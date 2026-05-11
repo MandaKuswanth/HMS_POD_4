@@ -7,22 +7,23 @@ const employeeSchema = new mongoose.Schema({
 
     employeeCode: { type: String, unique: true },
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true, trim: true },
     phone: { type: String, required: true, unique: true },
     department: { type: String, required: true },
     designation: { type: String, required: true },
     status: { type: Boolean, default: true },
+    joinngDate:{type:Date},
     medicalRegistrationNo: { type: String },
-    specialization: { type: String },
+    specialization: { type: String, required: true },
     qualification: { type: Array, required: true },
     consultationFee: { type: Number },
     availabilitySlots: { type: Array }
 },
 
     {
-        timestamps: {
-            createdAt: "joiningDate"
-        }
+        timestamps: true
+        
+        
     }
 )
 

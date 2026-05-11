@@ -13,16 +13,18 @@ exports.createEmployee = async (req, res) => {
             name,
             phone,
             email,
-            password,
+            role,
             department,
             designation,
             medicalRegistrationNo,
             specialization,
             qualification,
             consultationFee,
-            availabilitySlots,
-            role
+            availabilitySlots
         } = req.body;
+
+
+
 
         const existingEmp = await Employee.findOne({
             $or: [{ email }, { phone }]
@@ -34,7 +36,11 @@ exports.createEmployee = async (req, res) => {
             );
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const tempPassword = Math.random().toString(36).slice(-8);
+        console.log("Temporary password:", tempPassword);
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
 
         const employee = await Employee.create({
             name,
@@ -53,7 +59,8 @@ exports.createEmployee = async (req, res) => {
             email,
             passwordHash: hashedPassword,
             employeeId: employee.employeeCode,
-            roles: role
+            roles: role,
+            mustResetPassword: true
         });
 
         return res.status(201).json(
@@ -97,6 +104,17 @@ exports.login = async (req, res) => {
             );
         }
 
+
+        if (user.mustResetPassword) {
+            const token = user.generateAccessToken();
+            return res.status(200).json({
+                message: "Password reset required",
+                resetRequired: true,
+                token: token
+            });
+        }
+
+
         user.last_login = new Date();
         await user.save();
 
@@ -111,6 +129,34 @@ exports.login = async (req, res) => {
         );
     }
 }
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const { id } = req.user;
+        const { newPassword } = req.body;
+
+        const user = await User.findById(id);
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        user.passwordHash = hashedPassword;
+        user.mustResetPassword = false;
+
+        await user.save();
+
+        return res.status(200).json(
+            new ApiResponse(200, null, "Password updated successfully")
+        );
+
+    } catch (err) {
+        return res.status(500).json(
+            new ApiError(500, err.message)
+        );
+    }
+};
+
+
+
 
 exports.getProfile = async (req, res) => {
     try {

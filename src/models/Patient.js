@@ -32,7 +32,7 @@ patientSchema.pre('save', async function (next) {
             return next(err);
         }
     }
-    next();
+
 });
 
 module.exports = mongoose.model("Patient", patientSchema)

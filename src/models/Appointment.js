@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const appointmentSchema = new mongoose.Schema({
     appointmentId: {
-        type: String, required: true,
+        type: String, unique: true,
     },
     patientId: {
         type:String, trim: true,
@@ -18,11 +18,15 @@ const appointmentSchema = new mongoose.Schema({
     },
     status:{
         type:String,
-        enum : ["BOOKED", "CANCELLED", "COMPLETED"],
+        enum : ["BOOKED", "CANCELLED", "COMPLETED","IN-PROCESS"],
+        default: "IN-PROCESS"
     },
     createdByEmployeeId:{
         type: String, trim: true
     }
+},
+{
+    timestamps: true
 });
 
 appointmentSchema.pre('save', async function (next) {
@@ -33,12 +37,12 @@ appointmentSchema.pre('save', async function (next) {
                 { $inc: { seq: 1 } }, // Creates sequence
                 { new: true, upsert: true } // upsert is update and insert
             );
-            this.UHID = `APT-${String(counter.seq).padStart(6, '0')}`; // create 6 digit sequence number
+            this.appointmentId = `APT-${String(counter.seq).padStart(6, '0')}`; // create 6 digit sequence number
         } catch (err) {
             return next(err);
         }
     }
-    next();
+    
 });
 
 module.exports = mongoose.model("Appointment", appointmentSchema);
