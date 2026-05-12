@@ -1,6 +1,6 @@
-projectKey=hms_backend
+projectKey=HospitalManagementSystemBackEnd
 serverUrl=http://localhost:9000
 serverVersion=26.1.0.118079
-dashboardUrl=http://localhost:9000/dashboard?id=hms_backend
-ceTaskId=0d76d6b5-3157-4e41-89a7-906ddf625da9
-ceTaskUrl=http://localhost:9000/api/ce/task?id=0d76d6b5-3157-4e41-89a7-906ddf625da9
+dashboardUrl=http://localhost:9000/dashboard?id=HospitalManagementSystemBackEnd
+ceTaskId=ec816556-d7b1-4486-8aad-8c7828d39343
+ceTaskUrl=http://localhost:9000/api/ce/task?id=ec816556-d7b1-4486-8aad-8c7828d39343
