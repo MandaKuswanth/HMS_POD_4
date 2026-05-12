@@ -1,6 +1,6 @@
 const Employee = require("../models/Employee");
 const User = require("../models/User");
-const crypto = require("crypto");
+const crypto = require("node:crypto")
 
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
@@ -8,7 +8,7 @@ const ApiError = require("../utils/ApiError");
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 
-exports.createEmployee = async (req, res) => {
+exports.signup = async (req, res) => {
     try {
         const {
             name,
