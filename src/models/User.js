@@ -33,7 +33,8 @@ const userSchema = new Schema(
                 "CASHIER",
                 "NURSE",
                 "LAB_TECH",
-                "PHARMACIST"
+                "PHARMACIST",
+                "TECHNICIAN"
             ],
             required: true
         },

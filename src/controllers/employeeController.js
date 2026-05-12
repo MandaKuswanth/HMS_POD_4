@@ -1,5 +1,6 @@
 const Employee = require("../models/Employee");
 const User = require("../models/User");
+const crypto = require("crypto");
 
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
@@ -37,7 +38,8 @@ exports.createEmployee = async (req, res) => {
         }
 
 
-        const tempPassword = Math.random().toString(36).slice(-8);
+        const tempPassword = crypto.randomBytes(8).toString("hex");
+
         console.log("Temporary password:", tempPassword);
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
@@ -96,7 +98,7 @@ exports.login = async (req, res) => {
             );
         }
 
-        const passCheck = Boolean(await bcrypt.compare(password, user.passwordHash));
+        const passCheck = await user.isPasswordCorrect(password);
 
         if (!passCheck) {
             return res.status(401).json(
@@ -115,7 +117,7 @@ exports.login = async (req, res) => {
         }
 
 
-        user.last_login = new Date();
+        user.lastLogin = new Date();
         await user.save();
 
         const accessToken = user.generateAccessToken();
