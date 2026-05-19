@@ -1,0 +1,6 @@
+projectKey=hospital_management_system
+serverUrl=http://localhost:9000
+serverVersion=26.1.0.118079
+dashboardUrl=http://localhost:9000/dashboard?id=hospital_management_system
+ceTaskId=2f8ed8be-bdee-4688-badf-2cfa2520a0b9
+ceTaskUrl=http://localhost:9000/api/ce/task?id=2f8ed8be-bdee-4688-badf-2cfa2520a0b9
