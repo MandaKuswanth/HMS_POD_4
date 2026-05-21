@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { MatTableModule } from '@angular/material/table';
@@ -19,6 +19,7 @@ import { EmployeeDialog } from '../employee-dialog/employee-dialog';
 @Component({
   selector: 'app-employee-list',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     MatTableModule,
@@ -38,10 +39,9 @@ export class EmployeeList implements OnInit {
   private authService = inject(AuthService);
   private toastr = inject(ToastrService);
   private dialog = inject(MatDialog);
+  private cdr = inject(ChangeDetectorRef);
 
   employees: any[] = [];
-
-  /** Controls which set is visible: 'active' | 'pending' */
   activeView: 'active' | 'pending' = 'active';
 
   displayedColumns: string[] = [
@@ -60,7 +60,6 @@ export class EmployeeList implements OnInit {
     return this.authService.getRole() === 'ADMIN';
   }
 
-  /** Employees shown in the table based on current view */
   get filteredEmployees(): any[] {
     return this.employees.filter(emp =>
       this.activeView === 'active' ? emp.status : !emp.status
@@ -81,6 +80,7 @@ export class EmployeeList implements OnInit {
 
   toggleView(): void {
     this.activeView = this.activeView === 'active' ? 'pending' : 'active';
+    this.cdr.markForCheck();
   }
 
   loadEmployees(): void {
@@ -93,14 +93,18 @@ export class EmployeeList implements OnInit {
           const matchingUser = users.find((u: any) => u.email === employee.email);
           return {
             ...employee,
+            status: employee.status,   // explicitly from Employee doc
             role: matchingUser?.roles || matchingUser?.role || 'N/A'
           };
         });
 
         if (!Array.isArray(this.employees)) this.employees = [];
+
+        this.cdr.markForCheck();
       },
       error: () => {
         this.employees = [];
+        this.cdr.markForCheck();
         this.toastr.warning('Failed to load employees');
       }
     });
@@ -140,6 +144,23 @@ export class EmployeeList implements OnInit {
       },
       error: (err) => {
         this.toastr.error(err?.error?.message || 'Failed to delete employee');
+      }
+    });
+  }
+
+  toggleEmployeeStatus(employee: any): void {
+    const action = employee.status ? 'deactivate' : 'activate';
+
+    const confirmed = confirm(`Are you sure you want to ${action} ${employee.name}?`);
+    if (!confirmed) return;
+
+    this.employeeService.toggleEmployeeStatus(employee.employeeCode).subscribe({
+      next: (response) => {
+        this.toastr.success(response?.message || `Employee ${action}d successfully`);
+        this.loadEmployees();  // re-fetches fresh data from backend
+      },
+      error: (err) => {
+        this.toastr.error(err?.error?.message || 'Failed to update employee status');
       }
     });
   }

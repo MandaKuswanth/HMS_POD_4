@@ -64,22 +64,56 @@ exports.selfRegister = async(req, res) => {
         });
 
         await sendEmail({
-
             to: email,
-
             subject: "HMS Employee Account Created",
-
             html: `
-        <h2>Welcome to HMS</h2>
+            <h2>Welcome to HMS</h2>
 
-        <p>Your account has been created.</p>
+            <p>Your account has been successfully created.</p>
+
+            <p>
+                <strong>Email:</strong> ${email}
+            </p>
+
+            <p>
+                Your account is currently <strong>inactive</strong> and pending administrator approval.
+            </p>
+
+            <p>
+                You will be able to log in once your account is activated. After activation, you may be required to reset your password.
+            </p>
+
+            <p>
+                Please wait for approval or contact your administrator if needed.
+            </p>`
+        });
+
+        await sendEmail({
+            to: process.env.BREVO_SENDER_EMAIL, // replace with actual admin email
+            subject: "New Employee Registration - Approval Required",
+            html: `
+        <h2>New Employee Registration</h2>
+
+        <p>A new employee has registered in the HMS system and is awaiting approval.</p>
 
         <p>
             <strong>Email:</strong> ${email}
         </p>
 
         <p>
-            Please reset your password after login.
+            Please review the account details and activate the account to grant access.
+        </p>
+
+        <p>
+            Login to the admin panel to approve or reject this request.
+        </p>
+
+        <a href="http://localhost:4200/employees"> Employee List </a>
+
+        <br>
+
+        <p style="font-size: 12px; color: gray;">
+            This is an automated notification from HMS.
         </p>
     `
         });
@@ -165,23 +199,29 @@ exports.adminAddEmployee = async(req, res) => {
 
             subject: "HMS Employee Account Created",
 
-            html: `
-        <h2>Welcome to HMS</h2>
+            html: ` <
+                            h2 > Welcome to HMS < /h2>
 
-        <p>Your account has been created.</p>
+                            <
+                            p > Your account has been created. < /p>
 
-        <p>
-            <strong>Email:</strong> ${email}
-        </p>
+                            <
+                            p >
+                            <
+                            strong > Email: < /strong> ${email} <
+                            /p>
 
-        <p>
-            <strong>Temporary Password:</strong> ${tempPassword}
-        </p>
+                            <
+                            p >
+                            <
+                            strong > Temporary Password: < /strong> ${tempPassword} <
+                            /p>
 
-        <p>
-            Please reset your password after login.
-        </p>
-    `
+                            <
+                            p >
+                            Please reset your password after login. <
+                            /p>
+                        `
         });
 
         return res.status(201).json(
@@ -213,7 +253,9 @@ exports.login = async(req, res) => {
 
         if (!user) {
             return res.status(404).json(
-                new ApiError(404, `No user found in database with email id: ${email}`)
+                new ApiError(404, `
+                        No user found in database with email id: $ { email }
+                        `)
             );
         }
         if (!user.status) {
@@ -319,7 +361,9 @@ exports.getProfile = async(req, res) => {
         const user = await User.findById(id);
         if (!user) {
             return res.status(404).json(
-                new ApiError(404, `No user found in database with id: ${id}`)
+                new ApiError(404, `
+                        No user found in database with id: $ { id }
+                        `)
             );
         }
 
@@ -451,6 +495,101 @@ exports.deleteEmployee = async(req, res) => {
         console.error(err);
         return res.status(500).json(
             new ApiError(500, err.message || "Internal Server Error")
+        );
+    }
+};
+
+
+exports.toggleEmployeeStatus = async(req, res) => {
+        try {
+            const { employeeCode } = req.params;
+
+            const employee = await Employee.findOne({ employeeCode });
+
+            if (!employee) {
+                return res.status(404).json(
+                    new ApiError(404, "Employee not found")
+                );
+            }
+
+            const user = await User.findOne({ email: employee.email });
+
+            if (!user) {
+                return res.status(404).json(
+                    new ApiError(404, "User account not found")
+                );
+            }
+
+            const newStatus = !user.status;
+
+            user.status = newStatus;
+            employee.status = newStatus;
+
+            await user.save();
+            await employee.save();
+
+            await sendEmail({
+                        to: user.email,
+                        subject: "HMS Account Status Updated",
+                        html: `
+                <h2>HMS Account Status Updated</h2>
+
+                <p>Hello ${employee.name},</p>
+
+                <p>Your HMS account status has been updated successfully.</p>
+
+                <p>
+                    <strong>Status:</strong>
+                    ${user.status ? "ACTIVE" : "INACTIVE"}
+                </p>
+
+                <p>
+                    ${
+                        user.status
+                            ? "Your account is now active. You can access the HMS portal using your credentials."
+                            : "Your account has been temporarily deactivated. Please contact the administrator for more information."
+                    }
+                </p>
+
+                ${
+                    user.status
+                        ? `
+                        <p>
+                            <a href="http://localhost:4200/login" target="_blank">
+                                Login to HMS Portal
+                            </a>
+                        </p>
+                        `
+                        : ""
+                }
+
+                <p>
+                    Regards,<br>
+                    HMS Team
+                </p>
+            `
+        });
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    status: user.status
+                },
+                `Employee account ${
+                    user.status ? "activated" : "deactivated"
+                } successfully`
+            )
+        );
+
+    } catch (err) {
+        console.error(err);
+
+        return res.status(500).json(
+            new ApiError(
+                500,
+                err.message || "Internal Server Error"
+            )
         );
     }
 };

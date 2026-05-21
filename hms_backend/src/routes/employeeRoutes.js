@@ -9,7 +9,8 @@ const {
     login,
     getProfile,
     resetPassword,
-    getEmployees
+    getEmployees,
+    toggleEmployeeStatus
 } = require("../controllers/employeeController");
 
 const validate = require("../middleware/validate");
@@ -31,5 +32,7 @@ router.post("/admin/add-employee", auth, allowRoles("ADMIN"), signupValidation, 
 router.put("/admin/update-employee/:employeeCode", auth, allowRoles("ADMIN"), updateEmployee);
 router.delete("/admin/delete-employee/:employeeCode", auth, allowRoles("ADMIN"), deleteEmployee);
 router.get("/getEmployees", auth, allowRoles("ADMIN"), getEmployees);
+
+router.patch('/employees/:employeeCode/status', auth, allowRoles("ADMIN"), validate, toggleEmployeeStatus);
 
 module.exports = router;

@@ -52,4 +52,7 @@ export class EmployeeService {
   getEmployees(): Observable<any> {
     return this.http.get(`${this.baseUrl}/getEmployees`);
   }
+  toggleEmployeeStatus(employeeCode: string): Observable<any> {
+    return this.http.patch(`${this.baseUrl}/employees/${employeeCode}/status`, {});
+  }
 }

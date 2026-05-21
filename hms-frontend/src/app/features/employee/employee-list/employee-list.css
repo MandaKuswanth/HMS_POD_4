@@ -229,3 +229,11 @@ table {
         justify-content: flex-end;
     }
 }
+
+button[mat-icon-button] {
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+button[mat-icon-button]:hover {
+    transform: scale(1.08);
+}

@@ -82,11 +82,34 @@
                         <th mat-header-cell *matHeaderCellDef></th>
                         <td mat-cell *matCellDef="let emp">
                             <ng-container *ngIf="isAdmin">
-                                <button mat-icon-button matTooltip="Edit" (click)="openEditDialog(emp)">
-                                    <mat-icon>edit</mat-icon>
+                                <button mat-icon-button [color]="emp.status ? 'warn' : 'primary'" [matTooltip]="
+        emp.status
+        ? 'Deactivate Account'
+        : 'Activate Account'
+    " (click)="toggleEmployeeStatus(emp)">
+
+                                    <mat-icon>
+
+                                        {{ emp.status ? 'block' : 'check_circle' }}
+
+                                    </mat-icon>
+
                                 </button>
+
+                                <button mat-icon-button matTooltip="Edit" (click)="openEditDialog(emp)">
+
+                                    <mat-icon>
+                                        edit
+                                    </mat-icon>
+
+                                </button>
+
                                 <button mat-icon-button color="warn" matTooltip="Delete" (click)="deleteEmployee(emp)">
-                                    <mat-icon>delete</mat-icon>
+
+                                    <mat-icon>
+                                        delete
+                                    </mat-icon>
+
                                 </button>
                             </ng-container>
                         </td>

@@ -145,13 +145,12 @@ export class Register {
       designation: formValue.designation,
       joiningDate,
       role: formValue.role,
-      password: formValue.password
+      password: formValue.password,
+      qualification: this.showMedicalStaffFields() ? qualification : [],
+      availabilitySlots: this.showMedicalStaffFields()
+        ? (formValue.availabilitySlots || [])
+        : []
     };
-
-    if (this.showMedicalStaffFields()) {
-      payload.qualification = qualification;
-      payload.availabilitySlots = formValue.availabilitySlots || [];
-    }
 
     if (this.showDoctorFields()) {
       payload.medicalRegistrationNo = formValue.medicalRegistrationNo;
