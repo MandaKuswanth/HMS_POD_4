@@ -1,0 +1,38 @@
+<app-navbar></app-navbar>
+
+<div class="layout">
+    <app-sidebar></app-sidebar>
+
+    <main class="content">
+        <section class="welcome">
+            <h1>Welcome, {{ user?.name || 'User' }}</h1>
+            <p>You are logged in as <strong>{{ role }}</strong></p>
+        </section>
+
+        <section class="cards">
+            <mat-card class="overview-card">
+                <mat-icon>local_hospital</mat-icon>
+                <h3>Hospital Overview</h3>
+                <p>Manage hospital operations with secure role-based access.</p>
+            </mat-card>
+
+            <mat-card class="overview-card" *ngIf="isAdminOrTechnician()">
+                <mat-icon>groups</mat-icon>
+                <h3>Total Employees</h3>
+                <p class="count">{{ totalEmployees }}</p>
+            </mat-card>
+
+            <mat-card class="overview-card">
+                <mat-icon>verified_user</mat-icon>
+                <h3>Access Role</h3>
+                <p>{{ role }}</p>
+            </mat-card>
+
+            <mat-card class="overview-card">
+                <mat-icon>health_and_safety</mat-icon>
+                <h3>Healthcare System</h3>
+                <p>Clean, professional, and secure HMS frontend.</p>
+            </mat-card>
+        </section>
+    </main>
+</div>

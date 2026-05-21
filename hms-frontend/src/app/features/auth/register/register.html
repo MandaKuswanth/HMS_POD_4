@@ -1,0 +1,139 @@
+<div class="register-page">
+    <mat-card class="register-card">
+
+        <div class="register-header">
+            <mat-icon>person_add</mat-icon>
+            <h2>Employee Registration</h2>
+            <p>Create your account and wait for admin approval</p>
+        </div>
+
+        <form [formGroup]="form">
+            <div class="form-grid">
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Name</mat-label>
+                    <input matInput formControlName="name" />
+                    <mat-error>Name is required</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Email</mat-label>
+                    <input matInput type="email" formControlName="email" />
+                    <mat-error>Valid email is required</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Phone</mat-label>
+                    <input matInput formControlName="phone" />
+                    <mat-error>Phone is required</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Department</mat-label>
+                    <input matInput formControlName="department" />
+                    <mat-error>Department is required</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Designation</mat-label>
+                    <input matInput formControlName="designation" />
+                    <mat-error>Designation is required</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Joining Date</mat-label>
+                    <input matInput [matDatepicker]="picker" formControlName="joiningDate" />
+                    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <mat-error>Joining date is required</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Role</mat-label>
+                    <mat-select formControlName="role" (selectionChange)="onRoleChange()">
+                        <mat-option *ngFor="let r of roles" [value]="r">{{ r }}</mat-option>
+                    </mat-select>
+                    <mat-error>Role is required</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Password</mat-label>
+                    <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" />
+                    <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
+                        <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    </button>
+                    <mat-error>Password must be at least 6 characters</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Confirm Password</mat-label>
+                    <input matInput [type]="hideConfirm ? 'password' : 'text'" formControlName="confirmPassword" />
+                    <button mat-icon-button matSuffix type="button" (click)="hideConfirm = !hideConfirm">
+                        <mat-icon>{{ hideConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    </button>
+                    <mat-error>Please confirm your password</mat-error>
+                </mat-form-field>
+
+            </div>
+
+            <!-- Medical fields -->
+            <div class="medical-section" *ngIf="showMedicalStaffFields()">
+                <h3>Medical Details</h3>
+                <div class="form-grid">
+
+                    <mat-form-field appearance="outline" *ngIf="showDoctorFields()">
+                        <mat-label>Medical Registration No</mat-label>
+                        <input matInput formControlName="medicalRegistrationNo" />
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="showDoctorFields()">
+                        <mat-label>Specialization</mat-label>
+                        <input matInput formControlName="specialization" />
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                        <mat-label>Qualification</mat-label>
+                        <input matInput formControlName="qualificationText" placeholder="MBBS, MD, BSc Nursing" />
+                        <mat-error>Qualification is required</mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" *ngIf="showDoctorFields()">
+                        <mat-label>Consultation Fee</mat-label>
+                        <input matInput type="number" formControlName="consultationFee" />
+                        <mat-error>Consultation fee is required</mat-error>
+                    </mat-form-field>
+
+                </div>
+
+                <div class="slots-section">
+                    <div class="slots-header">
+                        <h3>Availability Slots</h3>
+                        <button mat-raised-button color="primary" type="button" (click)="addSlot()">
+                            <mat-icon>add</mat-icon> Add Slot
+                        </button>
+                    </div>
+                    <div formArrayName="availabilitySlots" *ngFor="let slot of availabilitySlots.controls; let i = index" class="slot-row">
+                        <mat-form-field appearance="outline" class="slot-input">
+                            <mat-label>Slot {{ i + 1 }}</mat-label>
+                            <input matInput [formControlName]="i" placeholder="MON 09:00-12:00" />
+                        </mat-form-field>
+                        <button mat-icon-button color="warn" type="button" (click)="removeSlot(i)">
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button mat-raised-button color="primary" class="full-width" type="button" (click)="onSubmit()" [disabled]="loading">
+                    {{ loading ? 'Registering...' : 'Register' }}
+                </button>
+            </div>
+        </form>
+
+        <div class="login-link">
+            <p>Already have an account? <a routerLink="/login">Login here</a></p>
+        </div>
+
+    </mat-card>
+</div>

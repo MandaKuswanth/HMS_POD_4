@@ -1,0 +1,65 @@
+.layout {
+    display: flex;
+}
+
+.content {
+    flex: 1;
+    padding: 30px;
+}
+
+.loader {
+    display: flex;
+    justify-content: center;
+    margin-top: 100px;
+}
+
+.profile-card {
+    padding: 30px;
+    border-radius: 18px;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.profile-header mat-icon {
+    font-size: 70px;
+    width: 70px;
+    height: 70px;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.profile-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.doctor-section {
+    margin-top: 40px;
+}
+
+.extra-section {
+    margin-top: 25px;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.chip {
+    background: #e3f2fd;
+    padding: 8px 14px;
+    border-radius: 20px;
+}

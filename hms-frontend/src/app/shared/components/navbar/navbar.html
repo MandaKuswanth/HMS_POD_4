@@ -1,0 +1,15 @@
+<mat-toolbar class="navbar">
+    <div class="brand" (click)="goDashboard()">
+        <mat-icon>local_hospital</mat-icon>
+        <span>HMS</span>
+    </div>
+
+    <span class="spacer"></span>
+
+    <span class="role" *ngIf="role">Role: {{ role }}</span>
+
+    <button mat-raised-button color="warn" (click)="logout()">
+    <mat-icon>logout</mat-icon>
+    Logout
+  </button>
+</mat-toolbar>
