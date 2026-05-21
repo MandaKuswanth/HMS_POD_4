@@ -14,12 +14,12 @@ const {
 
 router.post("/appointments", auth, allowRoles("ADMIN", "RECEPTIONIST"), validate, createAppointment);
 
-router.get("/appointments", auth, validate, getAppointments);
+router.get("/appointments", auth, validate, allowRoles("ADMIN", "RECEPTIONIST", "DOCTOR"), getAppointments);
 
-router.get("/appointments/:appointmentId", auth, validate, getAppointmentById);
+router.get("/appointments/:appointmentId", auth, allowRoles("ADMIN", "RECEPTIONIST"), validate, getAppointmentById);
 
-router.put("/appointments/:appointmentId", auth, validate, updateAppointment);
+router.put("/appointments/:appointmentId", auth, allowRoles("ADMIN", "RECEPTIONIST"), validate, updateAppointment);
 
-router.delete("/appointments/:appointmentId", auth, validate, deleteAppointment);
+router.delete("/appointments/:appointmentId", auth, allowRoles("ADMIN", "RECEPTIONIST"), validate, deleteAppointment);
 
 module.exports = router;
