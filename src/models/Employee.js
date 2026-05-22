@@ -1,8 +1,6 @@
 const mongoose = require("mongoose");
 const Counter = require("./Counter");
 
-
-
 const employeeSchema = new mongoose.Schema({
 
     employeeCode: { type: String, unique: true },

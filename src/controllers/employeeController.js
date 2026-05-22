@@ -61,7 +61,7 @@ exports.signup = async (req, res) => {
             email,
             passwordHash: hashedPassword,
             employeeId: employee.employeeCode,
-            roles: role,
+            role: roles,
             mustResetPassword: true
         });
 
