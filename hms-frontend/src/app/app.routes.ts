@@ -51,6 +51,23 @@ export const routes: Routes = [
             ).then(c => c.AccountInactive)
     },
     {
+        path: 'patients',
+
+        loadComponent: () =>
+            import(
+                './features/patient/patient-list/patient-list'
+            ).then(m => m.PatientList)
+    },
+
+    {
+        path: 'appointments',
+
+        loadComponent: () =>
+            import(
+                './features/appointment/appointment-list/appointment-list'
+            ).then(m => m.AppointmentList)
+    },
+    {
         path: '**',
         redirectTo: ''
     }

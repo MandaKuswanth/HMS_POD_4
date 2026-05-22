@@ -1,0 +1,239 @@
+.layout {
+    display: flex;
+    align-items: flex-start;
+    min-height: calc(100vh - 72px);
+    background: linear-gradient(180deg, #f8fffe 0%, #f3f7f7 100%);
+}
+
+
+/* CONTENT */
+
+.content {
+    flex: 1;
+    min-width: 0;
+    padding: 34px;
+}
+
+
+/* TABLE CARD */
+
+.table-card {
+    border-radius: 28px !important;
+    padding: 30px !important;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(0, 121, 107, 0.06);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.04), 0 4px 10px rgba(0, 121, 107, 0.03);
+}
+
+
+/* PAGE HEADER */
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+
+
+/* HEADER LEFT */
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-left mat-icon {
+    font-size: 42px;
+    width: 42px;
+    height: 42px;
+    color: #00796b;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(0, 121, 107, 0.08);
+}
+
+.header-left h2 {
+    margin: 0 0 4px;
+    color: #003c35;
+    font-size: 30px;
+    font-weight: 800;
+}
+
+.header-left p {
+    margin: 0;
+    color: #607d8b;
+    font-size: 15px;
+}
+
+
+/* HEADER ACTIONS */
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+
+/* Pending toggle button */
+
+.header-actions button[mat-stroked-button] {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 50px !important;
+    padding: 0 18px;
+    height: 42px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #607d8b;
+    border-color: #b0bec5;
+    transition: all 0.2s ease;
+}
+
+.header-actions button[mat-stroked-button]:hover {
+    background: rgba(0, 121, 107, 0.05);
+    border-color: #00796b;
+    color: #00796b;
+}
+
+
+/* When the "Pending" view is active, highlight the button */
+
+.header-actions button[mat-stroked-button].pending-active {
+    background: rgba(255, 152, 0, 0.08);
+    border-color: #f57c00;
+    color: #e65100;
+}
+
+.header-actions button[mat-stroked-button].pending-active mat-icon {
+    color: #f57c00;
+}
+
+
+/* Count pill inside the toggle button */
+
+.badge-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 121, 107, 0.1);
+    color: #00796b;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    margin-left: 2px;
+}
+
+.pending-active .badge-count {
+    background: rgba(245, 124, 0, 0.15);
+    color: #e65100;
+}
+
+
+/* TABLE */
+
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 18px;
+}
+
+table {
+    width: 100%;
+}
+
+
+/* STATUS BADGES */
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge.active {
+    background: rgba(0, 121, 107, 0.1);
+    color: #00796b;
+}
+
+.badge.inactive {
+    background: rgba(245, 124, 0, 0.1);
+    color: #e65100;
+}
+
+
+/* NO DATA */
+
+.no-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #90a4ae;
+    gap: 12px;
+}
+
+.no-data mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    opacity: 0.4;
+}
+
+.no-data p {
+    margin: 0;
+    font-size: 15px;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+    .content {
+        padding: 24px;
+    }
+    .table-card {
+        padding: 22px !important;
+    }
+    .header-left h2 {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .content {
+        padding: 18px;
+    }
+    .table-card {
+        border-radius: 22px !important;
+        padding: 18px !important;
+    }
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+    .header-left h2 {
+        font-size: 22px;
+    }
+    .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+button[mat-icon-button] {
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+button[mat-icon-button]:hover {
+    transform: scale(1.08);
+}

@@ -4,10 +4,13 @@
     <app-sidebar></app-sidebar>
 
     <main class="content">
+
+        @if (user) {
         <section class="welcome">
-            <h1>Welcome, {{ user?.name || 'User' }}</h1>
+            <h1>Welcome, {{ user.name }}</h1>
             <p>You are logged in as <strong>{{ role }}</strong></p>
         </section>
+        }
 
         <section class="cards">
             <mat-card class="overview-card">
@@ -16,11 +19,14 @@
                 <p>Manage hospital operations with secure role-based access.</p>
             </mat-card>
 
-            <mat-card class="overview-card" *ngIf="isAdminOrTechnician()">
+            @if(isAdminOrTechnician()){
+            <mat-card class="overview-card">
                 <mat-icon>groups</mat-icon>
                 <h3>Total Employees</h3>
                 <p class="count">{{ totalEmployees }}</p>
             </mat-card>
+            }
+
 
             <mat-card class="overview-card">
                 <mat-icon>verified_user</mat-icon>

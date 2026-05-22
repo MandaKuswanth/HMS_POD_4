@@ -445,7 +445,7 @@ exports.updateEmployee = async(req, res) => {
         if (qualification !== undefined) employee.qualification = qualification;
         if (consultationFee !== undefined) employee.consultationFee = consultationFee;
         if (availabilitySlots !== undefined) employee.availabilitySlots = availabilitySlots;
-        if (status !== undefined) employee.status = status; // ✅ handles activation/deactivation
+        if (status !== undefined) employee.status = status;
 
         await employee.save();
 
@@ -454,7 +454,7 @@ exports.updateEmployee = async(req, res) => {
 
         if (user) {
             if (role !== undefined) user.roles = role;
-            if (status !== undefined) user.status = status; // ✅ keep user status in sync
+            if (status !== undefined) user.status = status;
             if (email !== undefined) user.email = email;
             await user.save();
         }

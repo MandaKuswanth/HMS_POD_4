@@ -65,7 +65,9 @@ export class Login {
         const route = mustResetPassword ? '/reset-password' : '/dashboard';
 
         this.router.navigate([route]).then(() => {
+          setTimeout(() => {
           this.toastr.success('Login successful');
+          });
         });
       },
       error: (error) => {

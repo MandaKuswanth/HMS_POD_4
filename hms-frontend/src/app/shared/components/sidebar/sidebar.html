@@ -15,6 +15,30 @@
             <span>Employee List</span>
         </a>
 
+        <a mat-list-item routerLink="/patients" routerLinkActive="active" *ngIf="isAdminOrReceptionist()">
+
+            <mat-icon>
+                personal_injury
+            </mat-icon>
+
+            <span>
+        Patients
+    </span>
+
+        </a>
+
+        <a mat-list-item routerLink="/appointments" routerLinkActive="active" *ngIf="isAdminOrReceptionistOrDoctor()">
+
+            <mat-icon>
+                event_available
+            </mat-icon>
+
+            <span>
+        Appointments
+    </span>
+
+        </a>
+
         <a mat-list-item routerLink="/profile" routerLinkActive="active">
             <mat-icon>person</mat-icon>
             <span>Profile</span>

@@ -16,7 +16,7 @@ router.post("/appointments", auth, allowRoles("ADMIN", "RECEPTIONIST"), validate
 
 router.get("/appointments", auth, validate, allowRoles("ADMIN", "RECEPTIONIST", "DOCTOR"), getAppointments);
 
-router.get("/appointments/:appointmentId", auth, allowRoles("ADMIN", "RECEPTIONIST"), validate, getAppointmentById);
+router.get("/appointments/:appointmentId", auth, allowRoles("ADMIN", "RECEPTIONIST", "DOCTOR"), validate, getAppointmentById);
 
 router.put("/appointments/:appointmentId", auth, allowRoles("ADMIN", "RECEPTIONIST"), validate, updateAppointment);
 
