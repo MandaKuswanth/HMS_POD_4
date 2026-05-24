@@ -1,26 +1,19 @@
 const mongoose = require("mongoose");
+const { Schema } = mongoose;
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { Schema } = mongoose;
+
 const userSchema = new Schema(
     {
         email: {
-            type: String,
-            unique: true,
-            required: true,
-            trim: true
+            type: String,unique: true,required: true,trim: true
         },
-
         passwordHash: {
-            type: String,
-            required: true
+            type: String,required: true
         },
-
         status: {
-            type: Boolean,
-            default: true
+            type: Boolean,default: true
         },
-
         roles: {
             type: String,
             enum: [
@@ -36,38 +29,31 @@ const userSchema = new Schema(
             ],
             required: true
         },
-
         employeeId: {
-            type: String,
-            required: true
+            type: String,required: true
         },
-
         lastLogin: {
-            type: Date,
-            default: null
+            type: Date,default: null
         },
-
         mustResetPassword: {
-            type: Boolean,
-            default: true
+            type: Boolean,default: true
         }
     },
     {
         timestamps: {
-            createdAt: "created_at",
-            updatedAt: "updated_at"
+            createdAt: "created_at",updatedAt: "updated_at"
         }
     }
 );
 
 
-userSchema.methods.isPasswordCorrect = async function (password) {
+userSchema.methods.isPasswordCompare = async function (password) {
     return await bcrypt.compare(password, this.passwordHash);
 };
 
 
 
-userSchema.methods.generateAccessToken = function () {
+userSchema.methods.generateToken = function () {
     return jwt.sign(
         {
             id: this._id,
@@ -80,6 +66,5 @@ userSchema.methods.generateAccessToken = function () {
         }
     );
 };
-
 
 module.exports = mongoose.model("User", userSchema);

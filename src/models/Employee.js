@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const Counter = require("./Counter");
+
+
 const employeeSchema = new mongoose.Schema({
     employeeCode: { type: String, unique: true },
     name: { type: String, required: true },
@@ -8,19 +10,13 @@ const employeeSchema = new mongoose.Schema({
     department: { type: String, required: true },
     designation: { type: String, required: true },
     status: { type: Boolean, default: true },
-    joinngDate:{type:Date},
+    joiningDate:{type:Date},
     medicalRegistrationNo: { type: String },
     specialization: { type: String},
     qualification: { type: Array, required: true },
     consultationFee: { type: Number },
     availabilitySlots: { type: Array }
-},
-
-    {
-        timestamps: true
-        
-        
-    }
+},{timestamps: true }
 )
 
 employeeSchema.pre('save', async function (next) {
@@ -28,10 +24,10 @@ employeeSchema.pre('save', async function (next) {
         try {
             const counter = await Counter.findOneAndUpdate(
                 { name: 'employee' },
-                { $inc: { seq: 1 } }, // Creates sequence
-                { new: true, upsert: true } // upsert is update and insert
+                { $inc: { seq: 1 } }, 
+                { new: true, upsert: true } 
             );
-            this.employeeCode = `EMP-${String(counter.seq).padStart(6, '0')}`; // create 6 digit sequence number
+            this.employeeCode = `EMP-${String(counter.seq).padStart(6, '0')}`; 
         } catch (err) {
             return next(err);
         }

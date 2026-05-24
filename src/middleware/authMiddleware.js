@@ -12,7 +12,8 @@ module.exports = function validateToken(req, res, next) {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     req.user = decoded;
     next();
-  } catch (err) {
+  } 
+  catch (err) {
     return res.status(401).json({ message: err.message || 'Invalid or expired token' });
   }
 };
