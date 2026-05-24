@@ -3,6 +3,9 @@ import { CommonModule, formatDate } from '@angular/common';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 
+import { ToastrService } from 'ngx-toastr';
+import { EmployeeService } from '../../../core/services/employee';
+
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -11,9 +14,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
-
-import { ToastrService } from 'ngx-toastr';
-import { EmployeeService } from '../../../core/services/employee';
 
 @Component({
   selector: 'app-register',
@@ -35,7 +35,9 @@ import { EmployeeService } from '../../../core/services/employee';
   templateUrl: './register.html',
   styleUrl: './register.css'
 })
+
 export class Register {
+
   readonly fb = inject(FormBuilder);
   readonly employeeService = inject(EmployeeService);
   readonly toastr = inject(ToastrService);
@@ -47,8 +49,7 @@ export class Register {
   hideConfirm = true;
 
   roles = [
-    'DOCTOR', 'RECEPTIONIST', 'CASHIER',
-    'NURSE', 'LAB_TECH', 'PHARMACIST', 'TECHNICIAN'
+    'DOCTOR', 'RECEPTIONIST', 'CASHIER','NURSE', 'LAB_TECH', 'PHARMACIST', 'TECHNICIAN'
   ];
 
   form = this.fb.group({
@@ -76,12 +77,12 @@ export class Register {
     return this.form.get('role')?.value || '';
   }
 
-  showDoctorFields(): boolean {
-    return this.selectedRole === 'DOCTOR';
-  }
-
   showMedicalStaffFields(): boolean {
     return ['DOCTOR', 'NURSE', 'LAB_TECH'].includes(this.selectedRole);
+  }
+  
+  showDoctorFields(): boolean {
+    return this.selectedRole === 'DOCTOR';
   }
 
   onRoleChange(): void {

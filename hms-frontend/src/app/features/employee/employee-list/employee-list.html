@@ -8,7 +8,9 @@
 
             <div class="page-header">
                 <div class="header-left">
-                    <mat-icon>groups</mat-icon>
+                    <mat-icon>
+                        groups
+                    </mat-icon>
                     <div>
                         <h2>Employee List</h2>
                         <p>{{ activeView === 'active' ? 'Active employees' : 'Pending / inactive employees' }}</p>
@@ -106,9 +108,7 @@
 
                                 <button mat-icon-button color="warn" matTooltip="Delete" (click)="deleteEmployee(emp)">
 
-                                    <mat-icon>
-                                        delete
-                                    </mat-icon>
+                                    <mat-icon>delete</mat-icon>
 
                                 </button>
                             </ng-container>

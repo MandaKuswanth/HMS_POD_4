@@ -3,10 +3,10 @@ import { CommonModule } from '@angular/common';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatIconModule } from '@angular/material/icon';
 
 import { ToastrService } from 'ngx-toastr';
 
@@ -66,12 +66,12 @@ export class EmployeeList implements OnInit {
     );
   }
 
-  get activeCount(): number {
-    return this.employees.filter(emp => emp.status).length;
-  }
-
   get pendingCount(): number {
     return this.employees.filter(emp => !emp.status).length;
+  }
+
+  get activeCount(): number {
+    return this.employees.filter(emp => emp.status).length;
   }
 
   ngOnInit(): void {

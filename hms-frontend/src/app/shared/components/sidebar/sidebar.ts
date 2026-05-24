@@ -1,10 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-
-import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
-
+import { MatListModule } from '@angular/material/list';
 import { AuthService } from '../../../core/services/auth';
 
 @Component({
@@ -19,14 +17,24 @@ import { AuthService } from '../../../core/services/auth';
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css'
 })
+
 export class Sidebar {
-  private authService = inject(AuthService);
-  private router = inject(Router);
+
+  readonly authService = inject(AuthService);
+  readonly router = inject(Router);
 
   role = this.authService.getRole();
 
   isAdminOrTechnician(): boolean {
     return this.authService.isAdminOrTechnician();
+  }
+
+  isAdminOrReceptionist(): boolean {
+    return ['ADMIN', 'RECEPTIONIST'].includes(this.role || '');
+  }
+
+  isAdminOrReceptionistOrDoctor(): boolean {
+    return ['ADMIN', 'RECEPTIONIST', 'DOCTOR'].includes(this.role || '');
   }
 
   goTo(path: string): void {

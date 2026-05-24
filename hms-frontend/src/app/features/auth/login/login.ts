@@ -3,14 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 
+import { ToastrService } from 'ngx-toastr';
+import { AuthService } from '../../../core/services/auth';
+
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-
-import { ToastrService } from 'ngx-toastr';
-import { AuthService } from '../../../core/services/auth';
 
 @Component({
   selector: 'app-login',
@@ -65,13 +65,14 @@ export class Login {
         const route = mustResetPassword ? '/reset-password' : '/dashboard';
 
         this.router.navigate([route]).then(() => {
+          setTimeout(() => {
           this.toastr.success('Login successful');
+          });
         });
       },
       error: (error) => {
 
         this.loading = false;
-
         this.cdr.markForCheck();
 
         console.log(error);
@@ -83,10 +84,7 @@ export class Login {
           return;
         }
 
-        const message =
-          error?.error?.message ||
-          error?.error?.errors?.[0] ||
-          'Invalid credentials';
+        const message = error?.error?.message || error?.error?.errors?.[0] || 'Invalid credentials';
 
         this.toastr.error(message);
       }

@@ -1,0 +1,155 @@
+<h2 mat-dialog-title>
+
+    Add Patient
+
+</h2>
+
+<mat-dialog-content>
+
+    <form [formGroup]="form" class="dialog-form">
+
+        <div class="form-grid">
+
+            <mat-form-field appearance="outline">
+
+                <mat-label>
+                    Name
+                </mat-label>
+
+                <input matInput formControlName="name" />
+
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+
+                <mat-label>
+                    Email
+                </mat-label>
+
+                <input matInput type="email" formControlName="email" />
+
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+
+                <mat-label>
+                    Phone
+                </mat-label>
+
+                <input matInput formControlName="phone" />
+
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+
+                <mat-label>
+                    Gender
+                </mat-label>
+
+                <mat-select formControlName="gender">
+
+                    <mat-option *ngFor="let g of genders" [value]="g">
+
+                        {{ g }}
+
+                    </mat-option>
+
+                </mat-select>
+
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+
+                <mat-label>
+                    Date of Birth
+                </mat-label>
+
+                <input matInput [matDatepicker]="picker" formControlName="dob" />
+
+                <mat-datepicker-toggle matIconSuffix [for]="picker">
+                </mat-datepicker-toggle>
+
+                <mat-datepicker #picker>
+                </mat-datepicker>
+
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+
+                <mat-label>
+                    Address
+                </mat-label>
+
+                <input matInput formControlName="address" />
+
+            </mat-form-field>
+
+        </div>
+
+        <!-- EMERGENCY -->
+
+        <div class="medical-section">
+
+            <h3>
+                Emergency Contact
+            </h3>
+
+            <div class="form-grid">
+
+                <mat-form-field appearance="outline">
+
+                    <mat-label>
+                        Contact Name
+                    </mat-label>
+
+                    <input matInput formControlName="emergencyName" />
+
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+
+                    <mat-label>
+                        Relation
+                    </mat-label>
+
+                    <input matInput formControlName="emergencyRelation" />
+
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+
+                    <mat-label>
+                        Emergency Phone
+                    </mat-label>
+
+                    <input matInput formControlName="emergencyPhone" />
+
+                </mat-form-field>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+
+    <button mat-button (click)="onCancel()">
+
+        Cancel
+
+    </button>
+
+    <button mat-raised-button color="primary" [disabled]="loading" (click)="onSubmit()">
+
+        {{
+            loading
+            ? 'Adding...'
+            : 'Add Patient'
+        }}
+
+    </button>
+
+</mat-dialog-actions>

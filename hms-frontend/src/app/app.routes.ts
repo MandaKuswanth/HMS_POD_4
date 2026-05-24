@@ -6,7 +6,7 @@ export const routes: Routes = [
     {
         path: '',
         loadComponent: () =>
-            import('./features/landing/landing/landing').then(m => m.Landing)
+            import('./features/landing/landing').then(m => m.Landing)
     },
     {
         path: 'login',
@@ -14,7 +14,7 @@ export const routes: Routes = [
             import('./features/auth/login/login').then(m => m.Login)
     },
     {
-        path: 'register',  // ✅ new
+        path: 'register',  
         loadComponent: () =>
             import('./features/auth/register/register').then(m => m.Register)
     },
@@ -39,7 +39,7 @@ export const routes: Routes = [
     {
         path: 'profile',
         loadComponent: () =>
-            import('./features/profile/profile/profile')
+            import('./features/profile/profile')
                 .then(m => m.Profile)
     },
     {
@@ -49,6 +49,23 @@ export const routes: Routes = [
             import(
                 './features/auth/account-inactive/account-inactive'
             ).then(c => c.AccountInactive)
+    },
+    {
+        path: 'patients',
+
+        loadComponent: () =>
+            import(
+                './features/patient/patient-list/patient-list'
+            ).then(m => m.PatientList)
+    },
+
+    {
+        path: 'appointments',
+
+        loadComponent: () =>
+            import(
+                './features/appointment/appointment-list/appointment-list'
+            ).then(m => m.AppointmentList)
     },
     {
         path: '**',

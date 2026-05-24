@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from "rxjs";
 
 export interface LoginRequest {
@@ -12,7 +12,6 @@ export interface ResetPasswordRequest {
   newPassword: string;
   confirmPassword?: string;
 }
-
 @Injectable({
   providedIn: 'root'
 })
@@ -43,15 +42,12 @@ export class AuthService {
     if (token) {
       localStorage.setItem('token', token);
     }
-
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    }
-
     if (role) {
       localStorage.setItem('role', role);
     }
-
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
     localStorage.setItem('mustResetPassword', String(mustResetPassword));
   }
 
@@ -76,14 +72,14 @@ export class AuthService {
     return localStorage.getItem('role');
   }
 
-  getUser(): any {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  }
-
   isAdminOrTechnician(): boolean {
     const role = this.getRole();
     return role === 'ADMIN' || role === 'TECHNICIAN';
+  }
+
+  getUser(): any {
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
   }
 
   mustResetPassword(): boolean {

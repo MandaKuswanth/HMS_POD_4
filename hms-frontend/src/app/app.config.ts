@@ -1,8 +1,8 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideToastr } from 'ngx-toastr';
-import { provideNativeDateAdapter } from '@angular/material/core';
 
 import { routes } from './app.routes';
 import { tokenInterceptor } from './core/interceptors/token-interceptor';

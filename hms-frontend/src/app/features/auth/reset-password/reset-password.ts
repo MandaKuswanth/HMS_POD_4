@@ -1,12 +1,5 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  AbstractControl,
-  FormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators
-} from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
@@ -14,6 +7,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators
+} from '@angular/forms';
 
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../../core/services/auth';
@@ -60,7 +61,6 @@ export class ResetPassword {
     if (newPassword && confirmPassword && newPassword !== confirmPassword) {
       return { passwordMismatch: true };
     }
-
     return null;
   }
 
@@ -87,10 +87,7 @@ export class ResetPassword {
       },
       error: (error) => {
         this.loading = false;
-        const message =
-          error?.error?.message ||
-          error?.error?.errors?.[0]?.msg ||
-          'Password reset failed';
+        const message = error?.error?.message || error?.error?.errors?.[0]?.msg || 'Password reset failed';
 
         this.toastr.error(message);
       }

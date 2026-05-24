@@ -1,5 +1,5 @@
-import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { inject } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 
 export const authGuard: CanActivateFn = () => {
@@ -13,6 +13,5 @@ export const authGuard: CanActivateFn = () => {
     router.navigate(['/login']);
     return false;
   }
-
   return true;
 };

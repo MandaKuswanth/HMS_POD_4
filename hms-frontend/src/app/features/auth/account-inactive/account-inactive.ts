@@ -16,6 +16,7 @@ import { Router } from '@angular/router';
   styleUrls: ['./account-inactive.css']
 })
 export class AccountInactive {
+  
   constructor(readonly router: Router) { }
 
   goToLogin() {

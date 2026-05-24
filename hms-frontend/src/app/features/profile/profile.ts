@@ -5,10 +5,10 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-import { Navbar } from '../../../shared/components/navbar/navbar';
-import { Sidebar } from '../../../shared/components/sidebar/sidebar';
+import { EmployeeService } from '../../core/services/employee';
+import { Navbar } from '../../shared/components/navbar/navbar';
+import { Sidebar } from '../../shared/components/sidebar/sidebar';
 
-import { EmployeeService } from '../../../core/services/employee';
 
 @Component({
   selector: 'app-profile',
@@ -26,6 +26,7 @@ import { EmployeeService } from '../../../core/services/employee';
   styleUrl: './profile.css'
 })
 export class Profile implements OnInit {
+
   readonly employeeService = inject(EmployeeService);
   readonly cdr = inject(ChangeDetectorRef);
 
@@ -39,13 +40,9 @@ export class Profile implements OnInit {
   loadProfile(): void {
     this.employeeService.getProfile().subscribe({
       next: (response) => {
-        this.employee =
-          response?.data?.employee ||
-          response?.employee ||
-          response?.data;
-
+        this.employee = response?.data?.employee ||  response?.employee ||  response?.data;
         this.loading = false;
-        this.cdr.markForCheck(); // ✅ tells OnPush to re-render
+        this.cdr.markForCheck(); // tells OnPush to re-render
       },
       error: (error) => {
         console.error(error);

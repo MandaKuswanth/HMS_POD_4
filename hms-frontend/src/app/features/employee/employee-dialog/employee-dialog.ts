@@ -2,14 +2,15 @@ import { Component, inject, Inject, OnInit } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+
 
 import { ToastrService } from 'ngx-toastr';
 import { EmployeeService } from '../../../core/services/employee';
@@ -37,7 +38,9 @@ export interface EmployeeDialogData {
   templateUrl: './employee-dialog.html',
   styleUrl: './employee-dialog.css'
 })
+
 export class EmployeeDialog implements OnInit {
+
   readonly fb = inject(FormBuilder);
   readonly employeeService = inject(EmployeeService);
   readonly toastr = inject(ToastrService);
@@ -48,8 +51,7 @@ export class EmployeeDialog implements OnInit {
   loading = false;
 
   roles = [
-    'OWNER', 'ADMIN', 'DOCTOR', 'RECEPTIONIST',
-    'CASHIER', 'NURSE', 'LAB_TECH', 'PHARMACIST', 'TECHNICIAN'
+    'OWNER', 'ADMIN', 'DOCTOR', 'RECEPTIONIST','CASHIER', 'NURSE', 'LAB_TECH', 'PHARMACIST', 'TECHNICIAN'
   ];
 
   form = this.fb.group({
@@ -76,12 +78,12 @@ export class EmployeeDialog implements OnInit {
     return this.form.get('role')?.value || '';
   }
 
-  showDoctorFields(): boolean {
-    return this.selectedRole === 'DOCTOR';
-  }
-
   showMedicalStaffFields(): boolean {
     return ['DOCTOR', 'NURSE', 'LAB_TECH'].includes(this.selectedRole);
+  }
+
+  showDoctorFields(): boolean {
+    return this.selectedRole === 'DOCTOR';
   }
 
   ngOnInit(): void {
@@ -175,8 +177,7 @@ export class EmployeeDialog implements OnInit {
 
     if (this.showMedicalStaffFields()) {
 
-      payload.availabilitySlots =
-        formValue.availabilitySlots || [];
+      payload.availabilitySlots = formValue.availabilitySlots || [];
     }
 
     if (this.showDoctorFields()) {

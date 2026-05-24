@@ -1,18 +1,48 @@
 <div class="sidebar">
     <div class="sidebar-title">
-        <mat-icon>medical_services</mat-icon>
+        <mat-icon>
+            medical_services
+        </mat-icon>
         <span>Menu</span>
     </div>
 
     <mat-nav-list>
         <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
-            <mat-icon>dashboard</mat-icon>
+            <mat-icon>
+                dashboard
+            </mat-icon>
             <span>Dashboard</span>
         </a>
 
         <a mat-list-item routerLink="/employees" routerLinkActive="active" *ngIf="isAdminOrTechnician()">
-            <mat-icon>groups</mat-icon>
+            <mat-icon>
+                groups
+            </mat-icon>
             <span>Employee List</span>
+        </a>
+
+        <a mat-list-item routerLink="/patients" routerLinkActive="active" *ngIf="isAdminOrReceptionist()">
+
+            <mat-icon>
+                personal_injury
+            </mat-icon>
+
+            <span>
+        Patients
+    </span>
+
+        </a>
+
+        <a mat-list-item routerLink="/appointments" routerLinkActive="active" *ngIf="isAdminOrReceptionistOrDoctor()">
+
+            <mat-icon>
+                event_available
+            </mat-icon>
+
+            <span>
+        Appointments
+    </span>
+
         </a>
 
         <a mat-list-item routerLink="/profile" routerLinkActive="active">

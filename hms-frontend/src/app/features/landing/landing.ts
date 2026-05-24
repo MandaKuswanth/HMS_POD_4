@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
-import { Footer } from '../../../shared/components/footer/footer';
+import { Footer } from '../../shared/components/footer/footer';
 
 @Component({
   selector: 'app-landing',
