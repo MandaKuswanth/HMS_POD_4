@@ -5,9 +5,14 @@
             <span>HMS</span>
         </div>
 
-        <button mat-raised-button color="primary" (click)="goToLogin()">
-      Login
-    </button>
+        <div class="header-actions">
+            <button mat-stroked-button color="primary" (click)="goToRegister()">
+                Register
+            </button>
+            <button mat-raised-button color="primary" (click)="goToLogin()">
+                Login
+            </button>
+        </div>
     </header>
 
     <section class="hero">
@@ -18,8 +23,8 @@
             </p>
 
             <button mat-raised-button color="primary" class="hero-btn" (click)="goToLogin()">
-        Get Started
-      </button>
+                Get Started
+            </button>
         </div>
 
         <div class="hero-card">

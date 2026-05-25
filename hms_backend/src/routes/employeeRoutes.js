@@ -31,7 +31,7 @@ router.post("/reset-password", auth, resetPassword);
 router.post("/admin/add-employee", auth, allowRoles("ADMIN"), signupValidation, validate, adminAddEmployee);
 router.put("/admin/update-employee/:employeeCode", auth, allowRoles("ADMIN"), updateEmployee);
 router.delete("/admin/delete-employee/:employeeCode", auth, allowRoles("ADMIN"), deleteEmployee);
-router.get("/getEmployees", auth, allowRoles("ADMIN"), getEmployees);
+router.get("/getEmployees", auth, allowRoles("ADMIN", "RECEPTIONIST"), getEmployees);
 
 router.patch('/employees/:employeeCode/status', auth, allowRoles("ADMIN"), validate, toggleEmployeeStatus);
 

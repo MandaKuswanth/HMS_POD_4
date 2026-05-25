@@ -20,9 +20,12 @@ import { Footer } from '../../../shared/components/footer/footer';
   styleUrl: './landing.css'
 })
 export class Landing {
-  constructor(private router: Router) { }
+  constructor(readonly router: Router) { }
 
   goToLogin(): void {
     this.router.navigate(['/login']);
+  }
+  goToRegister(): void {
+    this.router.navigate(['/register']);
   }
 }

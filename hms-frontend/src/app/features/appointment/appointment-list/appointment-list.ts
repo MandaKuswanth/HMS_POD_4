@@ -42,10 +42,10 @@ import { AppointmentDialog } from '../appointment-dialog/appointment-dialog';
 })
 export class AppointmentList implements OnInit {
 
-  private appointmentService = inject(AppointmentService);
-  private toastr = inject(ToastrService);
-  private dialog = inject(MatDialog);
-  private cdr = inject(ChangeDetectorRef); // ✅ added
+  readonly appointmentService = inject(AppointmentService);
+  readonly toastr = inject(ToastrService);
+  readonly dialog = inject(MatDialog);
+  readonly cdr = inject(ChangeDetectorRef); // ✅ added
 
   appointments: any[] = [];
 
@@ -80,7 +80,8 @@ export class AppointmentList implements OnInit {
   // ✅ Open dialog
   openAddDialog(): void {
     const ref = this.dialog.open(AppointmentDialog, {
-      width: '720px',
+      width: '900px',
+      maxWidth: '95vw',
       disableClose: true
     });
 

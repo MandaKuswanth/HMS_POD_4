@@ -35,11 +35,11 @@ import { EmployeeDialog } from '../employee-dialog/employee-dialog';
   styleUrl: './employee-list.css'
 })
 export class EmployeeList implements OnInit {
-  private employeeService = inject(EmployeeService);
-  private authService = inject(AuthService);
-  private toastr = inject(ToastrService);
-  private dialog = inject(MatDialog);
-  private cdr = inject(ChangeDetectorRef);
+  readonly employeeService = inject(EmployeeService);
+  readonly authService = inject(AuthService);
+  readonly toastr = inject(ToastrService);
+  readonly dialog = inject(MatDialog);
+  readonly cdr = inject(ChangeDetectorRef);
 
   employees: any[] = [];
   activeView: 'active' | 'pending' = 'active';
@@ -113,7 +113,8 @@ export class EmployeeList implements OnInit {
   openAddDialog(): void {
     const ref = this.dialog.open(EmployeeDialog, {
       data: { mode: 'add' },
-      width: '680px',
+      width: '900px',
+      maxWidth: '95vw',
       disableClose: true
     });
 

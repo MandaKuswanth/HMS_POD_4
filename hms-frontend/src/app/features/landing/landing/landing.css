@@ -203,3 +203,9 @@
         padding: 28px;
     }
 }
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
