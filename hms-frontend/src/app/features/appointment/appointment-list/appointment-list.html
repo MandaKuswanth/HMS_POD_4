@@ -10,73 +10,62 @@
             <div class="page-header">
                 <div class="header-left">
                     <mat-icon>event_available</mat-icon>
-
                     <div>
                         <h2>Appointments</h2>
                         <p>Manage hospital appointments</p>
                     </div>
                 </div>
 
-                <button mat-fab color="primary" matTooltip="Add Appointment" (click)="openAddDialog()">
-          <mat-icon>add</mat-icon>
-        </button>
+                <button *ngIf="!isDoctor" mat-fab color="primary" matTooltip="Add Appointment" (click)="openAddDialog()">
+                    <mat-icon>add</mat-icon>
+                </button>
             </div>
 
             @if (appointments.length > 0) {
 
             <div class="table-wrapper">
-
                 <table mat-table [dataSource]="appointments">
 
-                    <!-- Appointment ID -->
                     <ng-container matColumnDef="appointmentId">
                         <th mat-header-cell *matHeaderCellDef>Appointment ID</th>
                         <td mat-cell *matCellDef="let a">{{ a.appointmentId }}</td>
                     </ng-container>
 
-                    <!-- Patient -->
                     <ng-container matColumnDef="patientId">
                         <th mat-header-cell *matHeaderCellDef>Patient UHID</th>
                         <td mat-cell *matCellDef="let a">{{ a.patientId }}</td>
                     </ng-container>
 
-                    <!-- Doctor -->
                     <ng-container matColumnDef="doctorEmployeeId">
                         <th mat-header-cell *matHeaderCellDef>Doctor</th>
                         <td mat-cell *matCellDef="let a">{{ a.doctorEmployeeId }}</td>
                     </ng-container>
 
-                    <!-- Date -->
                     <ng-container matColumnDef="date">
                         <th mat-header-cell *matHeaderCellDef>Date</th>
-                        <td mat-cell *matCellDef="let a">
-                            {{ a.date | date:'mediumDate' }}
-                        </td>
+                        <td mat-cell *matCellDef="let a">{{ a.date | date:'mediumDate' }}</td>
                     </ng-container>
 
-                    <!-- Slot -->
                     <ng-container matColumnDef="timeSlot">
                         <th mat-header-cell *matHeaderCellDef>Slot</th>
                         <td mat-cell *matCellDef="let a">{{ a.timeSlot }}</td>
                     </ng-container>
 
-                    <!-- Status -->
                     <ng-container matColumnDef="status">
                         <th mat-header-cell *matHeaderCellDef>Status</th>
                         <td mat-cell *matCellDef="let a">
                             <span class="badge" [ngClass]="a.status?.toLowerCase()">
-                  {{ a.status }}
-                </span>
+                                {{ a.status }}
+                            </span>
                         </td>
                     </ng-container>
 
-                    <!-- Actions -->
                     <ng-container matColumnDef="actions">
                         <th mat-header-cell *matHeaderCellDef>Actions</th>
                         <td mat-cell *matCellDef="let a">
-                            <button mat-icon-button color="warn" (click)="deleteAppointment(a)">
-                  <mat-icon>delete</mat-icon>
-                </button>
+                            <button *ngIf="!isDoctor" mat-icon-button color="warn" (click)="deleteAppointment(a)">
+                                <mat-icon>delete</mat-icon>
+                            </button>
                         </td>
                     </ng-container>
 
@@ -84,7 +73,6 @@
                     <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
 
                 </table>
-
             </div>
 
             } @else {

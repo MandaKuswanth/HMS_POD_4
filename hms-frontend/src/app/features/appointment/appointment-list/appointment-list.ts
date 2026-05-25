@@ -20,6 +20,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Navbar } from '../../../shared/components/navbar/navbar';
 import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 import { AppointmentService } from '../../../core/services/appointment';
+import { AuthService } from '../../../core/services/auth';
 import { AppointmentDialog } from '../appointment-dialog/appointment-dialog';
 
 @Component({
@@ -38,14 +39,15 @@ import { AppointmentDialog } from '../appointment-dialog/appointment-dialog';
   ],
   templateUrl: './appointment-list.html',
   styleUrls: ['./appointment-list.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush // ✅ added
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppointmentList implements OnInit {
 
   readonly appointmentService = inject(AppointmentService);
+  readonly authService = inject(AuthService);
   readonly toastr = inject(ToastrService);
   readonly dialog = inject(MatDialog);
-  readonly cdr = inject(ChangeDetectorRef); // ✅ added
+  readonly cdr = inject(ChangeDetectorRef);
 
   appointments: any[] = [];
 
@@ -59,17 +61,19 @@ export class AppointmentList implements OnInit {
     'actions'
   ];
 
+  get isDoctor(): boolean {
+    return this.authService.getRole() === 'DOCTOR';
+  }
+
   ngOnInit(): void {
     this.loadAppointments();
   }
 
-  // ✅ Load appointments
   loadAppointments(): void {
     this.appointmentService.getAppointments().subscribe({
       next: (response) => {
         this.appointments = response?.data || [];
-
-        this.cdr.markForCheck(); // ✅ IMPORTANT
+        this.cdr.markForCheck();
       },
       error: () => {
         this.toastr.error('Failed to load appointments');
@@ -77,7 +81,6 @@ export class AppointmentList implements OnInit {
     });
   }
 
-  // ✅ Open dialog
   openAddDialog(): void {
     const ref = this.dialog.open(AppointmentDialog, {
       width: '900px',
@@ -86,33 +89,21 @@ export class AppointmentList implements OnInit {
     });
 
     ref.afterClosed().subscribe(result => {
-      if (result) {
-        this.loadAppointments();
-      }
+      if (result) this.loadAppointments();
     });
   }
 
-  // ✅ Delete appointment
   deleteAppointment(appointment: any): void {
-    const confirmed = confirm(
-      `Delete appointment ${appointment.appointmentId}?`
-    );
+    if (!confirm(`Delete appointment ${appointment.appointmentId}?`)) return;
 
-    if (!confirmed) return;
-
-    this.appointmentService
-      .deleteAppointment(appointment.appointmentId)
-      .subscribe({
-        next: () => {
-          this.toastr.success('Appointment deleted');
-
-          this.loadAppointments();
-        },
-        error: (err) => {
-          this.toastr.error(
-            err?.error?.message || 'Delete failed'
-          );
-        }
-      });
+    this.appointmentService.deleteAppointment(appointment.appointmentId).subscribe({
+      next: () => {
+        this.toastr.success('Appointment deleted');
+        this.loadAppointments();
+      },
+      error: (err) => {
+        this.toastr.error(err?.error?.message || 'Delete failed');
+      }
+    });
   }
 }
