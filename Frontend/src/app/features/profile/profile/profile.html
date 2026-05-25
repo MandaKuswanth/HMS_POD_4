@@ -1,0 +1,109 @@
+<app-navbar></app-navbar>
+
+<div class="layout">
+    <app-sidebar></app-sidebar>
+
+    <main class="content">
+
+        <div class="loader" *ngIf="loading === true">
+            <mat-spinner diameter="50"></mat-spinner>
+        </div>
+
+        <mat-card class="profile-card" *ngIf="employee && loading === false">
+
+            <div class="profile-header">
+                <mat-icon>account_circle</mat-icon>
+
+                <div>
+                    <h2>{{ employee.name }}</h2>
+                    <p>{{ employee.role }}</p>
+                </div>
+            </div>
+
+            <div class="profile-grid">
+
+                <div class="profile-item">
+                    <strong>Email</strong>
+                    <span>{{ employee.email }}</span>
+                </div>
+
+                <div class="profile-item">
+                    <strong>Phone</strong>
+                    <span>{{ employee.phone }}</span>
+                </div>
+
+                <div class="profile-item">
+                    <strong>Department</strong>
+                    <span>{{ employee.department }}</span>
+                </div>
+
+                <div class="profile-item">
+                    <strong>Designation</strong>
+                    <span>{{ employee.designation }}</span>
+                </div>
+
+                <div class="profile-item">
+                    <strong>Employee Code</strong>
+                    <span>{{ employee.employeeCode }}</span>
+                </div>
+
+                <div class="profile-item">
+                    <strong>Status</strong>
+                    <span>
+            {{ employee.status ? 'Active' : 'Inactive' }}
+          </span>
+                </div>
+
+            </div>
+
+            <!-- Doctor Section -->
+
+            <div *ngIf="isDoctor()" class="doctor-section">
+
+                <h3>Doctor Information</h3>
+
+                <div class="profile-grid">
+
+                    <div class="profile-item">
+                        <strong>Medical Registration No</strong>
+                        <span>{{ employee.medicalRegistrationNo }}</span>
+                    </div>
+
+                    <div class="profile-item">
+                        <strong>Specialization</strong>
+                        <span>{{ employee.specialization }}</span>
+                    </div>
+
+                    <div class="profile-item">
+                        <strong>Consultation Fee</strong>
+                        <span>₹{{ employee.consultationFee }}</span>
+                    </div>
+
+                </div>
+
+                <div class="extra-section">
+                    <strong>Qualifications</strong>
+
+                    <div class="chips">
+                        <span class="chip" *ngFor="let qualification of employee.qualification">
+              {{ qualification }}
+            </span>
+                    </div>
+                </div>
+
+                <div class="extra-section">
+                    <strong>Availability Slots</strong>
+
+                    <div class="chips">
+                        <span class="chip" *ngFor="let slot of employee.availabilitySlots">
+              {{ slot }}
+            </span>
+                    </div>
+                </div>
+
+            </div>
+
+        </mat-card>
+
+    </main>
+</div>

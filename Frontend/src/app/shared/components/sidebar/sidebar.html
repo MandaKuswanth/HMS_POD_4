@@ -1,0 +1,37 @@
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <mat-icon>medical_services</mat-icon>
+    </div>
+    <span class="brand-label">HMS Menu</span>
+  </div>
+
+  <div class="sidebar-divider"></div>
+
+  <nav class="sidebar-nav">
+    <a class="nav-item" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      <mat-icon>dashboard</mat-icon>
+      <span class="nav-label">Dashboard</span>
+    </a>
+
+    <a class="nav-item" routerLink="/employees" routerLinkActive="active" *ngIf="isAdminOrTechnician()">
+      <mat-icon>groups</mat-icon>
+      <span class="nav-label">Employee List</span>
+    </a>
+
+    <a class="nav-item" routerLink="/patients" routerLinkActive="active" *ngIf="isAdminOrReceptionist()">
+      <mat-icon>personal_injury</mat-icon>
+      <span class="nav-label">Patients</span>
+    </a>
+
+    <a class="nav-item" routerLink="/appointments" routerLinkActive="active" *ngIf="isAdminOrReceptionistOrDoctor()">
+      <mat-icon>event_available</mat-icon>
+      <span class="nav-label">Appointments</span>
+    </a>
+
+    <a class="nav-item" routerLink="/profile" routerLinkActive="active">
+      <mat-icon>person</mat-icon>
+      <span class="nav-label">Profile</span>
+    </a>
+  </nav>
+</div>

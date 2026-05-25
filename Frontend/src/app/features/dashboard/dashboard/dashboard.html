@@ -1,0 +1,42 @@
+<app-navbar></app-navbar>
+
+<div class="layout">
+  <app-sidebar></app-sidebar>
+
+  <main class="content">
+    <section class="welcome">
+      <h1>Welcome, {{ user?.name || 'User' }}</h1>
+      <p>You are logged in as <strong>{{ role }}</strong></p>
+    </section>
+
+    <section class="cards">
+      <mat-card class="overview-card">
+        <mat-icon>local_hospital</mat-icon>
+        <h3>Hospital Overview</h3>
+        <p>Manage hospital operations with secure role-based access.</p>
+      </mat-card>
+
+      <mat-card class="overview-card">
+        <mat-icon>groups</mat-icon>
+        <h3>Total Employees</h3>
+        <p class="count">{{ totalEmployees }}</p>
+      </mat-card>
+
+      <mat-card class="overview-card">
+        <mat-icon>check_circle</mat-icon>
+        <h3>Active Employees</h3>
+        <p class="count">{{ activeEmployees }}</p>
+      </mat-card>
+
+      <mat-card class="overview-card">
+        <mat-icon>hourglass_empty</mat-icon>
+        <h3>Pending Employees</h3>
+        <p class="count">{{ pendingEmployees }}</p>
+      </mat-card>
+
+
+
+
+    </section>
+  </main>
+</div>

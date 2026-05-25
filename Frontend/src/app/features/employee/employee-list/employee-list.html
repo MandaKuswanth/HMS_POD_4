@@ -1,0 +1,149 @@
+<app-navbar></app-navbar>
+
+<div class="layout">
+  <app-sidebar></app-sidebar>
+
+  <main class="content">
+    <mat-card class="table-card">
+
+      <div class="page-header">
+        <div class="header-left">
+          <mat-icon>groups</mat-icon>
+          <div>
+            <h2>Employee List</h2>
+            <p>
+              {{ activeView === 'active' ? 'Active employees' : 'Pending / inactive employees' }}
+            </p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button mat-stroked-button [class.pending-active]="activeView === 'pending'" (click)="toggleView()">
+            <mat-icon>
+              {{ activeView === 'active' ? 'hourglass_empty' : 'check_circle' }}
+            </mat-icon>
+
+            {{ activeView === 'active' ? 'Pending' : 'Active' }}
+
+            <span class="badge-count">
+              {{ activeView === 'active' ? pendingCount : activeCount }}
+            </span>
+          </button>
+
+          <button *ngIf="isAdmin" mat-fab color="primary" matTooltip="Add Employee" (click)="openAddDialog()">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrapper" *ngIf="filteredEmployees.length > 0; else noData">
+        <table mat-table [dataSource]="filteredEmployees" class="mat-elevation-z1">
+
+          <ng-container matColumnDef="employeeCode">
+            <th mat-header-cell *matHeaderCellDef>Code</th>
+            <td mat-cell *matCellDef="let emp">
+              {{ emp.employeeCode || '-' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let emp">
+              {{ emp.name || '-' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef>Email</th>
+            <td mat-cell *matCellDef="let emp">
+              {{ emp.email || '-' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="phone">
+            <th mat-header-cell *matHeaderCellDef>Phone</th>
+            <td mat-cell *matCellDef="let emp">
+              {{ emp.phone || '-' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="department">
+            <th mat-header-cell *matHeaderCellDef>Department</th>
+            <td mat-cell *matCellDef="let emp">
+              {{ emp.department || '-' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="designation">
+            <th mat-header-cell *matHeaderCellDef>Designation</th>
+            <td mat-cell *matCellDef="let emp">
+              {{ emp.designation || '-' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="role">
+            <th mat-header-cell *matHeaderCellDef>Role</th>
+            <td mat-cell *matCellDef="let emp">
+              {{ emp.role || '-' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let emp">
+              <span [class]="emp.status ? 'badge active' : 'badge inactive'">
+                {{ emp.status ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+
+            <td mat-cell *matCellDef="let emp">
+              <div class="action-buttons" *ngIf="isAdmin">
+
+                <button mat-stroked-button class="status-btn" [class.deactivate]="emp.status"
+                  [class.activate]="!emp.status" (click)="toggleEmployeeStatus(emp)">
+                  {{ emp.status ? 'Deactivate Account' : 'Activate Account' }}
+                </button>
+
+                <button mat-icon-button class="icon-action-btn update-icon-btn" matTooltip="Update Employee"
+                  (click)="openEditDialog(emp)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+
+                <button mat-icon-button class="icon-action-btn delete-icon-btn" matTooltip="Delete Employee"
+                  (click)="deleteEmployee(emp)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+
+              </div>
+
+              <span *ngIf="!isAdmin" class="no-action">
+                No actions
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+        </table>
+      </div>
+
+      <ng-template #noData>
+        <div class="no-data">
+          <mat-icon>
+            {{ activeView === 'active' ? 'check_circle' : 'hourglass_empty' }}
+          </mat-icon>
+
+          <p>
+            No {{ activeView === 'active' ? 'active' : 'pending' }} employees found.
+          </p>
+        </div>
+      </ng-template>
+
+    </mat-card>
+  </main>
+</div>

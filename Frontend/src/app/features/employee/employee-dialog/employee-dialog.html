@@ -1,0 +1,263 @@
+<h2 mat-dialog-title>
+    {{ data.mode === 'add' ? 'Add Employee' : 'Edit Employee' }}
+</h2>
+
+<mat-dialog-content>
+
+    <form [formGroup]="form" class="dialog-form">
+
+        <div class="form-grid">
+
+            <!-- NAME -->
+
+            <mat-form-field appearance="outline">
+                <mat-label>Name</mat-label>
+
+                <input matInput formControlName="name" />
+
+                <mat-error>
+                    Name is required
+                </mat-error>
+            </mat-form-field>
+
+            <!-- EMAIL -->
+
+            <mat-form-field appearance="outline">
+                <mat-label>Email</mat-label>
+
+                <input matInput type="email" formControlName="email" />
+
+                <mat-error>
+                    Valid email is required
+                </mat-error>
+            </mat-form-field>
+
+            <!-- PHONE -->
+
+            <mat-form-field appearance="outline">
+                <mat-label>Phone</mat-label>
+
+                <input matInput formControlName="phone" />
+
+                <mat-error>
+                    Phone is required
+                </mat-error>
+            </mat-form-field>
+
+            <!-- DEPARTMENT -->
+
+            <mat-form-field appearance="outline">
+                <mat-label>Department</mat-label>
+
+                <input matInput formControlName="department" />
+
+                <mat-error>
+                    Department is required
+                </mat-error>
+            </mat-form-field>
+
+            <!-- DESIGNATION -->
+
+            <mat-form-field appearance="outline">
+                <mat-label>Designation</mat-label>
+
+                <input matInput formControlName="designation" />
+
+                <mat-error>
+                    Designation is required
+                </mat-error>
+            </mat-form-field>
+
+            <!-- QUALIFICATION -->
+
+            <mat-form-field appearance="outline">
+                <mat-label>Qualification</mat-label>
+
+                <input matInput formControlName="qualificationText" placeholder="MBA, MBBS, BTech" />
+
+                <mat-error>
+                    Qualification is required
+                </mat-error>
+            </mat-form-field>
+
+            <!-- JOINING DATE -->
+
+            <mat-form-field appearance="outline">
+                <mat-label>Joining Date</mat-label>
+
+                <input matInput [matDatepicker]="picker" formControlName="joiningDate" />
+
+                <mat-datepicker-toggle matIconSuffix [for]="picker">
+                </mat-datepicker-toggle>
+
+                <mat-datepicker #picker></mat-datepicker>
+
+                <mat-error>
+                    Joining date is required
+                </mat-error>
+            </mat-form-field>
+
+            <!-- ROLE -->
+
+            <mat-form-field appearance="outline">
+                <mat-label>Role</mat-label>
+
+                <mat-select formControlName="role" (selectionChange)="onRoleChange()">
+
+                    <mat-option *ngFor="let r of roles" [value]="r">
+
+                        {{ r }}
+
+                    </mat-option>
+
+                </mat-select>
+
+                <mat-error>
+                    Role is required
+                </mat-error>
+            </mat-form-field>
+
+            <!-- STATUS -->
+
+            <mat-form-field appearance="outline" *ngIf="data.mode === 'edit'">
+
+                <mat-label>Status</mat-label>
+
+                <mat-select formControlName="status">
+
+                    <mat-option [value]="true">
+                        Active
+                    </mat-option>
+
+                    <mat-option [value]="false">
+                        Inactive
+                    </mat-option>
+
+                </mat-select>
+
+            </mat-form-field>
+
+        </div>
+
+        <!-- MEDICAL SECTION -->
+
+        <div class="medical-section" *ngIf="showMedicalStaffFields()">
+
+            <h3>Medical Details</h3>
+
+            <div class="form-grid">
+
+                <!-- MEDICAL REGISTRATION -->
+
+                <mat-form-field appearance="outline" *ngIf="showDoctorFields()">
+
+                    <mat-label>
+                        Medical Registration No
+                    </mat-label>
+
+                    <input matInput formControlName="medicalRegistrationNo" />
+
+                </mat-form-field>
+
+                <!-- SPECIALIZATION -->
+
+                <mat-form-field appearance="outline" *ngIf="showDoctorFields()">
+
+                    <mat-label>Specialization</mat-label>
+
+                    <input matInput formControlName="specialization" />
+
+                </mat-form-field>
+
+                <!-- CONSULTATION FEE -->
+
+                <mat-form-field appearance="outline" *ngIf="showDoctorFields()">
+
+                    <mat-label>Consultation Fee</mat-label>
+
+                    <input matInput type="number" formControlName="consultationFee" />
+
+                    <mat-error>
+                        Consultation fee is required
+                    </mat-error>
+
+                </mat-form-field>
+
+            </div>
+
+            <!-- AVAILABILITY SLOTS -->
+
+            <div class="slots-section">
+
+                <div class="slots-header">
+
+                    <h3>Availability Slots</h3>
+
+                    <button mat-flat-button color="primary" type="button" (click)="addSlot()">
+
+                        <mat-icon>add</mat-icon>
+
+                        Add Slot
+
+                    </button>
+
+                </div>
+
+                <div formArrayName="availabilitySlots" *ngFor="
+                        let slot of availabilitySlots.controls;
+                        let i = index
+                    " class="slot-row">
+
+                    <mat-form-field appearance="outline" class="slot-input">
+
+                        <mat-label>
+                            Slot {{ i + 1 }}
+                        </mat-label>
+
+                        <input matInput [formControlName]="i" placeholder="MON 09:00-12:00" />
+
+                    </mat-form-field>
+
+                    <button mat-icon-button color="warn" type="button" (click)="removeSlot(i)">
+
+                        <mat-icon>delete</mat-icon>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+
+    <button mat-button type="button" (click)="onCancel()">
+
+        Cancel
+
+    </button>
+
+    <button mat-flat-button color="primary" type="button" (click)="onSubmit()" [disabled]="loading">
+
+        {{
+        loading
+        ? (
+        data.mode === 'add'
+        ? 'Adding...'
+        : 'Saving...'
+        )
+        : (
+        data.mode === 'add'
+        ? 'Add Employee'
+        : 'Save Changes'
+        )
+        }}
+
+    </button>
+
+</mat-dialog-actions>
