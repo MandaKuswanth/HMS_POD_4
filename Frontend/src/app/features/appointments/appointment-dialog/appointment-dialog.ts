@@ -47,6 +47,7 @@ export class AppointmentDialog implements OnInit {
     doctors: any[] = [];
     patients: any[] = [];
     availableSlots: string[] = [];
+    minDate: Date = new Date();
 
     loading = false;
 

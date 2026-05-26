@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
-import { roleGuard } from './core/guards/role-guard';
+
 
 export const routes: Routes = [
 
@@ -20,25 +20,24 @@ export const routes: Routes = [
             import('./features/auth/login/login').then(m => m.Login)
     },
     {
-        path: 'register',  // ✅ new
+        path: 'register',  
         loadComponent: () =>
             import('./features/auth/register/register').then(m => m.Register)
     },
     {
         path: 'reset-password',
-        // canActivate: [authGuard],
+        canActivate: [authGuard],
         loadComponent: () =>
             import('./features/auth/reset-password/reset-password').then(m => m.ResetPassword)
     },
     {
         path: 'dashboard',
-        // canActivate: [authGuard],
         loadComponent: () =>
             import('./features/dashboard/dashboard/dashboard').then(m => m.Dashboard)
     },
     {
         path: 'employees',
-        // canActivate: [authGuard, roleGuard],
+        canActivate: [authGuard],
         loadComponent: () =>
             import('./features/employee/employee-list/employee-list').then(m => m.EmployeeList)
     },
@@ -57,8 +56,7 @@ export const routes: Routes = [
             ).then(c => c.AccountInactive)
     }, {
         path: 'appointments',
-        // canActivate: [authGuard, roleGuard],
-        // data: { roles: ['SUPER_ADMIN', 'BRANCH_ADMIN', 'ADMIN', 'DESK', 'DOCTOR', 'RECEPTIONIST'] },
+        canActivate: [authGuard],
         loadComponent: () =>
             import('./features/appointments/appointment-list/appointment-list').then(m => m.AppointmentList)
     },

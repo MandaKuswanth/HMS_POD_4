@@ -1,6 +1,6 @@
 import {
   SelectionModel
-} from "./chunk-LNFUJEJO.js";
+} from "./chunk-U3HRNZTG.js";
 import {
   MAT_OPTGROUP,
   MAT_OPTION_PARENT_COMPONENT,
@@ -9,28 +9,23 @@ import {
   MatOptionModule,
   _countGroupLabelsBeforeOption,
   _getOptionScrollPosition
-} from "./chunk-SGQ3PE2G.js";
-import "./chunk-AMVBBNRC.js";
+} from "./chunk-C2K3JHF4.js";
+import "./chunk-YK53XMQX.js";
+import "./chunk-TRVJ43NX.js";
 import {
   CdkConnectedOverlay,
   CdkOverlayOrigin,
   OVERLAY_DEFAULT_CONFIG,
   OverlayModule,
   createRepositionScrollStrategy
-} from "./chunk-Z6WFCT5D.js";
-import {
-  MatFormFieldModule
-} from "./chunk-IO5A7K7C.js";
+} from "./chunk-VTXWG3TN.js";
 import {
   ErrorStateMatcher,
   _ErrorStateTracker
-} from "./chunk-Q5DNAZDI.js";
+} from "./chunk-XEWX4MWB.js";
 import {
-  FormGroupDirective,
-  NgControl,
-  NgForm,
-  Validators
-} from "./chunk-Q5IBG6D6.js";
+  MatFormFieldModule
+} from "./chunk-2PYCT4JB.js";
 import {
   MAT_FORM_FIELD,
   MatError,
@@ -40,14 +35,8 @@ import {
   MatLabel,
   MatPrefix,
   MatSuffix
-} from "./chunk-3HPS4J4D.js";
-import {
-  CdkScrollableModule,
-  ViewportRuler
-} from "./chunk-PZG7ITKJ.js";
-import "./chunk-CDXO56XH.js";
-import "./chunk-5KP6Y3HS.js";
-import "./chunk-77RGRQME.js";
+} from "./chunk-DDMT3UO2.js";
+import "./chunk-MFRXVG6Q.js";
 import {
   A,
   ActiveDescendantKeyManager,
@@ -63,28 +52,39 @@ import {
   addAriaReferencedId,
   hasModifierKey,
   removeAriaReferencedId
-} from "./chunk-3J4UIZ3E.js";
+} from "./chunk-CAZEPHEV.js";
+import {
+  _animationsDisabled
+} from "./chunk-CWLUHQCR.js";
 import {
   _getEventTarget
 } from "./chunk-GWBU7KI5.js";
 import "./chunk-PLJ2QXBA.js";
-import {
-  _animationsDisabled
-} from "./chunk-3F5VAGHM.js";
 import "./chunk-N4DOILP3.js";
-import "./chunk-QSBR3ZYU.js";
-import "./chunk-FBJKTYYR.js";
+import "./chunk-GNTJUIYF.js";
+import "./chunk-WCERWHAK.js";
+import {
+  CdkScrollableModule,
+  ViewportRuler
+} from "./chunk-VMUZU7OH.js";
+import "./chunk-EMZ5E5WN.js";
 import "./chunk-GUGIMSVJ.js";
-import "./chunk-URBRB3FA.js";
-import "./chunk-ZVGVR3AY.js";
-import "./chunk-FTGCW5VU.js";
-import "./chunk-WZOTQR7I.js";
-import "./chunk-EFQZFSF4.js";
-import "./chunk-ZXGYWJMK.js";
 import {
   BidiModule,
   Directionality
-} from "./chunk-FOZKJYTZ.js";
+} from "./chunk-YYUC6QS3.js";
+import "./chunk-NDDL2MTZ.js";
+import "./chunk-IZCVRZB2.js";
+import "./chunk-XZHTRGLQ.js";
+import "./chunk-VZFU32IF.js";
+import {
+  FormGroupDirective,
+  NgControl,
+  NgForm,
+  Validators
+} from "./chunk-AVHODDVD.js";
+import "./chunk-X6OMYMPU.js";
+import "./chunk-EITXNJPM.js";
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -101,22 +101,13 @@ import {
   NgModule,
   Output,
   Renderer2,
-  Subject,
   ViewChild,
   ViewEncapsulation,
   booleanAttribute,
-  defer,
-  filter,
   inject,
-  map,
-  merge,
   numberAttribute,
   setClassMetadata,
   signal,
-  startWith,
-  switchMap,
-  take,
-  takeUntil,
   ɵɵNgOnChangesFeature,
   ɵɵProvidersFeature,
   ɵɵadvance,
@@ -149,7 +140,18 @@ import {
   ɵɵtext,
   ɵɵtextInterpolate,
   ɵɵviewQuery
-} from "./chunk-FL7SXROJ.js";
+} from "./chunk-A7HD4W5G.js";
+import {
+  Subject,
+  defer,
+  filter,
+  map,
+  merge,
+  startWith,
+  switchMap,
+  take,
+  takeUntil
+} from "./chunk-PJVWDKLX.js";
 
 // node_modules/@angular/material/fesm2022/select.mjs
 var _c0 = ["trigger"];

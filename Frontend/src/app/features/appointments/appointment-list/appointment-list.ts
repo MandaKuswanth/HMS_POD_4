@@ -38,14 +38,16 @@ import { AppointmentDialog } from '../appointment-dialog/appointment-dialog';
     ],
     templateUrl: './appointment-list.html',
     styleUrls: ['./appointment-list.css'],
-    changeDetection: ChangeDetectionStrategy.OnPush // ✅ added
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppointmentList implements OnInit {
 
     private appointmentService = inject(AppointmentService);
     private toastr = inject(ToastrService);
     private dialog = inject(MatDialog);
-    private cdr = inject(ChangeDetectorRef); // ✅ added
+    private cdr = inject(ChangeDetectorRef);
+
+    role: string | null = null;
 
     appointments: any[] = [];
 
@@ -55,21 +57,27 @@ export class AppointmentList implements OnInit {
         'doctorEmployeeId',
         'date',
         'timeSlot',
-        'status',
-        'actions'
+        'status'
     ];
 
     ngOnInit(): void {
+        this.role = localStorage.getItem('role');
+
+        if (this.role !== 'DOCTOR') {
+            this.displayedColumns = [
+                ...this.displayedColumns,
+                'actions'
+            ];
+        }
+
         this.loadAppointments();
     }
 
-    // ✅ Load appointments
     loadAppointments(): void {
         this.appointmentService.getAppointments().subscribe({
             next: (response) => {
                 this.appointments = response?.data || [];
-
-                this.cdr.markForCheck(); // ✅ IMPORTANT
+                this.cdr.markForCheck();
             },
             error: () => {
                 this.toastr.error('Failed to load appointments');
@@ -77,8 +85,12 @@ export class AppointmentList implements OnInit {
         });
     }
 
-    // ✅ Open dialog
     openAddDialog(): void {
+        if (this.role === 'DOCTOR') {
+            this.toastr.error('Doctors are not allowed to create appointments');
+            return;
+        }
+
         const ref = this.dialog.open(AppointmentDialog, {
             width: '900px',
             disableClose: true
@@ -91,8 +103,12 @@ export class AppointmentList implements OnInit {
         });
     }
 
-    // ✅ Delete appointment
     deleteAppointment(appointment: any): void {
+        if (this.role === 'DOCTOR') {
+            this.toastr.error('Doctors are not allowed to delete appointments');
+            return;
+        }
+
         const confirmed = confirm(
             `Delete appointment ${appointment.appointmentId}?`
         );
@@ -104,7 +120,6 @@ export class AppointmentList implements OnInit {
             .subscribe({
                 next: () => {
                     this.toastr.success('Appointment deleted');
-
                     this.loadAppointments();
                 },
                 error: (err) => {
