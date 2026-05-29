@@ -20,12 +20,10 @@ const app = express();
 // Security middleware
 app.use(helmet());
 
-app.use(
-  cors({
-    origin: "http://localhost:4200",
-    credentials: true
-  })
-);
+app.use(cors({
+  origin: "*",
+  credentials: true
+}));
 
 // Logs requests
 app.use(morgan("dev"));

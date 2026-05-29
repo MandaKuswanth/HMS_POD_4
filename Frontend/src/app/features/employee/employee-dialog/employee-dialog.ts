@@ -1,8 +1,22 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
-import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import {
+  FormArray,
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+  ValidatorFn,
+  ValidationErrors,
+  AbstractControl
+} from '@angular/forms';
+
+import {
+  MatDialogRef,
+  MAT_DIALOG_DATA,
+  MatDialogModule
+} from '@angular/material/dialog';
+
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,7 +28,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { ToastrService } from 'ngx-toastr';
 import { Employee } from '../../../core/services/employee';
 
-/* Employee object type for table/dialog data */
 export interface EmployeeData {
   _id?: string;
   employeeCode?: string;
@@ -81,18 +94,72 @@ export class EmployeeDialog implements OnInit {
   ];
 
   form = this.fb.group({
-    name: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    phone: ['', Validators.required],
-    department: ['', Validators.required],
-    designation: ['', Validators.required],
-    joiningDate: [''],
-    role: ['', Validators.required],
+    name: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(30),
+        Validators.pattern(/^[A-Za-z ]+$/)
+      ]
+    ],
+
+    email: [
+      '',
+      [
+        Validators.required,
+        Validators.email,
+        Validators.maxLength(80)
+      ]
+    ],
+
+    phone: [
+      '',
+      [
+        Validators.required,
+        Validators.pattern(/^[6-9][0-9]{9}$/)
+      ]
+    ],
+
+    department: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(50)
+      ]
+    ],
+
+    designation: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(50)
+      ]
+    ],
+
+    joiningDate: [
+      '',
+      [
+        this.noFutureDateValidator()
+      ]
+    ],
+
+    role: [
+      '',
+      [
+        Validators.required
+      ]
+    ],
+
     status: [true],
+
     medicalRegistrationNo: [''],
     specialization: [''],
     qualificationText: [''],
     consultationFee: [''],
+
     availabilitySlots: this.fb.array([])
   });
 
@@ -114,28 +181,37 @@ export class EmployeeDialog implements OnInit {
 
   ngOnInit(): void {
     if (this.data.mode === 'edit' && this.data.employee) {
-      const emp = this.data.employee;
+      const employee = this.data.employee;
 
       this.form.patchValue({
-        name: emp.name || '',
-        email: emp.email || '',
-        phone: emp.phone || '',
-        department: emp.department || '',
-        designation: emp.designation || '',
-        joiningDate: emp.joiningDate || '',
-        role: emp.role || '',
-        status: emp.status ?? true,
-        medicalRegistrationNo: emp.medicalRegistrationNo || '',
-        specialization: emp.specialization || '',
-        qualificationText: emp.qualification?.join(', ') || '',
-        consultationFee: emp.consultationFee ? String(emp.consultationFee) : ''
+        name: employee.name || '',
+        email: employee.email || '',
+        phone: employee.phone || '',
+        department: employee.department || '',
+        designation: employee.designation || '',
+        joiningDate: employee.joiningDate || '',
+        role: employee.role || '',
+        status: employee.status ?? true,
+        medicalRegistrationNo: employee.medicalRegistrationNo || '',
+        specialization: employee.specialization || '',
+        qualificationText: employee.qualification?.join(', ') || '',
+        consultationFee: employee.consultationFee
+          ? String(employee.consultationFee)
+          : ''
       });
 
       this.availabilitySlots.clear();
 
-      if (emp.availabilitySlots?.length) {
-        emp.availabilitySlots.forEach((slot: string) => {
-          this.availabilitySlots.push(this.fb.control(slot, Validators.required));
+      if (employee.availabilitySlots?.length) {
+        employee.availabilitySlots.forEach((slot: string) => {
+          this.availabilitySlots.push(
+            this.fb.control(slot, [
+              Validators.required,
+              Validators.pattern(
+                /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]\s?-\s?([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+              )
+            ])
+          );
         });
       }
 
@@ -143,15 +219,39 @@ export class EmployeeDialog implements OnInit {
     }
   }
 
-  onRoleChange(): void {
-    const qualCtrl = this.form.get('qualificationText');
-    const feeCtrl = this.form.get('consultationFee');
+  noFutureDateValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const selectedDate = control.value;
 
-    qualCtrl?.clearValidators();
-    feeCtrl?.clearValidators();
+      if (!selectedDate) return null;
+
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0);
+
+      const joiningDate = new Date(selectedDate);
+      joiningDate.setHours(0, 0, 0, 0);
+
+      return joiningDate > todayDate ? { futureDate: true } : null;
+    };
+  }
+
+  onRoleChange(): void {
+    const qualificationControl = this.form.get('qualificationText');
+    const consultationFeeControl = this.form.get('consultationFee');
+    const medicalRegistrationControl = this.form.get('medicalRegistrationNo');
+    const specializationControl = this.form.get('specialization');
+
+    qualificationControl?.clearValidators();
+    consultationFeeControl?.clearValidators();
+    medicalRegistrationControl?.clearValidators();
+    specializationControl?.clearValidators();
 
     if (this.showMedicalStaffFields()) {
-      qualCtrl?.setValidators([Validators.required]);
+      qualificationControl?.setValidators([
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100)
+      ]);
 
       if (this.availabilitySlots.length === 0) {
         this.addSlot();
@@ -161,71 +261,122 @@ export class EmployeeDialog implements OnInit {
     }
 
     if (this.showDoctorFields()) {
-      feeCtrl?.setValidators([Validators.required]);
+      medicalRegistrationControl?.setValidators([
+        Validators.required,
+        Validators.minLength(4),
+        Validators.maxLength(30),
+        Validators.pattern(/^[A-Za-z0-9/-]+$/)
+      ]);
+
+      specializationControl?.setValidators([
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(50),
+        Validators.pattern(/^[A-Za-z ]+$/)
+      ]);
+
+      consultationFeeControl?.setValidators([
+        Validators.required,
+        Validators.min(1),
+        Validators.pattern(/^[0-9]+$/)
+      ]);
     }
 
-    qualCtrl?.updateValueAndValidity();
-    feeCtrl?.updateValueAndValidity();
+    qualificationControl?.updateValueAndValidity();
+    consultationFeeControl?.updateValueAndValidity();
+    medicalRegistrationControl?.updateValueAndValidity();
+    specializationControl?.updateValueAndValidity();
+
+    this.form.updateValueAndValidity();
   }
 
   addSlot(): void {
-    this.availabilitySlots.push(this.fb.control('', Validators.required));
+    const availabilitySlotControl = this.fb.control('', [
+      Validators.required,
+      Validators.pattern(
+        /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]\s?-\s?([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+      )
+    ]);
+
+    this.availabilitySlots.push(availabilitySlotControl);
   }
 
   removeSlot(index: number): void {
     this.availabilitySlots.removeAt(index);
+
+    if (this.showMedicalStaffFields() && this.availabilitySlots.length === 0) {
+      this.addSlot();
+    }
+  }
+
+  trimInputValue(value: unknown): string {
+    return typeof value === 'string' ? value.trim() : '';
   }
 
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.toastr.error('Please fill all required fields');
+      this.toastr.error('Please fill all required fields correctly');
       return;
     }
 
     const formValue = this.form.value;
 
-    const qualification = formValue.qualificationText
+    const qualifications = formValue.qualificationText
       ? formValue.qualificationText
         .split(',')
-        .map((s: string) => s.trim())
+        .map((qualification: string) => qualification.trim())
         .filter(Boolean)
       : [];
 
-    const joiningDate = formValue.joiningDate
+    const formattedJoiningDate = formValue.joiningDate
       ? formatDate(formValue.joiningDate, 'yyyy-MM-dd', 'en-US')
       : '';
 
-    const payload: any = {
-      name: formValue.name,
-      email: formValue.email,
-      phone: formValue.phone,
-      department: formValue.department,
-      designation: formValue.designation,
-      joiningDate,
+    const cleanedAvailabilitySlots = this.showMedicalStaffFields()
+      ? (formValue.availabilitySlots || [])
+        .map((slot: unknown) => String(slot).trim())
+        .filter(Boolean)
+      : [];
+
+    const employeePayload: any = {
+      name: this.trimInputValue(formValue.name),
+      email: this.trimInputValue(formValue.email),
+      phone: this.trimInputValue(formValue.phone),
+      department: this.trimInputValue(formValue.department),
+      designation: this.trimInputValue(formValue.designation),
+      joiningDate: formattedJoiningDate,
       role: formValue.role,
       status: formValue.status,
-      qualification
+      qualification: this.showMedicalStaffFields()
+        ? qualifications
+        : []
     };
 
     if (this.showMedicalStaffFields()) {
-      payload.availabilitySlots = formValue.availabilitySlots || [];
+      employeePayload.availabilitySlots = cleanedAvailabilitySlots;
     }
 
     if (this.showDoctorFields()) {
-      payload.medicalRegistrationNo = formValue.medicalRegistrationNo;
-      payload.specialization = formValue.specialization;
-      payload.consultationFee = Number(formValue.consultationFee);
+      employeePayload.medicalRegistrationNo = this.trimInputValue(
+        formValue.medicalRegistrationNo
+      );
+
+      employeePayload.specialization = this.trimInputValue(
+        formValue.specialization
+      );
+
+      employeePayload.consultationFee = Number(formValue.consultationFee);
     }
 
     this.loading = true;
 
     if (this.data.mode === 'add') {
-      this.employeeService.adminAddEmployee(payload).subscribe({
-        next: (res: any) => {
+      this.employeeService.adminAddEmployee(employeePayload).subscribe({
+        next: (response: any) => {
           this.loading = false;
 
-          const tempPassword = res?.data?.tempPassword;
+          const tempPassword = response?.data?.tempPassword;
 
           this.toastr.success(
             tempPassword
@@ -235,9 +386,13 @@ export class EmployeeDialog implements OnInit {
 
           this.dialogRef.close(true);
         },
-        error: (err: any) => {
+
+        error: (errorResponse: any) => {
           this.loading = false;
-          this.toastr.error(err?.error?.message || 'Failed to create employee');
+
+          this.toastr.error(
+            errorResponse?.error?.message || 'Failed to create employee'
+          );
         }
       });
 
@@ -252,15 +407,19 @@ export class EmployeeDialog implements OnInit {
       return;
     }
 
-    this.employeeService.updateEmployee(employeeCode, payload).subscribe({
+    this.employeeService.updateEmployee(employeeCode, employeePayload).subscribe({
       next: () => {
         this.loading = false;
         this.toastr.success('Employee updated successfully');
         this.dialogRef.close(true);
       },
-      error: (err: any) => {
+
+      error: (errorResponse: any) => {
         this.loading = false;
-        this.toastr.error(err?.error?.message || 'Failed to update employee');
+
+        this.toastr.error(
+          errorResponse?.error?.message || 'Failed to update employee'
+        );
       }
     });
   }

@@ -10,156 +10,322 @@
         <form [formGroup]="form">
             <div class="form-grid">
 
+                <!-- Name -->
                 <mat-form-field appearance="outline">
-                    <mat-label>Name</mat-label>
-                    <input matInput formControlName="name" />
+                    <mat-label>Full Name</mat-label>
+                    <input matInput formControlName="name" placeholder="Enter full name" />
+
+                    @if (form.get('name')?.hasError('required')) {
                     <mat-error>Name is required</mat-error>
+                    }
+
+                    @if (form.get('name')?.hasError('minlength')) {
+                    <mat-error>Name must be at least 3 characters</mat-error>
+                    }
+
+                    @if (form.get('name')?.hasError('maxlength')) {
+                    <mat-error>Name cannot exceed 30 characters</mat-error>
+                    }
+
+                    @if (form.get('name')?.hasError('pattern')) {
+                    <mat-error>Name should contain only letters and spaces</mat-error>
+                    }
                 </mat-form-field>
 
+                <!-- Email -->
                 <mat-form-field appearance="outline">
-                    <mat-label>Email</mat-label>
-                    <input matInput type="email" formControlName="email" />
-                    <mat-error>Valid email is required</mat-error>
+                    <mat-label>Email Address</mat-label>
+                    <input matInput type="email" formControlName="email" placeholder="example@gmail.com" />
+
+                    @if (form.get('email')?.hasError('required')) {
+                    <mat-error>Email is required</mat-error>
+                    }
+
+                    @if (form.get('email')?.hasError('email')) {
+                    <mat-error>Enter a valid email address</mat-error>
+                    }
+
+                    @if (form.get('email')?.hasError('maxlength')) {
+                    <mat-error>Email cannot exceed 80 characters</mat-error>
+                    }
                 </mat-form-field>
 
+                <!-- Phone -->
                 <mat-form-field appearance="outline">
-                    <mat-label>Phone</mat-label>
-                    <input matInput formControlName="phone" />
-                    <mat-error>Phone is required</mat-error>
+                    <mat-label>Phone Number</mat-label>
+                    <input matInput formControlName="phone" placeholder="9876543210" maxlength="10" />
+
+                    @if (form.get('phone')?.hasError('required')) {
+                    <mat-error>Phone number is required</mat-error>
+                    }
+
+                    @if (form.get('phone')?.hasError('pattern')) {
+                    <mat-error>Enter a valid 10 digit phone number starting with 6, 7, 8, or 9</mat-error>
+                    }
                 </mat-form-field>
 
+                <!-- Department -->
                 <mat-form-field appearance="outline">
                     <mat-label>Department</mat-label>
-                    <input matInput formControlName="department" />
+                    <input matInput formControlName="department" placeholder="Cardiology" />
+
+                    @if (form.get('department')?.hasError('required')) {
                     <mat-error>Department is required</mat-error>
+                    }
+
+                    @if (form.get('department')?.hasError('minlength')) {
+                    <mat-error>Department must be at least 2 characters</mat-error>
+                    }
+
+                    @if (form.get('department')?.hasError('maxlength')) {
+                    <mat-error>Department cannot exceed 50 characters</mat-error>
+                    }
                 </mat-form-field>
 
+                <!-- Designation -->
                 <mat-form-field appearance="outline">
                     <mat-label>Designation</mat-label>
-                    <input matInput formControlName="designation" />
+                    <input matInput formControlName="designation" placeholder="Senior Doctor" />
+
+                    @if (form.get('designation')?.hasError('required')) {
                     <mat-error>Designation is required</mat-error>
+                    }
+
+                    @if (form.get('designation')?.hasError('minlength')) {
+                    <mat-error>Designation must be at least 2 characters</mat-error>
+                    }
+
+                    @if (form.get('designation')?.hasError('maxlength')) {
+                    <mat-error>Designation cannot exceed 50 characters</mat-error>
+                    }
                 </mat-form-field>
 
+                <!-- Joining Date -->
                 <mat-form-field appearance="outline">
                     <mat-label>Joining Date</mat-label>
 
                     <input matInput [matDatepicker]="picker" formControlName="joiningDate" />
 
                     <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-
                     <mat-datepicker panelClass="hms-datepicker-panel" #picker></mat-datepicker>
 
+                    @if (form.get('joiningDate')?.hasError('required')) {
                     <mat-error>Joining date is required</mat-error>
+                    }
+
+                    @if (form.get('joiningDate')?.hasError('futureDate')) {
+                    <mat-error>Joining date cannot be a future date</mat-error>
+                    }
                 </mat-form-field>
 
+                <!-- Role -->
                 <mat-form-field appearance="outline">
                     <mat-label>Role</mat-label>
 
                     <mat-select formControlName="role" panelClass="role-select-panel" (selectionChange)="onRoleChange()"
                         [disableOptionCentering]="true">
-                        @for (r of roles; track r) {
-                        <mat-option [value]="r">
-                            {{ r }}
+
+                        @for (role of roles; track role) {
+                        <mat-option [value]="role">
+                            {{ role }}
                         </mat-option>
                         }
+
                     </mat-select>
 
+                    @if (form.get('role')?.hasError('required')) {
                     <mat-error>Role is required</mat-error>
+                    }
                 </mat-form-field>
 
+                <!-- Password -->
                 <mat-form-field appearance="outline">
                     <mat-label>Password</mat-label>
 
-                    <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" />
+                    <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password"
+                        placeholder="Enter password" />
 
                     <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
+
                         <mat-icon>
                             {{ hidePassword ? 'visibility_off' : 'visibility' }}
                         </mat-icon>
                     </button>
 
-                    <mat-error>Password must be at least 6 characters</mat-error>
+                    @if (form.get('password')?.hasError('required')) {
+                    <mat-error>Password is required</mat-error>
+                    }
+
+                    @if (form.get('password')?.hasError('minlength')) {
+                    <mat-error>Password must be at least 8 characters</mat-error>
+                    }
+
+                    @if (form.get('password')?.hasError('maxlength')) {
+                    <mat-error>Password cannot exceed 30 characters</mat-error>
+                    }
+
+                    @if (form.get('password')?.hasError('weakPassword')) {
+                    <mat-error>Password must contain uppercase, lowercase, number, and special character</mat-error>
+                    }
                 </mat-form-field>
 
+                <!-- Confirm Password -->
                 <mat-form-field appearance="outline">
                     <mat-label>Confirm Password</mat-label>
 
-                    <input matInput [type]="hideConfirm ? 'password' : 'text'" formControlName="confirmPassword" />
+                    <input matInput [type]="hideConfirm ? 'password' : 'text'" formControlName="confirmPassword"
+                        placeholder="Confirm password" />
 
                     <button mat-icon-button matSuffix type="button" (click)="hideConfirm = !hideConfirm">
+
                         <mat-icon>
                             {{ hideConfirm ? 'visibility_off' : 'visibility' }}
                         </mat-icon>
                     </button>
 
-                    <mat-error>Please confirm your password</mat-error>
+                    @if (form.get('confirmPassword')?.hasError('required')) {
+                    <mat-error>Confirm password is required</mat-error>
+                    }
+
+                    @if (form.hasError('passwordMismatch') && form.get('confirmPassword')?.touched) {
+                    <mat-error>Passwords do not match</mat-error>
+                    }
                 </mat-form-field>
 
             </div>
 
-            <!-- Medical fields -->
+            <!-- Medical Details -->
             @if (showMedicalStaffFields()) {
             <div class="medical-section">
                 <h3>Medical Details</h3>
 
                 <div class="form-grid">
 
+                    <!-- Medical Registration Number -->
                     @if (showDoctorFields()) {
                     <mat-form-field appearance="outline">
                         <mat-label>Medical Registration No</mat-label>
-                        <input matInput formControlName="medicalRegistrationNo" />
+                        <input matInput formControlName="medicalRegistrationNo" placeholder="REG12345" />
+
+                        @if (form.get('medicalRegistrationNo')?.hasError('required')) {
+                        <mat-error>Medical registration number is required</mat-error>
+                        }
+
+                        @if (form.get('medicalRegistrationNo')?.hasError('minlength')) {
+                        <mat-error>Medical registration number must be at least 4 characters</mat-error>
+                        }
+
+                        @if (form.get('medicalRegistrationNo')?.hasError('maxlength')) {
+                        <mat-error>Medical registration number cannot exceed 30 characters</mat-error>
+                        }
+
+                        @if (form.get('medicalRegistrationNo')?.hasError('pattern')) {
+                        <mat-error>Only letters, numbers, slash, and hyphen are allowed</mat-error>
+                        }
                     </mat-form-field>
                     }
 
+                    <!-- Specialization -->
                     @if (showDoctorFields()) {
                     <mat-form-field appearance="outline">
                         <mat-label>Specialization</mat-label>
-                        <input matInput formControlName="specialization" />
+                        <input matInput formControlName="specialization" placeholder="Cardiology" />
+
+                        @if (form.get('specialization')?.hasError('required')) {
+                        <mat-error>Specialization is required</mat-error>
+                        }
+
+                        @if (form.get('specialization')?.hasError('minlength')) {
+                        <mat-error>Specialization must be at least 2 characters</mat-error>
+                        }
+
+                        @if (form.get('specialization')?.hasError('maxlength')) {
+                        <mat-error>Specialization cannot exceed 50 characters</mat-error>
+                        }
+
+                        @if (form.get('specialization')?.hasError('pattern')) {
+                        <mat-error>Specialization should contain only letters and spaces</mat-error>
+                        }
                     </mat-form-field>
                     }
 
+                    <!-- Qualification -->
                     <mat-form-field appearance="outline">
                         <mat-label>Qualification</mat-label>
 
                         <input matInput formControlName="qualificationText" placeholder="MBBS, MD, BSc Nursing" />
 
+                        @if (form.get('qualificationText')?.hasError('required')) {
                         <mat-error>Qualification is required</mat-error>
+                        }
+
+                        @if (form.get('qualificationText')?.hasError('minlength')) {
+                        <mat-error>Qualification must be at least 2 characters</mat-error>
+                        }
+
+                        @if (form.get('qualificationText')?.hasError('maxlength')) {
+                        <mat-error>Qualification cannot exceed 100 characters</mat-error>
+                        }
                     </mat-form-field>
 
+                    <!-- Consultation Fee -->
                     @if (showDoctorFields()) {
                     <mat-form-field appearance="outline">
                         <mat-label>Consultation Fee</mat-label>
 
-                        <input matInput type="number" formControlName="consultationFee" />
+                        <input matInput type="number" formControlName="consultationFee" placeholder="500" />
 
+                        @if (form.get('consultationFee')?.hasError('required')) {
                         <mat-error>Consultation fee is required</mat-error>
+                        }
+
+                        @if (form.get('consultationFee')?.hasError('min')) {
+                        <mat-error>Consultation fee must be greater than 0</mat-error>
+                        }
+
+                        @if (form.get('consultationFee')?.hasError('pattern')) {
+                        <mat-error>Consultation fee should contain numbers only</mat-error>
+                        }
                     </mat-form-field>
                     }
 
                 </div>
 
+                <!-- Availability Slots -->
                 <div class="slots-section">
                     <div class="slots-header">
                         <h3>Availability Slots</h3>
 
                         <button mat-raised-button color="primary" type="button" (click)="addSlot()">
+
                             <mat-icon>add</mat-icon>
                             Add Slot
                         </button>
                     </div>
 
                     <div formArrayName="availabilitySlots">
-                        @for (slot of availabilitySlots.controls; track $index; let i = $index) {
+                        @for (slot of availabilitySlots.controls; track $index; let slotIndex = $index) {
                         <div class="slot-row">
-                            <mat-form-field appearance="outline" class="slot-input">
-                                <mat-label>Slot {{ i + 1 }}</mat-label>
 
-                                <input matInput [formControlName]="i" placeholder="MON 09:00-12:00" />
+                            <mat-form-field appearance="outline" class="slot-input">
+                                <mat-label>Slot {{ slotIndex + 1 }}</mat-label>
+
+                                <input matInput [formControlName]="slotIndex" placeholder="09:00 - 12:00" />
+
+                                @if (slot.hasError('required')) {
+                                <mat-error>Availability slot is required</mat-error>
+                                }
+
+                                @if (slot.hasError('pattern')) {
+                                <mat-error>Enter slot in this format: 09:00 - 12:00</mat-error>
+                                }
                             </mat-form-field>
 
-                            <button mat-icon-button color="warn" type="button" (click)="removeSlot(i)">
+                            <button mat-icon-button color="warn" type="button" (click)="removeSlot(slotIndex)">
+
                                 <mat-icon>delete</mat-icon>
                             </button>
+
                         </div>
                         }
                     </div>
@@ -167,9 +333,11 @@
             </div>
             }
 
+            <!-- Submit Button -->
             <div class="actions" style="width: 100%; display: flex; justify-content: center;">
-                <button mat-raised-button color="primary" style="width: 100px;" type="button" [disabled]="loading"
+                <button mat-raised-button color="primary" style="width: 120px;" type="button" [disabled]="loading"
                     (click)="onSubmit()">
+
                     {{ loading ? 'Registering...' : 'Register' }}
                 </button>
             </div>
@@ -178,7 +346,9 @@
         <div class="login-link">
             <p>
                 Already have an account?
-                <a routerLink="/login" style="text-decoration-line: none; ">Login here</a>
+                <a routerLink="/login" style="text-decoration-line: none;">
+                    Login here
+                </a>
             </p>
         </div>
 

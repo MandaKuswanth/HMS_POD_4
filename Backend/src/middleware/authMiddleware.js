@@ -11,6 +11,7 @@ module.exports = function validateToken(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     req.user = decoded;
+    console.log(`Authenticated user: ${req.user.id} with role: ${req.user.role}`);
     next();
   } catch (err) {
     return res.status(401).json({ message: err.message || 'Invalid or expired token' });

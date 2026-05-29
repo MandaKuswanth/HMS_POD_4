@@ -3,227 +3,265 @@
 </h2>
 
 <mat-dialog-content>
-
     <form [formGroup]="form" class="dialog-form">
 
         <div class="form-grid">
 
-            <!-- NAME -->
-
+            <!-- Name -->
             <mat-form-field appearance="outline">
-                <mat-label>Name</mat-label>
+                <mat-label>Full Name</mat-label>
+                <input matInput formControlName="name" placeholder="Enter employee name" />
 
-                <input matInput formControlName="name" />
-
-                <mat-error>
+                <mat-error *ngIf="form.get('name')?.hasError('required')">
                     Name is required
                 </mat-error>
-            </mat-form-field>
 
-            <!-- EMAIL -->
+                <mat-error *ngIf="form.get('name')?.hasError('minlength')">
+                    Name must be at least 3 characters
+                </mat-error>
 
-            <mat-form-field appearance="outline">
-                <mat-label>Email</mat-label>
+                <mat-error *ngIf="form.get('name')?.hasError('maxlength')">
+                    Name cannot exceed 30 characters
+                </mat-error>
 
-                <input matInput type="email" formControlName="email" />
-
-                <mat-error>
-                    Valid email is required
+                <mat-error *ngIf="form.get('name')?.hasError('pattern')">
+                    Name should contain only letters and spaces
                 </mat-error>
             </mat-form-field>
 
-            <!-- PHONE -->
-
+            <!-- Email -->
             <mat-form-field appearance="outline">
-                <mat-label>Phone</mat-label>
+                <mat-label>Email Address</mat-label>
+                <input matInput type="email" formControlName="email" placeholder="example@gmail.com" />
 
-                <input matInput formControlName="phone" />
+                <mat-error *ngIf="form.get('email')?.hasError('required')">
+                    Email is required
+                </mat-error>
 
-                <mat-error>
-                    Phone is required
+                <mat-error *ngIf="form.get('email')?.hasError('email')">
+                    Enter a valid email address
+                </mat-error>
+
+                <mat-error *ngIf="form.get('email')?.hasError('maxlength')">
+                    Email cannot exceed 80 characters
                 </mat-error>
             </mat-form-field>
 
-            <!-- DEPARTMENT -->
+            <!-- Phone -->
+            <mat-form-field appearance="outline">
+                <mat-label>Phone Number</mat-label>
+                <input matInput formControlName="phone" placeholder="9876543210" maxlength="10" />
 
+                <mat-error *ngIf="form.get('phone')?.hasError('required')">
+                    Phone number is required
+                </mat-error>
+
+                <mat-error *ngIf="form.get('phone')?.hasError('pattern')">
+                    Enter a valid 10 digit phone number starting with 6, 7, 8, or 9
+                </mat-error>
+            </mat-form-field>
+
+            <!-- Department -->
             <mat-form-field appearance="outline">
                 <mat-label>Department</mat-label>
+                <input matInput formControlName="department" placeholder="Cardiology" />
 
-                <input matInput formControlName="department" />
-
-                <mat-error>
+                <mat-error *ngIf="form.get('department')?.hasError('required')">
                     Department is required
                 </mat-error>
+
+                <mat-error *ngIf="form.get('department')?.hasError('minlength')">
+                    Department must be at least 2 characters
+                </mat-error>
+
+                <mat-error *ngIf="form.get('department')?.hasError('maxlength')">
+                    Department cannot exceed 50 characters
+                </mat-error>
             </mat-form-field>
 
-            <!-- DESIGNATION -->
-
+            <!-- Designation -->
             <mat-form-field appearance="outline">
                 <mat-label>Designation</mat-label>
+                <input matInput formControlName="designation" placeholder="Senior Doctor" />
 
-                <input matInput formControlName="designation" />
-
-                <mat-error>
+                <mat-error *ngIf="form.get('designation')?.hasError('required')">
                     Designation is required
                 </mat-error>
-            </mat-form-field>
 
-            <!-- QUALIFICATION -->
+                <mat-error *ngIf="form.get('designation')?.hasError('minlength')">
+                    Designation must be at least 2 characters
+                </mat-error>
 
-            <mat-form-field appearance="outline">
-                <mat-label>Qualification</mat-label>
-
-                <input matInput formControlName="qualificationText" placeholder="MBA, MBBS, BTech" />
-
-                <mat-error>
-                    Qualification is required
+                <mat-error *ngIf="form.get('designation')?.hasError('maxlength')">
+                    Designation cannot exceed 50 characters
                 </mat-error>
             </mat-form-field>
 
-            <!-- JOINING DATE -->
-
+            <!-- Joining Date -->
             <mat-form-field appearance="outline">
                 <mat-label>Joining Date</mat-label>
 
                 <input matInput [matDatepicker]="picker" formControlName="joiningDate" />
 
-                <mat-datepicker-toggle matIconSuffix [for]="picker">
-                </mat-datepicker-toggle>
-
+                <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
                 <mat-datepicker #picker></mat-datepicker>
 
-                <mat-error>
-                    Joining date is required
+                <mat-error *ngIf="form.get('joiningDate')?.hasError('futureDate')">
+                    Joining date cannot be a future date
                 </mat-error>
             </mat-form-field>
 
-            <!-- ROLE -->
-
+            <!-- Role -->
             <mat-form-field appearance="outline">
                 <mat-label>Role</mat-label>
 
                 <mat-select formControlName="role" (selectionChange)="onRoleChange()">
-
-                    <mat-option *ngFor="let r of roles" [value]="r">
-
-                        {{ r }}
-
+                    <mat-option *ngFor="let role of roles" [value]="role">
+                        {{ role }}
                     </mat-option>
-
                 </mat-select>
 
-                <mat-error>
+                <mat-error *ngIf="form.get('role')?.hasError('required')">
                     Role is required
                 </mat-error>
             </mat-form-field>
 
-            <!-- STATUS -->
-
+            <!-- Status -->
             <mat-form-field appearance="outline" *ngIf="data.mode === 'edit'">
-
                 <mat-label>Status</mat-label>
 
                 <mat-select formControlName="status">
-
-                    <mat-option [value]="true">
-                        Active
-                    </mat-option>
-
-                    <mat-option [value]="false">
-                        Inactive
-                    </mat-option>
-
+                    <mat-option [value]="true">Active</mat-option>
+                    <mat-option [value]="false">Inactive</mat-option>
                 </mat-select>
-
             </mat-form-field>
 
         </div>
 
-        <!-- MEDICAL SECTION -->
-
+        <!-- Medical Section -->
         <div class="medical-section" *ngIf="showMedicalStaffFields()">
 
             <h3>Medical Details</h3>
 
             <div class="form-grid">
 
-                <!-- MEDICAL REGISTRATION -->
-
+                <!-- Medical Registration Number -->
                 <mat-form-field appearance="outline" *ngIf="showDoctorFields()">
+                    <mat-label>Medical Registration No</mat-label>
+                    <input matInput formControlName="medicalRegistrationNo" placeholder="REG12345" />
 
-                    <mat-label>
-                        Medical Registration No
-                    </mat-label>
+                    <mat-error *ngIf="form.get('medicalRegistrationNo')?.hasError('required')">
+                        Medical registration number is required
+                    </mat-error>
 
-                    <input matInput formControlName="medicalRegistrationNo" />
+                    <mat-error *ngIf="form.get('medicalRegistrationNo')?.hasError('minlength')">
+                        Medical registration number must be at least 4 characters
+                    </mat-error>
 
+                    <mat-error *ngIf="form.get('medicalRegistrationNo')?.hasError('maxlength')">
+                        Medical registration number cannot exceed 30 characters
+                    </mat-error>
+
+                    <mat-error *ngIf="form.get('medicalRegistrationNo')?.hasError('pattern')">
+                        Only letters, numbers, slash, and hyphen are allowed
+                    </mat-error>
                 </mat-form-field>
 
-                <!-- SPECIALIZATION -->
-
+                <!-- Specialization -->
                 <mat-form-field appearance="outline" *ngIf="showDoctorFields()">
-
                     <mat-label>Specialization</mat-label>
+                    <input matInput formControlName="specialization" placeholder="Cardiology" />
 
-                    <input matInput formControlName="specialization" />
+                    <mat-error *ngIf="form.get('specialization')?.hasError('required')">
+                        Specialization is required
+                    </mat-error>
 
+                    <mat-error *ngIf="form.get('specialization')?.hasError('minlength')">
+                        Specialization must be at least 2 characters
+                    </mat-error>
+
+                    <mat-error *ngIf="form.get('specialization')?.hasError('maxlength')">
+                        Specialization cannot exceed 50 characters
+                    </mat-error>
+
+                    <mat-error *ngIf="form.get('specialization')?.hasError('pattern')">
+                        Specialization should contain only letters and spaces
+                    </mat-error>
                 </mat-form-field>
 
-                <!-- CONSULTATION FEE -->
+                <!-- Qualification -->
+                <mat-form-field appearance="outline">
+                    <mat-label>Qualification</mat-label>
+                    <input matInput formControlName="qualificationText" placeholder="MBBS, MD, BSc Nursing" />
 
+                    <mat-error *ngIf="form.get('qualificationText')?.hasError('required')">
+                        Qualification is required
+                    </mat-error>
+
+                    <mat-error *ngIf="form.get('qualificationText')?.hasError('minlength')">
+                        Qualification must be at least 2 characters
+                    </mat-error>
+
+                    <mat-error *ngIf="form.get('qualificationText')?.hasError('maxlength')">
+                        Qualification cannot exceed 100 characters
+                    </mat-error>
+                </mat-form-field>
+
+                <!-- Consultation Fee -->
                 <mat-form-field appearance="outline" *ngIf="showDoctorFields()">
-
                     <mat-label>Consultation Fee</mat-label>
+                    <input matInput type="number" formControlName="consultationFee" placeholder="500" />
 
-                    <input matInput type="number" formControlName="consultationFee" />
-
-                    <mat-error>
+                    <mat-error *ngIf="form.get('consultationFee')?.hasError('required')">
                         Consultation fee is required
                     </mat-error>
 
+                    <mat-error *ngIf="form.get('consultationFee')?.hasError('min')">
+                        Consultation fee must be greater than 0
+                    </mat-error>
+
+                    <mat-error *ngIf="form.get('consultationFee')?.hasError('pattern')">
+                        Consultation fee should contain numbers only
+                    </mat-error>
                 </mat-form-field>
 
             </div>
 
-            <!-- AVAILABILITY SLOTS -->
-
+            <!-- Availability Slots -->
             <div class="slots-section">
 
                 <div class="slots-header">
-
                     <h3>Availability Slots</h3>
 
                     <button mat-flat-button color="primary" type="button" (click)="addSlot()">
-
                         <mat-icon>add</mat-icon>
-
                         Add Slot
-
                     </button>
-
                 </div>
 
-                <div formArrayName="availabilitySlots" *ngFor="
-                        let slot of availabilitySlots.controls;
-                        let i = index
-                    " class="slot-row">
+                <div formArrayName="availabilitySlots">
+                    <div class="slot-row" *ngFor="let slot of availabilitySlots.controls; let slotIndex = index">
 
-                    <mat-form-field appearance="outline" class="slot-input">
+                        <mat-form-field appearance="outline" class="slot-input">
+                            <mat-label>Slot {{ slotIndex + 1 }}</mat-label>
 
-                        <mat-label>
-                            Slot {{ i + 1 }}
-                        </mat-label>
+                            <input matInput [formControlName]="slotIndex" placeholder="09:00 - 12:00" />
 
-                        <input matInput [formControlName]="i" placeholder="MON 09:00-12:00" />
+                            <mat-error *ngIf="slot.hasError('required')">
+                                Availability slot is required
+                            </mat-error>
 
-                    </mat-form-field>
+                            <mat-error *ngIf="slot.hasError('pattern')">
+                                Enter slot in this format: 09:00 - 12:00
+                            </mat-error>
+                        </mat-form-field>
 
-                    <button mat-icon-button color="warn" type="button" (click)="removeSlot(i)">
+                        <button mat-icon-button color="warn" type="button" (click)="removeSlot(slotIndex)">
 
-                        <mat-icon>delete</mat-icon>
+                            <mat-icon>delete</mat-icon>
+                        </button>
 
-                    </button>
-
+                    </div>
                 </div>
 
             </div>
@@ -231,31 +269,24 @@
         </div>
 
     </form>
-
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
 
     <button mat-button type="button" (click)="onCancel()">
-
         Cancel
-
     </button>
 
     <button mat-flat-button color="primary" type="button" (click)="onSubmit()" [disabled]="loading">
 
         {{
         loading
-        ? (
-        data.mode === 'add'
+        ? data.mode === 'add'
         ? 'Adding...'
         : 'Saving...'
-        )
-        : (
-        data.mode === 'add'
+        : data.mode === 'add'
         ? 'Add Employee'
         : 'Save Changes'
-        )
         }}
 
     </button>

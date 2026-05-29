@@ -8,6 +8,8 @@ const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const sendEmail = require("../utils/sendEmail");
 
+const jwt = require("jsonwebtoken");
+
 
 exports.adminAddEmployee = async (req, res) => {
     try {
@@ -305,6 +307,9 @@ exports.login = async (req, res) => {
 
         const accessToken = user.generateAccessToken();
 
+        const userDecoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+        
+
         if (user.mustResetPassword) {
             return res.status(200).json(
                 new ApiResponse(
@@ -313,11 +318,11 @@ exports.login = async (req, res) => {
                         resetRequired: true,
                         token: accessToken,
                         user: {
-                            _id: user._id,
+                            // _id: user._id,
                             employeeId: user.employeeId,
-                            name: employee?.name || "",
-                            email: user.email,
-                            role: user.roles,
+                            // name: employee?.name || "",
+                            email: userDecoded.email,
+                            role: userDecoded.role,
                             status: user.status,
                             mustResetPassword: user.mustResetPassword
                         }
@@ -337,11 +342,12 @@ exports.login = async (req, res) => {
                     resetRequired: false,
                     token: accessToken,
                     user: {
-                        _id: user._id,
+                        // _id: user._id,
                         employeeId: user.employeeId,
-                        name: employee?.name || "",
-                        email: user.email,
-                        role: user.roles,
+                        // name: employee?.name || "",
+                        email: userDecoded.email,
+                        role: userDecoded.role,
+
                         status: user.status,
                         mustResetPassword: user.mustResetPassword
                     }
@@ -590,6 +596,7 @@ exports.getPendingEmployees = async (req, res) => {
         const pendingUsers = await User.find({ status: false })
             .select("-passwordHash")
             .sort({ createdAt: -1 });
+        // const currentUser = await User.findById(req.user.id);
 
         const employees = await Employee.find({
             email: { $in: pendingUsers.map((user) => user.email) }
@@ -601,12 +608,7 @@ exports.getPendingEmployees = async (req, res) => {
             );
 
             return {
-                userId: user._id,
-                employeeId: user.employeeId,
-                email: user.email,
-                role: user.roles,
-                status: user.status,
-                mustResetPassword: user.mustResetPassword,
+                user: req.user,
                 employee
             };
         });
