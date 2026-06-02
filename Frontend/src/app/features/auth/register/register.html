@@ -104,7 +104,8 @@
                 <mat-form-field appearance="outline">
                     <mat-label>Joining Date</mat-label>
 
-                    <input matInput [matDatepicker]="picker" formControlName="joiningDate" />
+                    <input matInput [matDatepicker]="picker" formControlName="joiningDate" [min]="today"
+                        [max]="maxJoiningDate" />
 
                     <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
                     <mat-datepicker panelClass="hms-datepicker-panel" #picker></mat-datepicker>
@@ -113,8 +114,8 @@
                     <mat-error>Joining date is required</mat-error>
                     }
 
-                    @if (form.get('joiningDate')?.hasError('futureDate')) {
-                    <mat-error>Joining date cannot be a future date</mat-error>
+                    @if (form.get('joiningDate')?.hasError('pastDate')) {
+                    <mat-error>Joining date cannot be a previous date</mat-error>
                     }
                 </mat-form-field>
 

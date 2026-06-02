@@ -35,11 +35,11 @@ import { EmployeeDialog } from '../employee-dialog/employee-dialog';
   styleUrl: './employee-list.css'
 })
 export class EmployeeList implements OnInit {
-  private employeeService = inject(Employee);
-  private authService = inject(Auth);
-  private toastr = inject(ToastrService);
-  private dialog = inject(MatDialog);
-  private cdr = inject(ChangeDetectorRef);
+  private readonly employeeService = inject(Employee);
+  private readonly authService = inject(Auth);
+  private readonly toastr = inject(ToastrService);
+  private readonly dialog = inject(MatDialog);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   employees: any[] = [];
   activeView: 'active' | 'pending' = 'active';
@@ -90,11 +90,15 @@ export class EmployeeList implements OnInit {
       next: (response: any) => {
         console.log('EMPLOYEE LIST RESPONSE:', response);
 
-        this.employees = Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-            ? response
-            : [];
+        let employees: any[] = [];
+
+        if (Array.isArray(response?.data)) {
+          employees = response.data;
+        } else if (Array.isArray(response)) {
+          employees = response;
+        }
+
+        this.employees = employees;
 
         console.log('EMPLOYEES ARRAY:', this.employees);
 

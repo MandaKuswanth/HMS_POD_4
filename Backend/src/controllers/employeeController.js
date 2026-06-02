@@ -289,7 +289,7 @@ exports.login = async (req, res) => {
             );
         }
 
-        const employee = await Employee.findOne({ email });
+        
 
         const passCheck = await user.isPasswordCorrect(password);
 
@@ -318,9 +318,9 @@ exports.login = async (req, res) => {
                         resetRequired: true,
                         token: accessToken,
                         user: {
-                            // _id: user._id,
+                            _id: user._id,
                             employeeId: user.employeeId,
-                            // name: employee?.name || "",
+                            name: employee?.name || "",
                             email: userDecoded.email,
                             role: userDecoded.role,
                             status: user.status,
@@ -596,7 +596,7 @@ exports.getPendingEmployees = async (req, res) => {
         const pendingUsers = await User.find({ status: false })
             .select("-passwordHash")
             .sort({ createdAt: -1 });
-        // const currentUser = await User.findById(req.user.id);
+
 
         const employees = await Employee.find({
             email: { $in: pendingUsers.map((user) => user.email) }

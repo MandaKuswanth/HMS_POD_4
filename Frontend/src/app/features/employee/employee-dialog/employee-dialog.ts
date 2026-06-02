@@ -1,14 +1,11 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule, formatDate } from '@angular/common';
+import { CommonModule } from '@angular/common';
 
 import {
   FormArray,
   FormBuilder,
   ReactiveFormsModule,
-  Validators,
-  ValidatorFn,
-  ValidationErrors,
-  AbstractControl
+  Validators
 } from '@angular/forms';
 
 import {
@@ -27,6 +24,24 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { ToastrService } from 'ngx-toastr';
 import { Employee } from '../../../core/services/employee';
+import {
+  EMPLOYEE_ROLES,
+  NAME_PATTERN,
+  PHONE_PATTERN,
+  SLOT_PATTERN,
+  getConsultationFeeValidators,
+  getMedicalRegistrationValidators,
+  getQualificationValidators,
+  getSpecializationValidators,
+  isDoctorRole,
+  isMedicalStaffRole,
+  noFutureDateValidator,
+  trimInputValue,
+  getQualifications,
+  getFormattedJoiningDate,
+  getCleanAvailabilitySlots,
+  addDoctorPayloadFields
+} from '../../../shared/utils/employee-form-utils';
 
 export interface EmployeeData {
   _id?: string;
@@ -73,25 +88,15 @@ export interface EmployeeDialogData {
   styleUrl: './employee-dialog.css'
 })
 export class EmployeeDialog implements OnInit {
-  readonly fb = inject(FormBuilder);
-  readonly employeeService = inject(Employee);
-  readonly toastr = inject(ToastrService);
-  readonly dialogRef = inject(MatDialogRef<EmployeeDialog>);
+  private readonly fb = inject(FormBuilder);
+  private readonly employeeService = inject(Employee);
+  private readonly toastr = inject(ToastrService);
+  private readonly dialogRef = inject(MatDialogRef<EmployeeDialog>);
+
   readonly data = inject<EmployeeDialogData>(MAT_DIALOG_DATA);
 
   loading = false;
-
-  roles = [
-    'OWNER',
-    'ADMIN',
-    'DOCTOR',
-    'RECEPTIONIST',
-    'CASHIER',
-    'NURSE',
-    'LAB_TECH',
-    'PHARMACIST',
-    'TECHNICIAN'
-  ];
+  readonly roles = EMPLOYEE_ROLES;
 
   form = this.fb.group({
     name: [
@@ -100,7 +105,7 @@ export class EmployeeDialog implements OnInit {
         Validators.required,
         Validators.minLength(3),
         Validators.maxLength(30),
-        Validators.pattern(/^[A-Za-z ]+$/)
+        Validators.pattern(NAME_PATTERN)
       ]
     ],
 
@@ -117,7 +122,7 @@ export class EmployeeDialog implements OnInit {
       '',
       [
         Validators.required,
-        Validators.pattern(/^[6-9][0-9]{9}$/)
+        Validators.pattern(PHONE_PATTERN)
       ]
     ],
 
@@ -142,7 +147,7 @@ export class EmployeeDialog implements OnInit {
     joiningDate: [
       '',
       [
-        this.noFutureDateValidator()
+        noFutureDateValidator()
       ]
     ],
 
@@ -172,67 +177,53 @@ export class EmployeeDialog implements OnInit {
   }
 
   showDoctorFields(): boolean {
-    return this.selectedRole === 'DOCTOR';
+    return isDoctorRole(this.selectedRole);
   }
 
   showMedicalStaffFields(): boolean {
-    return ['DOCTOR', 'NURSE', 'LAB_TECH'].includes(this.selectedRole);
+    return isMedicalStaffRole(this.selectedRole);
   }
 
   ngOnInit(): void {
     if (this.data.mode === 'edit' && this.data.employee) {
-      const employee = this.data.employee;
-
-      this.form.patchValue({
-        name: employee.name || '',
-        email: employee.email || '',
-        phone: employee.phone || '',
-        department: employee.department || '',
-        designation: employee.designation || '',
-        joiningDate: employee.joiningDate || '',
-        role: employee.role || '',
-        status: employee.status ?? true,
-        medicalRegistrationNo: employee.medicalRegistrationNo || '',
-        specialization: employee.specialization || '',
-        qualificationText: employee.qualification?.join(', ') || '',
-        consultationFee: employee.consultationFee
-          ? String(employee.consultationFee)
-          : ''
-      });
-
-      this.availabilitySlots.clear();
-
-      if (employee.availabilitySlots?.length) {
-        employee.availabilitySlots.forEach((slot: string) => {
-          this.availabilitySlots.push(
-            this.fb.control(slot, [
-              Validators.required,
-              Validators.pattern(
-                /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]\s?-\s?([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
-              )
-            ])
-          );
-        });
-      }
-
-      this.onRoleChange();
+      this.patchEmployeeData(this.data.employee);
     }
   }
 
-  noFutureDateValidator(): ValidatorFn {
-    return (control: AbstractControl): ValidationErrors | null => {
-      const selectedDate = control.value;
+  private patchEmployeeData(employee: EmployeeData): void {
+    this.form.patchValue({
+      name: employee.name || '',
+      email: employee.email || '',
+      phone: employee.phone || '',
+      department: employee.department || '',
+      designation: employee.designation || '',
+      joiningDate: employee.joiningDate || '',
+      role: employee.role || '',
+      status: employee.status ?? true,
+      medicalRegistrationNo: employee.medicalRegistrationNo || '',
+      specialization: employee.specialization || '',
+      qualificationText: employee.qualification?.join(', ') || '',
+      consultationFee: employee.consultationFee
+        ? String(employee.consultationFee)
+        : ''
+    });
 
-      if (!selectedDate) return null;
+    this.availabilitySlots.clear();
 
-      const todayDate = new Date();
-      todayDate.setHours(0, 0, 0, 0);
+    if (employee.availabilitySlots?.length) {
+      employee.availabilitySlots.forEach((slot: string) => {
+        this.availabilitySlots.push(this.createSlotControl(slot));
+      });
+    }
 
-      const joiningDate = new Date(selectedDate);
-      joiningDate.setHours(0, 0, 0, 0);
+    this.onRoleChange();
+  }
 
-      return joiningDate > todayDate ? { futureDate: true } : null;
-    };
+  private createSlotControl(value = '') {
+    return this.fb.control(value, [
+      Validators.required,
+      Validators.pattern(SLOT_PATTERN)
+    ]);
   }
 
   onRoleChange(): void {
@@ -247,11 +238,7 @@ export class EmployeeDialog implements OnInit {
     specializationControl?.clearValidators();
 
     if (this.showMedicalStaffFields()) {
-      qualificationControl?.setValidators([
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(100)
-      ]);
+      qualificationControl?.setValidators(getQualificationValidators());
 
       if (this.availabilitySlots.length === 0) {
         this.addSlot();
@@ -261,25 +248,17 @@ export class EmployeeDialog implements OnInit {
     }
 
     if (this.showDoctorFields()) {
-      medicalRegistrationControl?.setValidators([
-        Validators.required,
-        Validators.minLength(4),
-        Validators.maxLength(30),
-        Validators.pattern(/^[A-Za-z0-9/-]+$/)
-      ]);
+      medicalRegistrationControl?.setValidators(
+        getMedicalRegistrationValidators()
+      );
 
-      specializationControl?.setValidators([
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(50),
-        Validators.pattern(/^[A-Za-z ]+$/)
-      ]);
+      specializationControl?.setValidators(
+        getSpecializationValidators()
+      );
 
-      consultationFeeControl?.setValidators([
-        Validators.required,
-        Validators.min(1),
-        Validators.pattern(/^[0-9]+$/)
-      ]);
+      consultationFeeControl?.setValidators(
+        getConsultationFeeValidators()
+      );
     }
 
     qualificationControl?.updateValueAndValidity();
@@ -291,14 +270,7 @@ export class EmployeeDialog implements OnInit {
   }
 
   addSlot(): void {
-    const availabilitySlotControl = this.fb.control('', [
-      Validators.required,
-      Validators.pattern(
-        /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]\s?-\s?([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
-      )
-    ]);
-
-    this.availabilitySlots.push(availabilitySlotControl);
+    this.availabilitySlots.push(this.createSlotControl());
   }
 
   removeSlot(index: number): void {
@@ -309,10 +281,6 @@ export class EmployeeDialog implements OnInit {
     }
   }
 
-  trimInputValue(value: unknown): string {
-    return typeof value === 'string' ? value.trim() : '';
-  }
-
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -320,85 +288,78 @@ export class EmployeeDialog implements OnInit {
       return;
     }
 
-    const formValue = this.form.value;
-
-    const qualifications = formValue.qualificationText
-      ? formValue.qualificationText
-        .split(',')
-        .map((qualification: string) => qualification.trim())
-        .filter(Boolean)
-      : [];
-
-    const formattedJoiningDate = formValue.joiningDate
-      ? formatDate(formValue.joiningDate, 'yyyy-MM-dd', 'en-US')
-      : '';
-
-    const cleanedAvailabilitySlots = this.showMedicalStaffFields()
-      ? (formValue.availabilitySlots || [])
-        .map((slot: unknown) => String(slot).trim())
-        .filter(Boolean)
-      : [];
-
-    const employeePayload: any = {
-      name: this.trimInputValue(formValue.name),
-      email: this.trimInputValue(formValue.email),
-      phone: this.trimInputValue(formValue.phone),
-      department: this.trimInputValue(formValue.department),
-      designation: this.trimInputValue(formValue.designation),
-      joiningDate: formattedJoiningDate,
-      role: formValue.role,
-      status: formValue.status,
-      qualification: this.showMedicalStaffFields()
-        ? qualifications
-        : []
-    };
-
-    if (this.showMedicalStaffFields()) {
-      employeePayload.availabilitySlots = cleanedAvailabilitySlots;
-    }
-
-    if (this.showDoctorFields()) {
-      employeePayload.medicalRegistrationNo = this.trimInputValue(
-        formValue.medicalRegistrationNo
-      );
-
-      employeePayload.specialization = this.trimInputValue(
-        formValue.specialization
-      );
-
-      employeePayload.consultationFee = Number(formValue.consultationFee);
-    }
+    const employeePayload = this.buildEmployeePayload();
 
     this.loading = true;
 
     if (this.data.mode === 'add') {
-      this.employeeService.adminAddEmployee(employeePayload).subscribe({
-        next: (response: any) => {
-          this.loading = false;
-
-          const tempPassword = response?.data?.tempPassword;
-
-          this.toastr.success(
-            tempPassword
-              ? `Employee created. Temp password: ${tempPassword}`
-              : 'Employee created successfully'
-          );
-
-          this.dialogRef.close(true);
-        },
-
-        error: (errorResponse: any) => {
-          this.loading = false;
-
-          this.toastr.error(
-            errorResponse?.error?.message || 'Failed to create employee'
-          );
-        }
-      });
-
+      this.createEmployee(employeePayload);
       return;
     }
 
+    this.updateEmployee(employeePayload);
+  }
+  private buildEmployeePayload(): any {
+    const formValue = this.form.value;
+    const isMedicalStaff = this.showMedicalStaffFields();
+
+    const employeePayload: any = {
+      name: trimInputValue(formValue.name),
+      email: trimInputValue(formValue.email),
+      phone: trimInputValue(formValue.phone),
+      department: trimInputValue(formValue.department),
+      designation: trimInputValue(formValue.designation),
+      joiningDate: getFormattedJoiningDate(formValue.joiningDate),
+      role: formValue.role,
+      status: formValue.status,
+      qualification: isMedicalStaff
+        ? getQualifications(formValue.qualificationText)
+        : []
+    };
+
+    if (isMedicalStaff) {
+      employeePayload.availabilitySlots = getCleanAvailabilitySlots(
+        formValue.availabilitySlots,
+        true
+      );
+    }
+
+    addDoctorPayloadFields(
+      employeePayload,
+      formValue,
+      this.showDoctorFields()
+    );
+
+    return employeePayload;
+  }
+
+  private createEmployee(employeePayload: any): void {
+    this.employeeService.adminAddEmployee(employeePayload).subscribe({
+      next: (response: any) => {
+        this.loading = false;
+
+        const tempPassword = response?.data?.tempPassword;
+
+        this.toastr.success(
+          tempPassword
+            ? `Employee created. Temp password: ${tempPassword}`
+            : 'Employee created successfully'
+        );
+
+        this.dialogRef.close(true);
+      },
+
+      error: (errorResponse: any) => {
+        this.loading = false;
+
+        this.toastr.error(
+          errorResponse?.error?.message || 'Failed to create employee'
+        );
+      }
+    });
+  }
+
+  private updateEmployee(employeePayload: any): void {
     const employeeCode = this.data.employee?.employeeCode;
 
     if (!employeeCode) {

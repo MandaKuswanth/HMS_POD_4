@@ -54,7 +54,7 @@ exports.createAppointment = async (req, res) => {
             );
         }
 
-        if (doctorUser.roles !== "DOCTOR") {
+        if (!doctorUser.roles.includes("DOCTOR")) {
             return res.status(400).json(
                 new ApiError(400, "Invalid doctorEmployeeId, employee is not a doctor")
             );

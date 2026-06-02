@@ -40,10 +40,10 @@ import { PatientDialog } from '../patient-dialog/patient-dialog';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PatientList implements OnInit {
-    private patientService = inject(PatientService);
-    private toastr = inject(ToastrService);
-    private dialog = inject(MatDialog);
-    private cdr = inject(ChangeDetectorRef);
+    private readonly patientService = inject(PatientService);
+    private readonly toastr = inject(ToastrService);
+    private readonly dialog = inject(MatDialog);
+    private readonly cdr = inject(ChangeDetectorRef);
 
     patients: any[] = [];
     loading = false;

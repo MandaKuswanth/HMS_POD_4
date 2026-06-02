@@ -20,7 +20,7 @@ import { Footer } from '../../../shared/components/footer/footer';
   styleUrl: './landing.css'
 })
 export class Landing {
-  constructor(private router: Router) { }
+  constructor(private readonly router: Router) { }
 
   goToLogin(): void {
     this.router.navigate(['/login']);

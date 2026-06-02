@@ -16,27 +16,25 @@
         <p>Manage hospital operations with secure role-based access.</p>
       </mat-card>
 
-      <mat-card class="overview-card">
-        <mat-icon>groups</mat-icon>
-        <h3>Total Employees</h3>
-        <p class="count">{{ totalEmployees }}</p>
-      </mat-card>
+      <ng-container *ngIf="canViewEmployeeStats">
+        <mat-card class="overview-card">
+          <mat-icon>groups</mat-icon>
+          <h3>Total Employees</h3>
+          <p class="count">{{ totalEmployees }}</p>
+        </mat-card>
 
-      <mat-card class="overview-card">
-        <mat-icon>check_circle</mat-icon>
-        <h3>Active Employees</h3>
-        <p class="count">{{ activeEmployees }}</p>
-      </mat-card>
+        <mat-card class="overview-card">
+          <mat-icon>check_circle</mat-icon>
+          <h3>Active Employees</h3>
+          <p class="count">{{ activeEmployees }}</p>
+        </mat-card>
 
-      <mat-card class="overview-card">
-        <mat-icon>hourglass_empty</mat-icon>
-        <h3>Pending Employees</h3>
-        <p class="count">{{ pendingEmployees }}</p>
-      </mat-card>
-
-
-
-
+        <mat-card class="overview-card">
+          <mat-icon>hourglass_empty</mat-icon>
+          <h3>Pending Employees</h3>
+          <p class="count">{{ pendingEmployees }}</p>
+        </mat-card>
+      </ng-container>
     </section>
   </main>
 </div>

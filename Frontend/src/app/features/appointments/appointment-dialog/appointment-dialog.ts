@@ -36,13 +36,13 @@ import { PatientService } from '../../../core/services/patient';
     styleUrl: './appointment-dialog.css'
 })
 export class AppointmentDialog implements OnInit {
-    private fb = inject(FormBuilder);
-    private toastr = inject(ToastrService);
-    private dialogRef = inject(MatDialogRef<AppointmentDialog>);
-    private appointmentService = inject(AppointmentService);
-    private employeeService = inject(Employee);
-    private patientService = inject(PatientService);
-    private cdr = inject(ChangeDetectorRef);
+    private readonly fb = inject(FormBuilder);
+    private readonly toastr = inject(ToastrService);
+    private readonly dialogRef = inject(MatDialogRef<AppointmentDialog>);
+    private readonly appointmentService = inject(AppointmentService);
+    private readonly employeeService = inject(Employee);
+    private readonly patientService = inject(PatientService);
+    private readonly cdr = inject(ChangeDetectorRef);
 
     doctors: any[] = [];
     patients: any[] = [];

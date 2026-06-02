@@ -45,8 +45,9 @@
     font-size: 78px;
     width: 78px;
     height: 78px;
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.18);
+    color: #0d47a1;
+    background: #dbeafe;
+    border: 2px solid #90caf9;
     border-radius: 50%;
     padding: 10px;
 }

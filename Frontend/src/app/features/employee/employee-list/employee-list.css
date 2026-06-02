@@ -16,10 +16,10 @@
 .table-card {
     border-radius: 28px !important;
     padding: 30px !important;
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(25, 118, 210, 0.08);
+    background: #ffffff;
+    border: 1px solid #dbeafe;
     box-shadow:
-        0 14px 36px rgba(25, 118, 210, 0.08),
+        0 14px 36px rgba(13, 71, 161, 0.08),
         0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
@@ -42,22 +42,22 @@
     font-size: 42px;
     width: 42px;
     height: 42px;
-    color: #1976d2;
+    color: #0d47a1;
     padding: 14px;
     border-radius: 18px;
-    background: rgba(25, 118, 210, 0.1);
+    background: #dbeafe;
 }
 
 .header-left h2 {
     margin: 0 0 4px;
-    color: #0d47a1;
+    color: #0b2f6b;
     font-size: 30px;
     font-weight: 800;
 }
 
 .header-left p {
     margin: 0;
-    color: #607d8b;
+    color: #455a64;
     font-size: 15px;
 }
 
@@ -78,25 +78,26 @@
     height: 42px;
     font-weight: 700;
     font-size: 14px;
-    color: #1565c0;
-    border-color: rgba(25, 118, 210, 0.35);
+    color: #0d47a1;
+    border-color: #0d47a1;
+    background: #ffffff;
     transition: all 0.2s ease;
 }
 
 .header-actions button[mat-stroked-button]:hover {
-    background: rgba(25, 118, 210, 0.08);
-    border-color: #1976d2;
-    color: #0d47a1;
+    background: #e3f2fd;
+    border-color: #0b2f6b;
+    color: #0b2f6b;
 }
 
 .header-actions button[mat-stroked-button].pending-active {
-    background: rgba(255, 152, 0, 0.1);
-    border-color: #f57c00;
-    color: #e65100;
+    background: #fff3e0;
+    border-color: #bf5f00;
+    color: #7a2e00;
 }
 
 .header-actions button[mat-stroked-button].pending-active mat-icon {
-    color: #f57c00;
+    color: #7a2e00;
 }
 
 /* COUNT BADGE */
@@ -104,8 +105,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: rgba(25, 118, 210, 0.12);
-    color: #1565c0;
+    background: #dbeafe;
+    color: #0d47a1;
     border-radius: 50px;
     font-size: 12px;
     font-weight: 800;
@@ -116,8 +117,8 @@
 }
 
 .pending-active .badge-count {
-    background: rgba(245, 124, 0, 0.15);
-    color: #e65100;
+    background: #ffe0b2;
+    color: #7a2e00;
 }
 
 /* TABLE */
@@ -133,14 +134,14 @@ table {
 }
 
 th {
-    color: #0d47a1;
+    color: #0b2f6b;
     font-weight: 800;
-    background: #f3f8ff;
+    background: #f1f7ff;
     white-space: nowrap;
 }
 
 td {
-    color: #374151;
+    color: #263238;
     white-space: nowrap;
 }
 
@@ -154,13 +155,13 @@ td {
 }
 
 .badge.active {
-    background: rgba(25, 118, 210, 0.1);
-    color: #1565c0;
+    background: #dbeafe;
+    color: #0d47a1;
 }
 
 .badge.inactive {
-    background: rgba(245, 124, 0, 0.12);
-    color: #e65100;
+    background: #fff3e0;
+    color: #7a2e00;
 }
 
 /* ACTION BUTTONS */
@@ -182,23 +183,23 @@ td {
 }
 
 .status-btn.deactivate {
-    color: #d32f2f !important;
-    border-color: rgba(211, 47, 47, 0.45) !important;
-    background: rgba(211, 47, 47, 0.04) !important;
+    color: #8b0000 !important;
+    border-color: #8b0000 !important;
+    background: #ffebee !important;
 }
 
 .status-btn.deactivate:hover {
-    background: rgba(211, 47, 47, 0.1) !important;
+    background: #ffcdd2 !important;
 }
 
 .status-btn.activate {
-    color: #1565c0 !important;
-    border-color: rgba(25, 118, 210, 0.45) !important;
-    background: rgba(25, 118, 210, 0.05) !important;
+    color: #0d47a1 !important;
+    border-color: #0d47a1 !important;
+    background: #e3f2fd !important;
 }
 
 .status-btn.activate:hover {
-    background: rgba(25, 118, 210, 0.12) !important;
+    background: #dbeafe !important;
 }
 
 /* ICON ACTION BUTTONS */
@@ -220,38 +221,38 @@ td {
 
 /* UPDATE ICON */
 .update-icon-btn {
-    background: rgba(25, 118, 210, 0.08) !important;
-    border: 1px solid rgba(25, 118, 210, 0.16) !important;
+    background: #e3f2fd !important;
+    border: 1px solid #90caf9 !important;
 }
 
 .update-icon-btn mat-icon {
-    color: #1976d2 !important;
+    color: #0d47a1 !important;
 }
 
 .update-icon-btn:hover {
-    background: rgba(25, 118, 210, 0.16) !important;
-    box-shadow: 0 6px 16px rgba(25, 118, 210, 0.18);
+    background: #dbeafe !important;
+    box-shadow: 0 6px 16px rgba(13, 71, 161, 0.18);
     transform: translateY(-2px) scale(1.05);
 }
 
 /* DELETE ICON */
 .delete-icon-btn {
-    background: rgba(211, 47, 47, 0.08) !important;
-    border: 1px solid rgba(211, 47, 47, 0.16) !important;
+    background: #ffebee !important;
+    border: 1px solid #ef9a9a !important;
 }
 
 .delete-icon-btn mat-icon {
-    color: #d32f2f !important;
+    color: #8b0000 !important;
 }
 
 .delete-icon-btn:hover {
-    background: rgba(211, 47, 47, 0.16) !important;
-    box-shadow: 0 6px 16px rgba(211, 47, 47, 0.18);
+    background: #ffcdd2 !important;
+    box-shadow: 0 6px 16px rgba(139, 0, 0, 0.18);
     transform: translateY(-2px) scale(1.05);
 }
 
 .no-action {
-    color: #9ca3af;
+    color: #455a64;
     font-size: 13px;
     font-weight: 600;
 }
@@ -262,23 +263,33 @@ td {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-
     gap: 12px;
     padding: 60px 20px;
-
-    color: #90a4ae;
+    color: #455a64;
 }
 
 .no-data mat-icon {
     font-size: 48px;
     width: 48px;
     height: 48px;
-    opacity: 0.45;
+    color: #0d47a1;
+    opacity: 0.8;
 }
 
 .no-data p {
     margin: 0;
     font-size: 15px;
+    color: #37474f;
+}
+
+/* DISABLED BUTTON CONTRAST FIX */
+button[color="primary"]:disabled,
+.reset-btn:disabled,
+button:disabled {
+    background-color: #e3f2fd !important;
+    color: #263238 !important;
+    cursor: not-allowed;
+    opacity: 1;
 }
 
 /* RESPONSIVE */

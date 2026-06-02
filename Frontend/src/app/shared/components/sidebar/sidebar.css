@@ -3,7 +3,7 @@
     flex-shrink: 0;
     min-height: calc(100vh - 64px);
     background: linear-gradient(180deg, #0d47a1 0%, #1565c0 45%, #1976d2 100%);
-    border-right: 1px solid rgba(255, 255, 255, 0.18);
+    border-right: 1px solid #90caf9;
     padding: 20px 14px;
     display: flex;
     flex-direction: column;
@@ -29,7 +29,7 @@
     width: 38px;
     height: 38px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.18);
+    background: #e3f2fd;
     flex-shrink: 0;
 }
 
@@ -37,7 +37,7 @@
     font-size: 21px;
     width: 21px;
     height: 21px;
-    color: #ffffff;
+    color: #0d47a1;
 }
 
 .brand-label {
@@ -50,7 +50,7 @@
 /* DIVIDER */
 .sidebar-divider {
     height: 1px;
-    background: rgba(255, 255, 255, 0.22);
+    background: #90caf9;
     margin: 16px 0;
 }
 
@@ -67,11 +67,11 @@
     gap: 12px;
     padding: 11px 14px;
     border-radius: 12px;
-    color: #e3f2fd;
+    color: #ffffff;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
     text-decoration: none;
     white-space: nowrap;
     min-height: 44px;
@@ -82,35 +82,73 @@
     width: 20px;
     height: 20px;
     flex-shrink: 0;
-    color: #e3f2fd;
+    color: #ffffff;
     transition: color 0.2s ease;
 }
 
 .nav-item:hover {
-    background: rgba(255, 255, 255, 0.16);
-    color: #ffffff;
+    background: #e3f2fd;
+    color: #0d47a1;
     transform: translateX(3px);
 }
 
 .nav-item:hover mat-icon {
-    color: #ffffff;
+    color: #0d47a1;
 }
 
 /* ACTIVE */
 .nav-item.active {
     background: #ffffff;
-    color: #1565c0;
+    color: #0d47a1;
     font-weight: 700;
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
 }
 
 .nav-item.active mat-icon {
-    color: #1565c0;
+    color: #0d47a1;
 }
 
 .nav-label {
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* COLLAPSED SIDEBAR OPTIONAL */
+.sidebar.collapsed {
+    width: 78px;
+}
+
+.sidebar.collapsed .brand-label,
+.sidebar.collapsed .nav-label {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-brand {
+    justify-content: center;
+    padding: 0;
+}
+
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding: 11px;
+}
+
+/* SCROLLBAR */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #0d47a1;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #90caf9;
+    border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #bbdefb;
 }
 
 /* RESPONSIVE */
@@ -120,7 +158,7 @@
         top: 64px;
         left: -280px;
         z-index: 999;
-        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.18);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
         transition: left 0.3s ease;
     }
 

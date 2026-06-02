@@ -42,10 +42,10 @@ import { AppointmentDialog } from '../appointment-dialog/appointment-dialog';
 })
 export class AppointmentList implements OnInit {
 
-    private appointmentService = inject(AppointmentService);
-    private toastr = inject(ToastrService);
-    private dialog = inject(MatDialog);
-    private cdr = inject(ChangeDetectorRef);
+    private readonly appointmentService = inject(AppointmentService);
+    private readonly toastr = inject(ToastrService);
+    private readonly dialog = inject(MatDialog);
+    private readonly cdr = inject(ChangeDetectorRef);
 
     role: string | null = null;
 

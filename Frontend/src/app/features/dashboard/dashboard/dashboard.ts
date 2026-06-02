@@ -23,9 +23,9 @@ import { Employee } from '../../../core/services/employee';
   styleUrl: './dashboard.css'
 })
 export class Dashboard implements OnInit {
-  private authService = inject(Auth);
-  private employeeService = inject(Employee);
-  private cdr = inject(ChangeDetectorRef);
+  private readonly authService = inject(Auth);
+  private readonly employeeService = inject(Employee);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   user: any = null;
   role: string | null = null;
@@ -44,12 +44,14 @@ export class Dashboard implements OnInit {
     this.canViewEmployeeStats = this.isAdminOrTechnician();
 
     this.loadProfile();
-    this.loadEmployeesCount();
+
+    if (this.canViewEmployeeStats) {
+      this.loadEmployeesCount();
+    }
   }
 
   isAdminOrTechnician(): boolean {
     const currentRole = this.role?.toUpperCase()?.trim();
-
     return currentRole === 'ADMIN' || currentRole === 'TECHNICIAN';
   }
 
@@ -70,6 +72,10 @@ export class Dashboard implements OnInit {
 
         this.canViewEmployeeStats = this.isAdminOrTechnician();
 
+        if (this.canViewEmployeeStats) {
+          this.loadEmployeesCount();
+        }
+
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -83,11 +89,13 @@ export class Dashboard implements OnInit {
       next: (response: any) => {
         console.log('DASHBOARD EMPLOYEE RESPONSE:', response);
 
-        const employees = Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-            ? response
-            : [];
+        let employees: any[] = [];
+
+        if (Array.isArray(response?.data)) {
+          employees = response.data;
+        } else if (Array.isArray(response)) {
+          employees = response;
+        }
 
         this.totalEmployees = employees.length;
 

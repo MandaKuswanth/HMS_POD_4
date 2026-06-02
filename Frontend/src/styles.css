@@ -1,18 +1,21 @@
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 @import 'ngx-toastr/toastr';
 
-/* You can add global styles to this file, and also import other style files */
+/* GLOBAL */
 html,
 body {
   margin: 0;
   font-family: Arial, sans-serif;
 }
 
-/* ---------- ROLE DROPDOWN BACKGROUND FIX ---------- */
-
+/* COMMON OVERLAY FIX */
 .cdk-overlay-container {
   z-index: 99999 !important;
 }
+
+/* ============================================================
+   ROLE DROPDOWN BACKGROUND FIX
+   ============================================================ */
 
 .role-select-panel {
   background: #ffffff !important;
@@ -40,14 +43,15 @@ body {
 
 /* Option hover */
 .role-select-panel .mat-mdc-option:hover {
-  background: #eaf3ff !important;
+  background: #e3f2fd !important;
+  color: #0d47a1 !important;
 }
 
 /* Selected option */
 .role-select-panel .mat-mdc-option.mdc-list-item--selected {
   background: #dbeafe !important;
-  color: #1976d2 !important;
-  font-weight: 600 !important;
+  color: #0d47a1 !important;
+  font-weight: 700 !important;
 }
 
 /* Selected option text */
@@ -66,22 +70,17 @@ body {
 }
 
 .role-select-panel::-webkit-scrollbar-thumb {
-  background: #94a3b8;
+  background: #64748b;
   border-radius: 99px;
 }
 
 .role-select-panel::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #475569;
 }
-
 
 /* ============================================================
    DATEPICKER BACKGROUND FIX
    ============================================================ */
-
-.cdk-overlay-container {
-  z-index: 99999 !important;
-}
 
 .hms-datepicker-panel {
   background: #ffffff !important;
@@ -92,13 +91,19 @@ body {
 
 /* Datepicker main container */
 .hms-datepicker-panel .mat-datepicker-content {
+  width: 320px !important;
+  max-width: 320px !important;
   background: #ffffff !important;
   border-radius: 16px !important;
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22) !important;
+  overflow: hidden !important;
 }
 
 /* Calendar body */
 .hms-datepicker-panel .mat-calendar {
+  width: 320px !important;
+  max-width: 320px !important;
+  height: auto !important;
   background: #ffffff !important;
   color: #1f2937 !important;
   padding: 10px !important;
@@ -113,7 +118,7 @@ body {
 /* Month / Year button */
 .hms-datepicker-panel .mat-calendar-period-button {
   color: #0f172a !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
 }
 
 /* Previous / Next arrows */
@@ -124,69 +129,140 @@ body {
 
 /* Week days */
 .hms-datepicker-panel .mat-calendar-table-header {
-  color: #475569 !important;
-  font-weight: 600 !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+
+/* Calendar table */
+.hms-datepicker-panel .mat-calendar-table {
+  width: 100% !important;
+}
+
+/* Calendar cells */
+.hms-datepicker-panel .mat-calendar-body-cell {
+  width: 40px !important;
+  height: 40px !important;
 }
 
 /* Dates */
 .hms-datepicker-panel .mat-calendar-body-cell-content {
+  width: 36px !important;
+  height: 36px !important;
   color: #1f2937 !important;
   border-radius: 50% !important;
 }
 
 /* Hover date */
 .hms-datepicker-panel .mat-calendar-body-cell:hover .mat-calendar-body-cell-content {
-  background: #eaf3ff !important;
+  background: #e3f2fd !important;
+  color: #0d47a1 !important;
 }
 
 /* Selected date */
 .hms-datepicker-panel .mat-calendar-body-selected {
-  background-color: #1976d2 !important;
+  background-color: #0d47a1 !important;
   color: #ffffff !important;
 }
 
 /* Today date */
 .hms-datepicker-panel .mat-calendar-body-today:not(.mat-calendar-body-selected) {
-  border-color: #1976d2 !important;
+  border-color: #0d47a1 !important;
+  color: #0d47a1 !important;
 }
 
 /* Month label */
 .hms-datepicker-panel .mat-calendar-body-label {
   color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+/* Disabled dates contrast fix */
+.hms-datepicker-panel .mat-calendar-body-disabled .mat-calendar-body-cell-content {
+  color: #64748b !important;
+}
+
+/* ============================================================
+   MATERIAL SELECT GENERAL CONTRAST FIX
+   ============================================================ */
+
+.mat-mdc-select-panel {
+  background: #ffffff !important;
+}
+
+.mat-mdc-option {
+  color: #1e293b !important;
+}
+
+.mat-mdc-option:hover {
+  background: #e3f2fd !important;
+  color: #0d47a1 !important;
+}
+
+.mat-mdc-option.mdc-list-item--selected {
+  background: #dbeafe !important;
+  color: #0d47a1 !important;
+  font-weight: 700 !important;
+}
+
+.mat-mdc-option .mdc-list-item__primary-text {
+  color: inherit !important;
+}
+
+/* ============================================================
+   BUTTON DISABLED CONTRAST FIX
+   ============================================================ */
+
+button:disabled,
+button[color="primary"]:disabled,
+.reset-btn:disabled {
+  background-color: #e3f2fd !important;
+  color: #263238 !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+}
+
+/* ============================================================
+   FORM FIELD CONTRAST FIX
+   ============================================================ */
+
+.mat-mdc-form-field {
+  color: #1f2937 !important;
+}
+
+.mat-mdc-input-element {
+  color: #1f2937 !important;
+}
+
+.mat-mdc-form-field-label,
+.mdc-floating-label {
+  color: #455a64 !important;
+}
+
+.mat-mdc-form-field-error {
+  color: #8b0000 !important;
   font-weight: 600 !important;
 }
 
+/* ============================================================
+   TOASTR OPTIONAL CLEAN LOOK
+   ============================================================ */
 
-/* ---------- DATEPICKER WIDTH FIX ---------- */
-
-.hms-datepicker-panel .mat-datepicker-content {
-  width: 320px !important;
-  max-width: 320px !important;
-  background: #ffffff !important;
-  border-radius: 16px !important;
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22) !important;
-  overflow: hidden !important;
+.toast-success {
+  background-color: #0d47a1 !important;
+  color: #ffffff !important;
 }
 
-.hms-datepicker-panel .mat-calendar {
-  width: 320px !important;
-  max-width: 320px !important;
-  height: auto !important;
-  background: #ffffff !important;
-  padding: 10px !important;
+.toast-error {
+  background-color: #8b0000 !important;
+  color: #ffffff !important;
 }
 
-.hms-datepicker-panel .mat-calendar-table {
-  width: 100% !important;
+.toast-warning {
+  background-color: #7a2e00 !important;
+  color: #ffffff !important;
 }
 
-.hms-datepicker-panel .mat-calendar-body-cell {
-  width: 40px !important;
-  height: 40px !important;
-}
-
-.hms-datepicker-panel .mat-calendar-body-cell-content {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 50% !important;
+.toast-info {
+  background-color: #0b2f6b !important;
+  color: #ffffff !important;
 }

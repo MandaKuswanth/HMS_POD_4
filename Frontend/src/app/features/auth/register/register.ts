@@ -5,16 +5,13 @@ import {
   ChangeDetectorRef
 } from '@angular/core';
 
-import { CommonModule, formatDate } from '@angular/common';
+import { CommonModule } from '@angular/common';
 
 import {
   FormArray,
   FormBuilder,
   ReactiveFormsModule,
-  Validators,
-  ValidatorFn,
-  ValidationErrors,
-  AbstractControl
+  Validators
 } from '@angular/forms';
 
 import { Router, RouterModule } from '@angular/router';
@@ -30,6 +27,27 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { ToastrService } from 'ngx-toastr';
 import { Employee } from '../../../core/services/employee';
+
+import {
+  REGISTER_ROLES,
+  NAME_PATTERN,
+  PHONE_PATTERN,
+  SLOT_PATTERN,
+  getConsultationFeeValidators,
+  getMedicalRegistrationValidators,
+  getQualificationValidators,
+  getSpecializationValidators,
+  isDoctorRole,
+  isMedicalStaffRole,
+  noFutureDateValidator,
+  passwordMatchValidator,
+  passwordStrengthValidator,
+  trimInputValue,
+  getQualifications,
+  getFormattedJoiningDate,
+  getCleanAvailabilitySlots,
+  addDoctorPayloadFields
+} from '../../../shared/utils/employee-form-utils';
 
 @Component({
   selector: 'app-register',
@@ -52,25 +70,25 @@ import { Employee } from '../../../core/services/employee';
   styleUrl: './register.css'
 })
 export class Register {
-  readonly fb = inject(FormBuilder);
-  readonly employeeService = inject(Employee);
-  readonly toastr = inject(ToastrService);
-  readonly router = inject(Router);
-  readonly cdr = inject(ChangeDetectorRef);
+  private readonly fb = inject(FormBuilder);
+  private readonly employeeService = inject(Employee);
+  private readonly toastr = inject(ToastrService);
+  private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   loading = false;
   hidePassword = true;
   hideConfirm = true;
 
-  roles = [
-    'DOCTOR',
-    'RECEPTIONIST',
-    'CASHIER',
-    'NURSE',
-    'LAB_TECH',
-    'PHARMACIST',
-    'TECHNICIAN'
-  ];
+  today = new Date();
+  maxJoiningDate: Date = new Date(
+    this.today.getFullYear(),
+    this.today.getMonth() + 2,
+    this.today.getDate()
+  );
+
+
+  readonly roles = REGISTER_ROLES;
 
   form = this.fb.group(
     {
@@ -80,7 +98,7 @@ export class Register {
           Validators.required,
           Validators.minLength(3),
           Validators.maxLength(30),
-          Validators.pattern(/^[A-Za-z ]+$/)
+          Validators.pattern(NAME_PATTERN)
         ]
       ],
 
@@ -97,7 +115,7 @@ export class Register {
         '',
         [
           Validators.required,
-          Validators.pattern(/^[6-9][0-9]{9}$/)
+          Validators.pattern(PHONE_PATTERN)
         ]
       ],
 
@@ -123,7 +141,7 @@ export class Register {
         '',
         [
           Validators.required,
-          this.noFutureDateValidator()
+          noFutureDateValidator()
         ]
       ],
 
@@ -140,7 +158,7 @@ export class Register {
           Validators.required,
           Validators.minLength(8),
           Validators.maxLength(30),
-          this.passwordStrengthValidator()
+          passwordStrengthValidator()
         ]
       ],
 
@@ -159,7 +177,7 @@ export class Register {
       availabilitySlots: this.fb.array([])
     },
     {
-      validators: [this.passwordMatchValidator()]
+      validators: [passwordMatchValidator()]
     }
   );
 
@@ -172,61 +190,11 @@ export class Register {
   }
 
   showDoctorFields(): boolean {
-    return this.selectedRole === 'DOCTOR';
+    return isDoctorRole(this.selectedRole);
   }
 
   showMedicalStaffFields(): boolean {
-    return ['DOCTOR', 'NURSE', 'LAB_TECH'].includes(this.selectedRole);
-  }
-
-  passwordStrengthValidator(): ValidatorFn {
-    return (control: AbstractControl): ValidationErrors | null => {
-      const passwordValue = control.value;
-
-      if (!passwordValue) return null;
-
-      const hasUpperCase = /[A-Z]/.test(passwordValue);
-      const hasLowerCase = /[a-z]/.test(passwordValue);
-      const hasNumber = /[0-9]/.test(passwordValue);
-      const hasSpecialCharacter = /[@$!%*?&#^()_+\-={}[\]|:;"'<>,./]/.test(passwordValue);
-
-      const isStrongPassword =
-        hasUpperCase &&
-        hasLowerCase &&
-        hasNumber &&
-        hasSpecialCharacter;
-
-      return isStrongPassword ? null : { weakPassword: true };
-    };
-  }
-
-  passwordMatchValidator(): ValidatorFn {
-    return (group: AbstractControl): ValidationErrors | null => {
-      const password = group.get('password')?.value;
-      const confirmPassword = group.get('confirmPassword')?.value;
-
-      if (!password || !confirmPassword) return null;
-
-      return password === confirmPassword
-        ? null
-        : { passwordMismatch: true };
-    };
-  }
-
-  noFutureDateValidator(): ValidatorFn {
-    return (control: AbstractControl): ValidationErrors | null => {
-      const selectedDate = control.value;
-
-      if (!selectedDate) return null;
-
-      const todayDate = new Date();
-      todayDate.setHours(0, 0, 0, 0);
-
-      const joiningDate = new Date(selectedDate);
-      joiningDate.setHours(0, 0, 0, 0);
-
-      return joiningDate > todayDate ? { futureDate: true } : null;
-    };
+    return isMedicalStaffRole(this.selectedRole);
   }
 
   onRoleChange(): void {
@@ -241,11 +209,7 @@ export class Register {
     specializationControl?.clearValidators();
 
     if (this.showMedicalStaffFields()) {
-      qualificationControl?.setValidators([
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(100)
-      ]);
+      qualificationControl?.setValidators(getQualificationValidators());
 
       if (this.availabilitySlots.length === 0) {
         this.addSlot();
@@ -255,25 +219,17 @@ export class Register {
     }
 
     if (this.showDoctorFields()) {
-      medicalRegistrationControl?.setValidators([
-        Validators.required,
-        Validators.minLength(4),
-        Validators.maxLength(30),
-        Validators.pattern(/^[A-Za-z0-9/-]+$/)
-      ]);
+      medicalRegistrationControl?.setValidators(
+        getMedicalRegistrationValidators()
+      );
 
-      specializationControl?.setValidators([
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(50),
-        Validators.pattern(/^[A-Za-z ]+$/)
-      ]);
+      specializationControl?.setValidators(
+        getSpecializationValidators()
+      );
 
-      consultationFeeControl?.setValidators([
-        Validators.required,
-        Validators.min(1),
-        Validators.pattern(/^[0-9]+$/)
-      ]);
+      consultationFeeControl?.setValidators(
+        getConsultationFeeValidators()
+      );
     }
 
     qualificationControl?.updateValueAndValidity();
@@ -282,17 +238,18 @@ export class Register {
     specializationControl?.updateValueAndValidity();
 
     this.form.updateValueAndValidity();
+    this.cdr.markForCheck();
   }
 
   addSlot(): void {
-    const availabilitySlotControl = this.fb.control('', [
-      Validators.required,
-      Validators.pattern(
-        /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]\s?-\s?([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
-      )
-    ]);
+    this.availabilitySlots.push(
+      this.fb.control('', [
+        Validators.required,
+        Validators.pattern(SLOT_PATTERN)
+      ])
+    );
 
-    this.availabilitySlots.push(availabilitySlotControl);
+    this.cdr.markForCheck();
   }
 
   removeSlot(index: number): void {
@@ -301,13 +258,22 @@ export class Register {
     if (this.showMedicalStaffFields() && this.availabilitySlots.length === 0) {
       this.addSlot();
     }
-  }
 
-  trimInputValue(value: unknown): string {
-    return typeof value === 'string' ? value.trim() : '';
+    this.cdr.markForCheck();
   }
 
   onSubmit(): void {
+    console.log('FORM INVALID:', this.form.invalid);
+    console.log('FORM ERRORS:', this.form.errors);
+
+    Object.keys(this.form.controls).forEach((key) => {
+      const control = this.form.get(key);
+
+      if (control?.invalid) {
+        console.log('INVALID FIELD:', key, control.errors, control.value);
+      }
+    });
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
 
@@ -320,59 +286,17 @@ export class Register {
       return;
     }
 
-    const formValue = this.form.value;
+    const registerPayload = this.buildRegisterPayload();
 
-    const qualifications = formValue.qualificationText
-      ? formValue.qualificationText
-        .split(',')
-        .map((qualification: string) => qualification.trim())
-        .filter(Boolean)
-      : [];
-
-    const formattedJoiningDate = formValue.joiningDate
-      ? formatDate(formValue.joiningDate, 'yyyy-MM-dd', 'en-US')
-      : '';
-
-    const cleanedAvailabilitySlots = this.showMedicalStaffFields()
-      ? (formValue.availabilitySlots || [])
-        .map((slot: unknown) => String(slot).trim())
-        .filter(Boolean)
-      : [];
-
-    const registerPayload: any = {
-      name: this.trimInputValue(formValue.name),
-      email: this.trimInputValue(formValue.email),
-      phone: this.trimInputValue(formValue.phone),
-      department: this.trimInputValue(formValue.department),
-      designation: this.trimInputValue(formValue.designation),
-      joiningDate: formattedJoiningDate,
-      role: formValue.role,
-      password: formValue.password,
-
-      qualification: this.showMedicalStaffFields()
-        ? qualifications
-        : [],
-
-      availabilitySlots: cleanedAvailabilitySlots
-    };
-
-    if (this.showDoctorFields()) {
-      registerPayload.medicalRegistrationNo = this.trimInputValue(
-        formValue.medicalRegistrationNo
-      );
-
-      registerPayload.specialization = this.trimInputValue(
-        formValue.specialization
-      );
-
-      registerPayload.consultationFee = Number(formValue.consultationFee);
-    }
+    console.log('REGISTER PAYLOAD:', registerPayload);
 
     this.loading = true;
     this.cdr.markForCheck();
 
     this.employeeService.selfRegister(registerPayload).subscribe({
-      next: () => {
+      next: (response: any) => {
+        console.log('REGISTER SUCCESS:', response);
+
         this.loading = false;
         this.cdr.markForCheck();
 
@@ -383,7 +307,10 @@ export class Register {
         });
       },
 
-      error: (errorResponse) => {
+      error: (errorResponse: any) => {
+        console.log('REGISTER API ERROR:', errorResponse);
+        console.log('BACKEND ERROR BODY:', errorResponse?.error);
+
         this.loading = false;
         this.cdr.markForCheck();
 
@@ -392,5 +319,40 @@ export class Register {
         );
       }
     });
+  }
+
+  private buildRegisterPayload(): any {
+    const formValue = this.form.value;
+    const isMedicalStaff = this.showMedicalStaffFields();
+
+    const registerPayload: any = {
+      name: trimInputValue(formValue.name),
+      email: trimInputValue(formValue.email),
+      phone: trimInputValue(formValue.phone),
+      department: trimInputValue(formValue.department),
+      designation: trimInputValue(formValue.designation),
+      joiningDate: getFormattedJoiningDate(formValue.joiningDate),
+      role: formValue.role,
+
+      password: formValue.password,
+      confirmPassword: formValue.confirmPassword,
+
+      qualification: isMedicalStaff
+        ? getQualifications(formValue.qualificationText)
+        : [],
+
+      availabilitySlots: getCleanAvailabilitySlots(
+        formValue.availabilitySlots,
+        isMedicalStaff
+      )
+    };
+
+    addDoctorPayloadFields(
+      registerPayload,
+      formValue,
+      this.showDoctorFields()
+    );
+
+    return registerPayload;
   }
 }
