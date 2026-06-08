@@ -10,12 +10,18 @@ const userSchema = new Schema(
             type: String,
             unique: true,
             required: true,
-            trim: true
+            trim: true,
+            lowercase: true
         },
 
         passwordHash: {
             type: String,
             required: true
+        },
+
+        isEmployee: {
+            type: Boolean,
+            default: true
         },
 
         status: {
@@ -36,12 +42,20 @@ const userSchema = new Schema(
                 "PHARMACIST",
                 "TECHNICIAN"
             ],
-            required: true
+            required: function () {
+                return this.isEmployee;
+            }
         },
 
         employeeId: {
             type: String,
-            required: true
+            required: function () {
+                return this.isEmployee;
+            }
+        },
+        UHID: {
+            type: String,
+            default: null
         },
 
         lastLogin: {
@@ -51,7 +65,9 @@ const userSchema = new Schema(
 
         mustResetPassword: {
             type: Boolean,
-            default: true
+            default: function () {
+                return this.isEmployee;
+            }
         }
     },
     {
@@ -62,19 +78,19 @@ const userSchema = new Schema(
     }
 );
 
-
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.passwordHash);
 };
-
-
 
 userSchema.methods.generateAccessToken = function () {
     return jwt.sign(
         {
             id: this._id,
             email: this.email,
-            role: this.roles
+            role: this.roles,
+            isEmployee: this.isEmployee,
+            employeeId: this.employeeId,
+            UHID: this.UHID
         },
         process.env.ACCESS_TOKEN_SECRET,
         {
@@ -82,6 +98,5 @@ userSchema.methods.generateAccessToken = function () {
         }
     );
 };
-
 
 module.exports = mongoose.model("User", userSchema);

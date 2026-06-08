@@ -34,10 +34,10 @@ import { AuthService } from '../../../core/services/auth';
   styleUrl: './reset-password.css'
 })
 export class ResetPassword {
-  private fb = inject(FormBuilder);
-  private authService = inject(AuthService);
-  private router = inject(Router);
-  private toastr = inject(ToastrService);
+  readonly fb = inject(FormBuilder);
+  readonly authService = inject(AuthService);
+  readonly router = inject(Router);
+  readonly toastr = inject(ToastrService);
 
   hideNewPassword = true;
   hideConfirmPassword = true;

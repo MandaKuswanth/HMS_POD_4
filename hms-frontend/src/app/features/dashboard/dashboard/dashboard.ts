@@ -31,9 +31,9 @@ import { EmployeeService } from '../../../core/services/employee';
 })
 export class Dashboard implements OnInit {
 
-  private authService = inject(AuthService);
-  private employeeService = inject(EmployeeService);
-  private cdr = inject(ChangeDetectorRef);
+  readonly authService = inject(AuthService);
+  readonly employeeService = inject(EmployeeService);
+  readonly cdr = inject(ChangeDetectorRef);
 
   user: any = null;
   role: string | null = null;

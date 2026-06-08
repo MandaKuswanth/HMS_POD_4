@@ -22,9 +22,9 @@ import { AuthService } from '../../../core/services/auth';
   styleUrl: './navbar.css'
 })
 export class Navbar {
-  private authService = inject(AuthService);
-  private toastr = inject(ToastrService);
-  private router = inject(Router);
+  readonly authService = inject(AuthService);
+  readonly toastr = inject(ToastrService);
+  readonly router = inject(Router);
 
   role = this.authService.getRole();
 

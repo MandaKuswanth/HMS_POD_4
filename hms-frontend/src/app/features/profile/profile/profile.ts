@@ -45,7 +45,7 @@ export class Profile implements OnInit {
           response?.data;
 
         this.loading = false;
-        this.cdr.markForCheck(); // ✅ tells OnPush to re-render
+        this.cdr.markForCheck(); 
       },
       error: (error) => {
         console.error(error);

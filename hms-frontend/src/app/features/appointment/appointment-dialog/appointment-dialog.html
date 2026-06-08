@@ -31,6 +31,7 @@
                 <mat-datepicker #picker></mat-datepicker>
             </mat-form-field>
 
+
             <mat-form-field appearance="outline">
                 <mat-label>Time Slot</mat-label>
                 <mat-select formControlName="timeSlot">
@@ -38,10 +39,14 @@
                         {{ slot }}
                     </mat-option>
                 </mat-select>
-                <mat-hint *ngIf="availableSlots.length === 0 && form.get('doctorEmployeeId')?.value">
+
+                @if (availableSlots.length === 0 && form.get('doctorEmployeeId')?.value) {
+                <mat-hint>
                     No slots available for this doctor
                 </mat-hint>
+                }
             </mat-form-field>
+
 
         </div>
     </form>

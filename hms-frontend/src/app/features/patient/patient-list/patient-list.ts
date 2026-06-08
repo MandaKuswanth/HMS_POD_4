@@ -41,10 +41,10 @@ import { PatientDialog } from '../patient-dialog/patient-dialog';
 })
 export class PatientList implements OnInit {
 
-  private patientService = inject(PatientService);
-  private toastr = inject(ToastrService);
-  private dialog = inject(MatDialog);
-  private cdr = inject(ChangeDetectorRef); // ✅ added
+  readonly patientService = inject(PatientService);
+  readonly toastr = inject(ToastrService);
+  readonly dialog = inject(MatDialog);
+  readonly cdr = inject(ChangeDetectorRef); // ✅ added
 
   patients: any[] = [];
 

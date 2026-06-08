@@ -11,12 +11,12 @@
                 <mat-label>Email</mat-label>
                 <input matInput type="email" formControlName="email" />
                 <mat-icon matSuffix>email</mat-icon>
-                <mat-error *ngIf="loginForm.get('email')?.hasError('required')">
-                    Email is required
-                </mat-error>
-                <mat-error *ngIf="loginForm.get('email')?.hasError('email')">
-                    Enter a valid email
-                </mat-error>
+
+                @if (loginForm.get('email')?.hasError('required')) {
+                <mat-error>Email is required</mat-error>
+                } @if (loginForm.get('email')?.hasError('email')) {
+                <mat-error>Enter a valid email</mat-error>
+                }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
@@ -24,10 +24,9 @@
                 <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" />
                 <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
                     <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-                </button>
-                <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
-                    Password is required
-                </mat-error>
+                </button> @if (loginForm.get('password')?.hasError('required')) {
+                <mat-error>Password is required</mat-error>
+                }
             </mat-form-field>
 
             <button mat-raised-button color="primary" class="full-width login-btn" type="submit" [disabled]="loading">
@@ -35,7 +34,6 @@
             </button>
         </form>
 
-        <!-- ✅ Register link -->
         <div class="register-link">
             <p>New employee? <a routerLink="/register">Register here</a></p>
         </div>

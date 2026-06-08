@@ -10,34 +10,22 @@
             <span>Dashboard</span>
         </a>
 
-        <a mat-list-item routerLink="/employees" routerLinkActive="active" *ngIf="isAdminOrTechnician()">
+        @if (isAdminOrTechnician()) {
+        <a mat-list-item routerLink="/employees" routerLinkActive="active">
             <mat-icon>groups</mat-icon>
             <span>Employee List</span>
         </a>
-
-        <a mat-list-item routerLink="/patients" routerLinkActive="active" *ngIf="isAdminOrReceptionist()">
-
-            <mat-icon>
-                personal_injury
-            </mat-icon>
-
-            <span>
-        Patients
-    </span>
-
+        } @if (isAdminOrReceptionist()) {
+        <a mat-list-item routerLink="/patients" routerLinkActive="active">
+            <mat-icon>personal_injury</mat-icon>
+            <span>Patients</span>
         </a>
-
-        <a mat-list-item routerLink="/appointments" routerLinkActive="active" *ngIf="isAdminOrReceptionistOrDoctor()">
-
-            <mat-icon>
-                event_available
-            </mat-icon>
-
-            <span>
-        Appointments
-    </span>
-
+        } @if (isAdminOrReceptionistOrDoctor()) {
+        <a mat-list-item routerLink="/appointments" routerLinkActive="active">
+            <mat-icon>event_available</mat-icon>
+            <span>Appointments</span>
         </a>
+        }
 
         <a mat-list-item routerLink="/profile" routerLinkActive="active">
             <mat-icon>person</mat-icon>

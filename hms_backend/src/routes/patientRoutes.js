@@ -18,4 +18,16 @@ router.get("/patients/:uhid", auth, allowRoles("ADMIN", "RECEPTIONIST"), getPati
 router.put("/patients/:uhid", auth, allowRoles("ADMIN", "RECEPTIONIST"), updatePatient);
 router.delete("/patients/:uhid", auth, allowRoles("ADMIN", "RECEPTIONIST"), deletePatient);
 
+
+//react-native
+router.put(
+    "/patient-profile/:uhid",
+    auth,
+    updatePatient
+);
+router.get(
+    "/patient-profile/:uhid",
+    auth,
+    getPatientById
+);
 module.exports = router;

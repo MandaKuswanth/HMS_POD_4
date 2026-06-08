@@ -10,7 +10,7 @@ const mongoose = require("mongoose");
 
 const sendEmail = require("../utils/sendEmail");
 
-exports.selfRegister = async(req, res) => {
+exports.selfRegister = async (req, res) => {
     try {
         const {
             name,
@@ -121,14 +121,14 @@ exports.selfRegister = async(req, res) => {
         return res.status(201).json(
             new ApiResponse(
                 201, {
-                    employee,
-                    user: {
-                        _id: user._id,
-                        email: user.email,
-                        role: user.roles,
-                        status: user.status
-                    }
-                },
+                employee,
+                user: {
+                    _id: user._id,
+                    email: user.email,
+                    role: user.roles,
+                    status: user.status
+                }
+            },
                 "Registration successful. Please wait for admin approval."
             )
         );
@@ -141,7 +141,7 @@ exports.selfRegister = async(req, res) => {
     }
 };
 
-exports.adminAddEmployee = async(req, res) => {
+exports.adminAddEmployee = async (req, res) => {
     try {
         const {
             name,
@@ -227,9 +227,9 @@ exports.adminAddEmployee = async(req, res) => {
         return res.status(201).json(
             new ApiResponse(
                 201, {
-                    employee,
-                    user
-                },
+                employee,
+                user
+            },
                 "Employee created successfully"
             )
         );
@@ -242,14 +242,17 @@ exports.adminAddEmployee = async(req, res) => {
     }
 };
 
-exports.login = async(req, res) => {
+exports.login = async (req, res) => {
     try {
         const {
             email,
             password
         } = req.body;
 
-        const user = await User.findOne({ email })
+        const user = await User.findOne({
+            email,
+            isEmployee: true
+        });
 
         if (!user) {
             return res.status(404).json(
@@ -307,15 +310,15 @@ exports.login = async(req, res) => {
         return res.status(200).json(
             new ApiResponse(
                 200, {
-                    token: accessToken,
-                    employee: {
-                        id: user._id,
-                        name: user.name,
-                        email: user.email,
-                        role: user.roles,
-                        mustResetPassword: user.mustResetPassword
-                    }
-                },
+                token: accessToken,
+                employee: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.roles,
+                    mustResetPassword: user.mustResetPassword
+                }
+            },
                 "User is successfully logged-in."
             )
         );
@@ -326,7 +329,7 @@ exports.login = async(req, res) => {
     }
 }
 
-exports.resetPassword = async(req, res) => {
+exports.resetPassword = async (req, res) => {
     try {
         const { id } = req.user;
         const { newPassword } = req.body;
@@ -354,7 +357,7 @@ exports.resetPassword = async(req, res) => {
 
 
 
-exports.getProfile = async(req, res) => {
+exports.getProfile = async (req, res) => {
     try {
         const { id } = req.user;
 
@@ -389,16 +392,16 @@ exports.getProfile = async(req, res) => {
     }
 };
 
-exports.getEmployees = async(req, res) => {
+exports.getEmployees = async (req, res) => {
     try {
         const employees = await Employee.find();
         const user = await User.find();
 
         return res.status(200).json(
             new ApiResponse(200, {
-                    employees,
-                    user
-                },
+                employees,
+                user
+            },
                 "Employees fetched successfully"));
     } catch (err) {
         return res.status(500).json(
@@ -407,7 +410,7 @@ exports.getEmployees = async(req, res) => {
     }
 };
 
-exports.updateEmployee = async(req, res) => {
+exports.updateEmployee = async (req, res) => {
     try {
         const { employeeCode } = req.params;
 
@@ -471,7 +474,7 @@ exports.updateEmployee = async(req, res) => {
     }
 };
 
-exports.deleteEmployee = async(req, res) => {
+exports.deleteEmployee = async (req, res) => {
     try {
         const { employeeCode } = req.params;
 
@@ -500,38 +503,38 @@ exports.deleteEmployee = async(req, res) => {
 };
 
 
-exports.toggleEmployeeStatus = async(req, res) => {
-        try {
-            const { employeeCode } = req.params;
+exports.toggleEmployeeStatus = async (req, res) => {
+    try {
+        const { employeeCode } = req.params;
 
-            const employee = await Employee.findOne({ employeeCode });
+        const employee = await Employee.findOne({ employeeCode });
 
-            if (!employee) {
-                return res.status(404).json(
-                    new ApiError(404, "Employee not found")
-                );
-            }
+        if (!employee) {
+            return res.status(404).json(
+                new ApiError(404, "Employee not found")
+            );
+        }
 
-            const user = await User.findOne({ email: employee.email });
+        const user = await User.findOne({ email: employee.email });
 
-            if (!user) {
-                return res.status(404).json(
-                    new ApiError(404, "User account not found")
-                );
-            }
+        if (!user) {
+            return res.status(404).json(
+                new ApiError(404, "User account not found")
+            );
+        }
 
-            const newStatus = !user.status;
+        const newStatus = !user.status;
 
-            user.status = newStatus;
-            employee.status = newStatus;
+        user.status = newStatus;
+        employee.status = newStatus;
 
-            await user.save();
-            await employee.save();
+        await user.save();
+        await employee.save();
 
-            await sendEmail({
-                        to: user.email,
-                        subject: "HMS Account Status Updated",
-                        html: `
+        await sendEmail({
+            to: user.email,
+            subject: "HMS Account Status Updated",
+            html: `
                 <h2>HMS Account Status Updated</h2>
 
                 <p>Hello ${employee.name},</p>
@@ -544,23 +547,21 @@ exports.toggleEmployeeStatus = async(req, res) => {
                 </p>
 
                 <p>
-                    ${
-                        user.status
-                            ? "Your account is now active. You can access the HMS portal using your credentials."
-                            : "Your account has been temporarily deactivated. Please contact the administrator for more information."
-                    }
+                    ${user.status
+                    ? "Your account is now active. You can access the HMS portal using your credentials."
+                    : "Your account has been temporarily deactivated. Please contact the administrator for more information."
+                }
                 </p>
 
-                ${
-                    user.status
-                        ? `
+                ${user.status
+                    ? `
                         <p>
                             <a href="http://localhost:4200/login" target="_blank">
                                 Login to HMS Portal
                             </a>
                         </p>
                         `
-                        : ""
+                    : ""
                 }
 
                 <p>
@@ -576,8 +577,7 @@ exports.toggleEmployeeStatus = async(req, res) => {
                 {
                     status: user.status
                 },
-                `Employee account ${
-                    user.status ? "activated" : "deactivated"
+                `Employee account ${user.status ? "activated" : "deactivated"
                 } successfully`
             )
         );

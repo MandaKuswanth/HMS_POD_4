@@ -22,8 +22,14 @@ const appointmentSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["BOOKED", "CANCELLED", "COMPLETED", "IN-PROCESS"],
-        default: "IN-PROCESS"
+        enum: [
+            "PENDING",
+            "BOOKED",
+            "CANCELLED",
+            "COMPLETED",
+            "IN-PROCESS"
+        ],
+        default: "PENDING"
     },
     createdByEmployeeId: {
         type: String,
@@ -33,7 +39,7 @@ const appointmentSchema = new mongoose.Schema({
     timestamps: true
 });
 
-appointmentSchema.pre('save', async function(next) {
+appointmentSchema.pre('save', async function (next) {
     if (this.isNew) {
         try {
             const counter = await Counter.findOneAndUpdate({ name: 'appointment' }, { $inc: { seq: 1 } }, // Creates sequence

@@ -22,4 +22,5 @@ router.put("/appointments/:appointmentId", auth, allowRoles("ADMIN", "RECEPTIONI
 
 router.delete("/appointments/:appointmentId", auth, allowRoles("ADMIN", "RECEPTIONIST"), validate, deleteAppointment);
 
+
 module.exports = router;
