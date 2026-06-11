@@ -1,41 +1,43 @@
-import React,
-{
+import React, {
     useState
-}
-    from "react";
+} from "react";
 
 import {
-    View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Alert
-}
-    from "react-native";
+} from "react-native";
 
 import DateTimePicker
     from "@react-native-community/datetimepicker";
 
 import {
-    SafeAreaView
-}
-    from "react-native-safe-area-context";
-
-import {
     updateAppointment
-}
-    from "../../services/appointmentService";
+} from "../../services/appointmentService";
 
-export default function
-    EditAppointmentScreen({
+import COLORS
+    from "../../utils/colors";
 
-        appointment,
+import AppContainer
+    from "../../components/AppContainer";
 
-        token,
+import AppCard
+    from "../../components/AppCard";
 
-        goBack
+import AppButton
+    from "../../components/AppButton";
 
-    }) {
+import AppHeader
+    from "../../components/AppHeader";
+
+export default function EditAppointmentScreen({
+
+    appointment,
+    token,
+    goBack
+
+}) {
 
     const [date,
         setDate] =
@@ -49,21 +51,25 @@ export default function
         setShowPicker] =
         useState(false);
 
+    const [loading,
+        setLoading] =
+        useState(false);
+
     const handleUpdate =
         async () => {
 
             try {
 
+                setLoading(true);
+
                 await updateAppointment(
 
-                    appointment
-                        .appointmentId,
+                    appointment.appointmentId,
 
                     {
                         date,
                         timeSlot:
-                            appointment
-                                .timeSlot
+                            appointment.timeSlot
                     },
 
                     token
@@ -71,161 +77,128 @@ export default function
 
                 Alert.alert(
                     "Success",
-                    "Appointment updated"
+                    "Appointment updated successfully"
                 );
 
                 goBack();
 
             } catch (err) {
 
-                console.log(err);
-
                 Alert.alert(
                     "Error",
                     err?.response?.data?.message ||
                     "Update failed"
                 );
+
+            } finally {
+
+                setLoading(false);
             }
         };
 
     return (
 
-        <SafeAreaView
-            style={
-                styles.container
-            }
-        >
+        <AppContainer>
 
-            <TouchableOpacity
-                onPress={goBack}
-            >
-                <Text
-                    style={
-                        styles.back
+            <AppHeader
+                title="Edit Appointment"
+                subtitle="Update your appointment date"
+                onBack={goBack}
+            />
+
+            <AppCard>
+
+                <Text style={styles.label}>
+                    Appointment Date
+                </Text>
+
+                <TouchableOpacity
+                    style={styles.dateButton}
+                    onPress={() =>
+                        setShowPicker(true)
                     }
                 >
-                    ← Back
-                </Text>
-            </TouchableOpacity>
 
-            <Text
-                style={
-                    styles.title
-                }
-            >
-                Edit Appointment
-            </Text>
+                    <Text style={styles.dateText}>
+                        📅 {date.toDateString()}
+                    </Text>
 
-            <TouchableOpacity
-                style={
-                    styles.dateButton
-                }
-                onPress={() =>
-                    setShowPicker(
-                        true
+                </TouchableOpacity>
+
+                {
+                    showPicker && (
+
+                        <DateTimePicker
+                            value={date}
+                            mode="date"
+                            minimumDate={
+                                new Date()
+                            }
+                            onChange={(
+                                event,
+                                selectedDate
+                            ) => {
+
+                                setShowPicker(
+                                    false
+                                );
+
+                                if (
+                                    selectedDate
+                                ) {
+
+                                    setDate(
+                                        selectedDate
+                                    );
+                                }
+                            }}
+                        />
                     )
                 }
-            >
-                <Text>
-                    {
-                        date
-                            .toDateString()
+
+                <AppButton
+                    title={
+                        loading
+                            ? "Updating..."
+                            : "Update Appointment"
                     }
-                </Text>
-            </TouchableOpacity>
-
-            {
-                showPicker && (
-
-                    <DateTimePicker
-                        value={date}
-                        mode="date"
-                        minimumDate={
-                            new Date()
-                        }
-                        onChange={(
-                            event,
-                            selectedDate
-                        ) => {
-
-                            setShowPicker(
-                                false
-                            );
-
-                            if (
-                                selectedDate
-                            ) {
-
-                                setDate(
-                                    selectedDate
-                                );
-                            }
-                        }}
-                    />
-                )
-            }
-
-            <TouchableOpacity
-                style={
-                    styles.button
-                }
-                onPress={
-                    handleUpdate
-                }
-            >
-                <Text
-                    style={
-                        styles.buttonText
+                    onPress={
+                        handleUpdate
                     }
-                >
-                    Update Appointment
-                </Text>
-            </TouchableOpacity>
+                    style={styles.button}
+                />
 
-        </SafeAreaView>
+            </AppCard>
+
+        </AppContainer>
     );
 }
 
-const styles =
-    StyleSheet.create({
+const styles = StyleSheet.create({
 
-        container: {
-            flex: 1,
-            backgroundColor:
-                "#f3f4f6",
-            padding: 20
-        },
+    label: {
+        fontSize: 15,
+        fontWeight: "600",
+        color: COLORS.text,
+        marginBottom: 10
+    },
 
-        back: {
-            color: "#2563eb",
-            fontSize: 18,
-            fontWeight: "600"
-        },
+    dateButton: {
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 12,
+        padding: 16,
+        backgroundColor: COLORS.white
+    },
 
-        title: {
-            fontSize: 28,
-            fontWeight: "700",
-            marginVertical: 20
-        },
+    dateText: {
+        color: COLORS.text,
+        fontSize: 15,
+        fontWeight: "600"
+    },
 
-        dateButton: {
-            backgroundColor:
-                "#fff",
-            padding: 16,
-            borderRadius: 12
-        },
+    button: {
+        marginTop: 25
+    }
 
-        button: {
-            backgroundColor:
-                "#2563eb",
-            padding: 16,
-            borderRadius: 12,
-            marginTop: 20,
-            alignItems: "center"
-        },
-
-        buttonText: {
-            color: "#fff",
-            fontWeight: "700"
-        }
-    });
+});

@@ -4,17 +4,27 @@ import {
     View,
     Text,
     TextInput,
-    TouchableOpacity,
     StyleSheet,
     Alert,
     ScrollView,
+    TouchableOpacity
 } from "react-native";
 
-import { SafeAreaView }
-    from "react-native-safe-area-context";
+import AppContainer
+    from "../../components/AppContainer";
 
-import { updatePatient }
-    from "../../services/patientService";
+import AppCard
+    from "../../components/AppCard";
+
+import AppButton
+    from "../../components/AppButton";
+
+import COLORS
+    from "../../utils/colors";
+
+import {
+    updatePatient
+} from "../../services/patientService";
 
 export default function EditProfileScreen({
     patient,
@@ -82,9 +92,11 @@ export default function EditProfileScreen({
 
     return (
 
-        <SafeAreaView style={styles.container}>
+        <AppContainer>
 
-            <ScrollView>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+            >
 
                 <TouchableOpacity
                     onPress={goBack}
@@ -94,103 +106,145 @@ export default function EditProfileScreen({
                     </Text>
                 </TouchableOpacity>
 
-                <Text style={styles.title}>
-                    Edit Profile
-                </Text>
+                <View style={styles.header}>
 
-                <View style={styles.card}>
+                    <Text style={styles.title}>
+                        Edit Profile
+                    </Text>
+
+                    <Text style={styles.subtitle}>
+                        Update your personal information
+                    </Text>
+
+                </View>
+
+                <AppCard style={styles.card}>
+
+                    <Text style={styles.label}>
+                        Full Name
+                    </Text>
 
                     <TextInput
                         style={styles.input}
                         value={name}
                         onChangeText={setName}
-                        placeholder="Name"
+                        placeholder="Enter name"
+                        placeholderTextColor={
+                            COLORS.subtitle
+                        }
                     />
+
+                    <Text style={styles.label}>
+                        Phone Number
+                    </Text>
 
                     <TextInput
                         style={styles.input}
                         value={phone}
                         onChangeText={setPhone}
-                        placeholder="Phone"
+                        placeholder="Enter phone"
                         keyboardType="phone-pad"
+                        placeholderTextColor={
+                            COLORS.subtitle
+                        }
                     />
+
+                    <Text style={styles.label}>
+                        Address
+                    </Text>
 
                     <TextInput
-                        style={styles.input}
+                        style={[
+                            styles.input,
+                            styles.addressInput
+                        ]}
                         value={address}
                         onChangeText={setAddress}
-                        placeholder="Address"
+                        placeholder="Enter address"
                         multiline
+                        placeholderTextColor={
+                            COLORS.subtitle
+                        }
                     />
 
-                    <TouchableOpacity
-                        style={styles.button}
-                        onPress={handleUpdate}
-                    >
-                        <Text style={styles.buttonText}>
-                            {
-                                loading
-                                    ? "Updating..."
-                                    : "Update Profile"
-                            }
-                        </Text>
-                    </TouchableOpacity>
+                </AppCard>
 
+                <View style={styles.buttonContainer}>
+                    <AppButton
+                        title={
+                            loading
+                                ? "Updating..."
+                                : "Update Profile"
+                        }
+                        onPress={handleUpdate}
+                    />
                 </View>
 
             </ScrollView>
 
-        </SafeAreaView>
+        </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
 
-    container: {
-        flex: 1,
-        backgroundColor: "#f3f4f6",
+    back: {
+        marginHorizontal: 20,
+        marginTop: 10,
+        marginBottom: 10,
+        color: COLORS.primary,
+        fontSize: 16,
+        fontWeight: "600"
     },
 
-    back: {
-        margin: 20,
-        color: "#2563eb",
-        fontSize: 16,
-        fontWeight: "600",
+    header: {
+        paddingHorizontal: 20,
+        marginBottom: 20
     },
 
     title: {
-        fontSize: 26,
+        fontSize: 28,
         fontWeight: "700",
-        marginHorizontal: 20,
-        marginBottom: 20,
+        color: COLORS.text
+    },
+
+    subtitle: {
+        color: COLORS.subtitle,
+        marginTop: 4,
+        fontSize: 14
     },
 
     card: {
-        backgroundColor: "#fff",
-        margin: 20,
-        padding: 20,
-        borderRadius: 16,
+        marginHorizontal: 20
+    },
+
+    label: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: COLORS.text,
+        marginBottom: 8,
+        marginTop: 10
     },
 
     input: {
         borderWidth: 1,
-        borderColor: "#d1d5db",
-        borderRadius: 12,
-        padding: 14,
-        marginBottom: 15,
+        borderColor: COLORS.border,
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 15,
+        color: COLORS.text,
+        backgroundColor: COLORS.white,
+        marginBottom: 10
     },
 
-    button: {
-        backgroundColor: "#2563eb",
-        padding: 15,
-        borderRadius: 12,
-        alignItems: "center",
+    addressInput: {
+        height: 100,
+        textAlignVertical: "top"
     },
 
-    buttonText: {
-        color: "#fff",
-        fontWeight: "600",
-        fontSize: 16,
-    },
+    buttonContainer: {
+        margin: 20
+    }
 
 });

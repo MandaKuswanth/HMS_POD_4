@@ -5,11 +5,17 @@ import {
     Text,
     StyleSheet,
     ScrollView,
-    TouchableOpacity,
+    TouchableOpacity
 } from "react-native";
 
-import { SafeAreaView }
-    from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import COLORS from "../../utils/colors";
+
+import AppCard from "../../components/AppCard";
+
+import AppButton from "../../components/AppButton";
+import AppContainer from "../../components/AppContainer";
 
 export default function ProfileScreen({
     patient,
@@ -19,7 +25,7 @@ export default function ProfileScreen({
 
     return (
 
-        <SafeAreaView style={styles.container}>
+        <AppContainer>
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -28,203 +34,231 @@ export default function ProfileScreen({
                 <TouchableOpacity
                     onPress={goBack}
                 >
-                    <Text style={styles.backButton}>
+                    <Text
+                        style={styles.backButton}
+                    >
                         ← Back
                     </Text>
                 </TouchableOpacity>
 
-                <View style={styles.profileHeader}>
+                <View
+                    style={styles.header}
+                >
 
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>
-                            {patient?.name?.charAt(0)}
+                    <View
+                        style={styles.avatar}
+                    >
+                        <Text
+                            style={styles.avatarText}
+                        >
+                            {
+                                patient?.name
+                                    ?.charAt(0)
+                                    ?.toUpperCase()
+                            }
                         </Text>
                     </View>
 
-                    <Text style={styles.name}>
+                    <Text
+                        style={styles.name}
+                    >
                         {patient?.name}
                     </Text>
 
-                    <Text style={styles.uhid}>
+                    <Text
+                        style={styles.uhid}
+                    >
                         {patient?.UHID}
                     </Text>
 
                 </View>
 
-                <View style={styles.card}>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.icon}>
-                            📧
-                        </Text>
-
-                        <View>
-                            <Text style={styles.label}>
-                                Email
-                            </Text>
-
-                            <Text style={styles.value}>
-                                {patient?.email}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.icon}>
-                            📞
-                        </Text>
-
-                        <View>
-                            <Text style={styles.label}>
-                                Phone
-                            </Text>
-
-                            <Text style={styles.value}>
-                                {patient?.phone}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.icon}>
-                            ⚧
-                        </Text>
-
-                        <View>
-                            <Text style={styles.label}>
-                                Gender
-                            </Text>
-
-                            <Text style={styles.value}>
-                                {patient?.gender}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.icon}>
-                            📍
-                        </Text>
-
-                        <View>
-                            <Text style={styles.label}>
-                                Address
-                            </Text>
-
-                            <Text style={styles.value}>
-                                {patient?.address}
-                            </Text>
-                        </View>
-                    </View>
-
-                </View>
-
-                <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={goToEditProfile}
+                <AppCard
+                    style={styles.card}
                 >
-                    <Text style={styles.editButtonText}>
-                        Edit Profile
-                    </Text>
-                </TouchableOpacity>
+
+                    <View
+                        style={styles.infoRow}
+                    >
+                        <Text
+                            style={styles.label}
+                        >
+                            Email
+                        </Text>
+
+                        <Text
+                            style={styles.value}
+                        >
+                            {patient?.email}
+                        </Text>
+                    </View>
+
+                    <View
+                        style={styles.divider}
+                    />
+
+                    <View
+                        style={styles.infoRow}
+                    >
+                        <Text
+                            style={styles.label}
+                        >
+                            Phone
+                        </Text>
+
+                        <Text
+                            style={styles.value}
+                        >
+                            {patient?.phone}
+                        </Text>
+                    </View>
+
+                    <View
+                        style={styles.divider}
+                    />
+
+                    <View
+                        style={styles.infoRow}
+                    >
+                        <Text
+                            style={styles.label}
+                        >
+                            Gender
+                        </Text>
+
+                        <Text
+                            style={styles.value}
+                        >
+                            {patient?.gender}
+                        </Text>
+                    </View>
+
+                    <View
+                        style={styles.divider}
+                    />
+
+                    <View
+                        style={styles.infoRow}
+                    >
+                        <Text
+                            style={styles.label}
+                        >
+                            Address
+                        </Text>
+
+                        <Text
+                            style={[
+                                styles.value,
+                                styles.address
+                            ]}
+                        >
+                            {
+                                patient?.address ||
+                                "N/A"
+                            }
+                        </Text>
+                    </View>
+
+                </AppCard>
+
+                <View
+                    style={styles.buttonContainer}
+                >
+                    <AppButton
+                        title="Edit Profile"
+                        onPress={goToEditProfile}
+                    />
+                </View>
 
             </ScrollView>
 
-        </SafeAreaView>
+        </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
 
-    container: {
-        flex: 1,
-        backgroundColor: "#F8FAFC"
-    },
-
     backButton: {
         fontSize: 18,
         fontWeight: "600",
-        color: "#0F766E",
+        color: COLORS.primary,
         margin: 20
     },
 
-    profileHeader: {
+    header: {
         alignItems: "center",
-        marginBottom: 20
+        backgroundColor: COLORS.primary,
+        marginHorizontal: 20,
+        marginBottom: 20,
+        borderRadius: 28,
+        paddingVertical: 30
     },
 
     avatar: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-        backgroundColor: "#0F766E",
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: COLORS.white,
+
         justifyContent: "center",
         alignItems: "center"
     },
 
     avatarText: {
-        color: "#fff",
-        fontSize: 34,
+        color: COLORS.primary,
+        fontSize: 40,
         fontWeight: "700"
     },
 
     name: {
-        fontSize: 26,
+        marginTop: 15,
+        fontSize: 28,
         fontWeight: "700",
-        marginTop: 12,
-        color: "#0F172A"
+        color: COLORS.white
     },
 
     uhid: {
-        color: "#64748B",
-        marginTop: 4
+        marginTop: 6,
+        color: COLORS.primaryLight,
+        fontSize: 15
     },
 
     card: {
-        backgroundColor: "#fff",
         marginHorizontal: 20,
-        borderRadius: 20,
-        padding: 20,
-
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 3
+        paddingVertical: 5
     },
 
     infoRow: {
         flexDirection: "row",
-        marginBottom: 20,
-        alignItems: "center"
-    },
-
-    icon: {
-        fontSize: 24,
-        width: 40
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: 16
     },
 
     label: {
-        color: "#64748B",
-        fontSize: 13
+        fontSize: 15,
+        color: COLORS.subtitle
     },
 
     value: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#0F172A"
+        color: COLORS.text
     },
 
-    editButton: {
-        backgroundColor: "#0F766E",
-        margin: 20,
-        padding: 16,
-        borderRadius: 16,
-        alignItems: "center"
+    address: {
+        flex: 1,
+        textAlign: "right",
+        marginLeft: 20
     },
 
-    editButtonText: {
-        color: "#fff",
-        fontWeight: "700",
-        fontSize: 16
+    divider: {
+        height: 1,
+        backgroundColor:
+            COLORS.border
+    },
+
+    buttonContainer: {
+        margin: 20
     }
 });

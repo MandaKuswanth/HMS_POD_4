@@ -11,6 +11,11 @@ import {
 import { SafeAreaView }
     from "react-native-safe-area-context";
 
+import COLORS from "../../utils/colors";
+import AppCard from "../../components/AppCard";
+import AppButton from "../../components/AppButton";
+import AppContainer from "../../components/AppContainer";
+
 export default function DashboardScreen({
     patient,
     logout,
@@ -21,7 +26,7 @@ export default function DashboardScreen({
 
     return (
 
-        <SafeAreaView style={styles.container}>
+        <AppContainer>
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -51,111 +56,106 @@ export default function DashboardScreen({
 
                 <View style={styles.grid}>
 
-                    <TouchableOpacity
-                        style={styles.actionCard}
-                        onPress={goToProfile}
-                    >
-                        <Text style={styles.icon}>
-                            👤
-                        </Text>
+                    <AppCard style={styles.actionCard}>
+                        <TouchableOpacity
+                            style={styles.actionContent}
+                            onPress={goToProfile}
+                        >
+                            <Text style={styles.icon}>
+                                👤
+                            </Text>
 
-                        <Text style={styles.actionText}>
-                            My Profile
-                        </Text>
-                    </TouchableOpacity>
+                            <Text style={styles.actionText}>
+                                My Profile
+                            </Text>
+                        </TouchableOpacity>
+                    </AppCard>
 
-                    <TouchableOpacity
-                        style={styles.actionCard}
-                        onPress={goToBookAppointment}
-                    >
-                        <Text style={styles.icon}>
-                            📅
-                        </Text>
+                    <AppCard style={styles.actionCard}>
+                        <TouchableOpacity
+                            style={styles.actionContent}
+                            onPress={goToBookAppointment}
+                        >
+                            <Text style={styles.icon}>
+                                📅
+                            </Text>
 
-                        <Text style={styles.actionText}>
-                            Book Appointment
-                        </Text>
-                    </TouchableOpacity>
+                            <Text style={styles.actionText}>
+                                Book Appointment
+                            </Text>
+                        </TouchableOpacity>
+                    </AppCard>
 
-                    <TouchableOpacity
-                        style={styles.actionCard}
-                        onPress={goToMyAppointments}
-                    >
-                        <Text style={styles.icon}>
-                            📋
-                        </Text>
+                    <AppCard style={styles.actionCard}>
+                        <TouchableOpacity
+                            style={styles.actionContent}
+                            onPress={goToMyAppointments}
+                        >
+                            <Text style={styles.icon}>
+                                📋
+                            </Text>
 
-                        <Text style={styles.actionText}>
-                            My Appointments
-                        </Text>
-                    </TouchableOpacity>
+                            <Text style={styles.actionText}>
+                                My Appointments
+                            </Text>
+                        </TouchableOpacity>
+                    </AppCard>
 
                 </View>
 
-                <TouchableOpacity
-                    style={styles.logoutButton}
-                    onPress={logout}
-                >
-                    <Text style={styles.logoutText}>
-                        Logout
-                    </Text>
-                </TouchableOpacity>
+                <View style={styles.logoutContainer}>
+                    <AppButton
+                        title="Logout"
+                        onPress={logout}
+                        color={COLORS.danger}
+                    />
+                </View>
 
             </ScrollView>
 
-        </SafeAreaView>
+        </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
 
-    container: {
-        flex: 1,
-        backgroundColor: "#F8FAFC"
-    },
-
     headerCard: {
-        backgroundColor: "#0F766E",
+        backgroundColor: COLORS.primary,
         margin: 20,
         padding: 24,
-        borderRadius: 24,
-
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 6
+        borderRadius: 28
     },
 
     greeting: {
-        color: "#CCFBF1",
+        color: COLORS.primaryLight,
         fontSize: 16
     },
 
     patientName: {
-        color: "#FFFFFF",
-        fontSize: 28,
+        color: COLORS.white,
+        fontSize: 30,
         fontWeight: "700",
-        marginTop: 5
+        marginTop: 6
     },
 
     uhidBadge: {
-        marginTop: 15,
         alignSelf: "flex-start",
-        backgroundColor: "#14B8A6",
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        marginTop: 15,
+        backgroundColor: COLORS.primaryLight,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
         borderRadius: 20
     },
 
     uhidText: {
-        color: "#fff",
-        fontWeight: "600"
+        color: COLORS.primary,
+        fontWeight: "700"
     },
 
     sectionTitle: {
         fontSize: 22,
         fontWeight: "700",
-        color: "#0F172A",
+        color: COLORS.text,
         marginHorizontal: 20,
         marginBottom: 15
     },
@@ -169,16 +169,14 @@ const styles = StyleSheet.create({
 
     actionCard: {
         width: "48%",
-        backgroundColor: "#FFFFFF",
-        paddingVertical: 30,
-        borderRadius: 20,
         marginBottom: 15,
-        alignItems: "center",
+        borderRadius: 24
+    },
 
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 3
+    actionContent: {
+        height: 120,
+        justifyContent: "center",
+        alignItems: "center"
     },
 
     icon: {
@@ -189,21 +187,11 @@ const styles = StyleSheet.create({
     actionText: {
         fontSize: 15,
         fontWeight: "600",
-        textAlign: "center",
-        color: "#0F172A"
+        color: COLORS.text,
+        textAlign: "center"
     },
 
-    logoutButton: {
-        backgroundColor: "#DC2626",
-        margin: 20,
-        padding: 16,
-        borderRadius: 16,
-        alignItems: "center"
-    },
-
-    logoutText: {
-        color: "#FFFFFF",
-        fontWeight: "700",
-        fontSize: 16
+    logoutContainer: {
+        margin: 20
     }
 });

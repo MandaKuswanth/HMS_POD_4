@@ -1,28 +1,60 @@
 import React, { useState } from "react";
+
 import {
     View,
     Text,
-    TextInput,
     TouchableOpacity,
     StyleSheet,
     Alert,
-    ScrollView,
+    ScrollView
 } from "react-native";
 
-import { SafeAreaView } from "react-native-safe-area-context";
-import { registerPatient } from "../../services/authService";
+import {
+    registerPatient
+} from "../../services/authService";
 
-export default function RegisterScreen({ goToLogin }) {
+import AppContainer
+    from "../../components/AppContainer";
 
-    const [name, setName] = useState("");
-    const [phone, setPhone] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [gender, setGender] = useState("");
-    const [dob, setDob] = useState("");
-    const [address, setAddress] = useState("");
+import AppCard
+    from "../../components/AppCard";
 
-    const [loading, setLoading] = useState(false);
+import AppInput
+    from "../../components/AppInput";
+
+import AppButton
+    from "../../components/AppButton";
+
+import COLORS
+    from "../../utils/colors";
+
+export default function RegisterScreen({
+    goToLogin
+}) {
+
+    const [name, setName] =
+        useState("");
+
+    const [phone, setPhone] =
+        useState("");
+
+    const [email, setEmail] =
+        useState("");
+
+    const [password, setPassword] =
+        useState("");
+
+    const [gender, setGender] =
+        useState("");
+
+    const [dob, setDob] =
+        useState("");
+
+    const [address, setAddress] =
+        useState("");
+
+    const [loading, setLoading] =
+        useState(false);
 
     const handleRegister = async () => {
 
@@ -34,10 +66,12 @@ export default function RegisterScreen({ goToLogin }) {
             !gender ||
             !dob
         ) {
+
             Alert.alert(
                 "Error",
                 "Please fill all required fields"
             );
+
             return;
         }
 
@@ -45,34 +79,24 @@ export default function RegisterScreen({ goToLogin }) {
 
             setLoading(true);
 
-            const response =
-                await registerPatient({
-                    name,
-                    phone,
-                    email,
-                    password,
-                    gender,
-                    dob,
-                    address
-                });
-
-            console.log(
-                "REGISTER RESPONSE:",
-                response
-            );
+            await registerPatient({
+                name,
+                phone,
+                email,
+                password,
+                gender,
+                dob,
+                address
+            });
 
             Alert.alert(
                 "Success",
                 "Patient registered successfully"
             );
 
-            if (goToLogin) {
-                goToLogin();
-            }
+            goToLogin();
 
         } catch (err) {
-
-            console.log(err);
 
             Alert.alert(
                 "Registration Failed",
@@ -83,273 +107,250 @@ export default function RegisterScreen({ goToLogin }) {
         } finally {
 
             setLoading(false);
-
         }
     };
 
     return (
 
-        <SafeAreaView style={styles.container}>
+        <AppContainer>
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
             >
 
-                <View style={styles.card}>
+                <View style={styles.wrapper}>
 
-                    <Text style={styles.title}>
-                        HMS Patient Registration
-                    </Text>
+                    <AppCard>
 
-                    <TextInput
-                        placeholder="Name"
-                        style={styles.input}
-                        value={name}
-                        onChangeText={setName}
-                    />
+                        <View style={styles.logoContainer}>
+                            <Text style={styles.logo}>
+                                🏥
+                            </Text>
+                        </View>
 
-                    <TextInput
-                        placeholder="Phone"
-                        style={styles.input}
-                        value={phone}
-                        onChangeText={setPhone}
-                        keyboardType="phone-pad"
-                    />
+                        <Text style={styles.title}>
+                            Create Account
+                        </Text>
 
-                    <TextInput
-                        placeholder="Email"
-                        style={styles.input}
-                        value={email}
-                        onChangeText={setEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                    />
+                        <Text style={styles.subtitle}>
+                            Register as a patient
+                        </Text>
 
-                    <TextInput
-                        placeholder="Password"
-                        style={styles.input}
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                    />
+                        <AppInput
+                            placeholder="Full Name"
+                            value={name}
+                            onChangeText={setName}
+                        />
 
-                    <Text style={styles.label}>
-                        Gender
-                    </Text>
+                        <AppInput
+                            placeholder="Phone Number"
+                            value={phone}
+                            onChangeText={setPhone}
+                            keyboardType="phone-pad"
+                        />
 
-                    <View style={styles.genderContainer}>
+                        <AppInput
+                            placeholder="Email"
+                            value={email}
+                            onChangeText={setEmail}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                        />
 
-                        <TouchableOpacity
-                            style={[
-                                styles.genderButton,
-                                gender === "male" &&
-                                styles.selectedGender
-                            ]}
-                            onPress={() =>
-                                setGender("male")
-                            }
-                        >
-                            <Text
-                                style={
-                                    gender === "male"
-                                        ? styles.selectedGenderText
-                                        : styles.genderText
+                        <AppInput
+                            placeholder="Password"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                        />
+
+                        <Text style={styles.label}>
+                            Gender
+                        </Text>
+
+                        <View style={styles.genderContainer}>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.genderButton,
+                                    gender === "male" &&
+                                    styles.selectedGender
+                                ]}
+                                onPress={() =>
+                                    setGender("male")
                                 }
                             >
-                                Male
-                            </Text>
-                        </TouchableOpacity>
+                                <Text
+                                    style={
+                                        gender === "male"
+                                            ? styles.selectedGenderText
+                                            : styles.genderText
+                                    }
+                                >
+                                    Male
+                                </Text>
+                            </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={[
-                                styles.genderButton,
-                                gender === "female" &&
-                                styles.selectedGender
-                            ]}
-                            onPress={() =>
-                                setGender("female")
-                            }
-                        >
-                            <Text
-                                style={
-                                    gender === "female"
-                                        ? styles.selectedGenderText
-                                        : styles.genderText
+                            <TouchableOpacity
+                                style={[
+                                    styles.genderButton,
+                                    gender === "female" &&
+                                    styles.selectedGender
+                                ]}
+                                onPress={() =>
+                                    setGender("female")
                                 }
                             >
-                                Female
-                            </Text>
-                        </TouchableOpacity>
+                                <Text
+                                    style={
+                                        gender === "female"
+                                            ? styles.selectedGenderText
+                                            : styles.genderText
+                                    }
+                                >
+                                    Female
+                                </Text>
+                            </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={[
-                                styles.genderButton,
-                                gender === "others" &&
-                                styles.selectedGender
-                            ]}
-                            onPress={() =>
-                                setGender("others")
-                            }
-                        >
-                            <Text
-                                style={
-                                    gender === "others"
-                                        ? styles.selectedGenderText
-                                        : styles.genderText
+                            <TouchableOpacity
+                                style={[
+                                    styles.genderButton,
+                                    gender === "others" &&
+                                    styles.selectedGender
+                                ]}
+                                onPress={() =>
+                                    setGender("others")
                                 }
                             >
-                                Others
-                            </Text>
-                        </TouchableOpacity>
+                                <Text
+                                    style={
+                                        gender === "others"
+                                            ? styles.selectedGenderText
+                                            : styles.genderText
+                                    }
+                                >
+                                    Others
+                                </Text>
+                            </TouchableOpacity>
 
-                    </View>
+                        </View>
 
-                    <TextInput
-                        placeholder="DOB (YYYY-MM-DD)"
-                        style={styles.input}
-                        value={dob}
-                        onChangeText={setDob}
-                    />
+                        <AppInput
+                            placeholder="DOB (YYYY-MM-DD)"
+                            value={dob}
+                            onChangeText={setDob}
+                        />
 
-                    <TextInput
-                        placeholder="Address"
-                        style={[
-                            styles.input,
-                            styles.addressInput
-                        ]}
-                        value={address}
-                        onChangeText={setAddress}
-                        multiline
-                    />
+                        <AppInput
+                            placeholder="Address"
+                            value={address}
+                            onChangeText={setAddress}
+                            multiline
+                            style={styles.addressInput}
+                        />
 
-                    <TouchableOpacity
-                        style={styles.button}
-                        onPress={handleRegister}
-                        disabled={loading}
-                    >
-
-                        <Text style={styles.buttonText}>
-
-                            {
+                        <AppButton
+                            title={
                                 loading
                                     ? "Registering..."
                                     : "Register"
                             }
+                            onPress={handleRegister}
+                        />
 
-                        </Text>
+                        <TouchableOpacity
+                            onPress={goToLogin}
+                        >
+                            <Text style={styles.switchText}>
+                                Already have an account? Login
+                            </Text>
+                        </TouchableOpacity>
 
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={goToLogin}
-                    >
-
-                        <Text style={styles.switchText}>
-                            Already have an account?
-                            Login
-                        </Text>
-
-                    </TouchableOpacity>
+                    </AppCard>
 
                 </View>
 
             </ScrollView>
 
-        </SafeAreaView>
+        </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
 
-    container: {
-        flex: 1,
-        backgroundColor: "#F8FAFC",
+    wrapper: {
+        padding: 20
     },
 
-    card: {
-        backgroundColor: "#FFFFFF",
-        margin: 20,
-        padding: 24,
-        borderRadius: 20,
-        elevation: 4,
+    logoContainer: {
+        alignItems: "center",
+        marginBottom: 15
+    },
+
+    logo: {
+        fontSize: 55
     },
 
     title: {
         fontSize: 30,
         fontWeight: "700",
         textAlign: "center",
-        color: "#0F172A",
-        marginBottom: 20,
+        color: COLORS.text,
+        marginBottom: 8
     },
 
-    input: {
-        borderWidth: 1,
-        borderColor: "#E2E8F0",
-        borderRadius: 12,
-        padding: 14,
-        marginBottom: 15,
-        backgroundColor: "#FFFFFF"
+    subtitle: {
+        textAlign: "center",
+        color: COLORS.subtitle,
+        marginBottom: 25,
+        fontSize: 15
     },
 
     label: {
         fontSize: 15,
         fontWeight: "600",
-        color: "#334155",
-        marginBottom: 8,
+        color: COLORS.text,
+        marginBottom: 10
     },
 
     genderContainer: {
         flexDirection: "row",
         gap: 10,
-        marginBottom: 18,
+        marginBottom: 20
     },
 
     genderButton: {
         flex: 1,
         paddingVertical: 12,
-        borderWidth: 1,
-        borderColor: "#CBD5E1",
         borderRadius: 12,
-        alignItems: "center",
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        alignItems: "center"
     },
 
     selectedGender: {
-        backgroundColor: "#0F766E",
-        borderColor: "#0F766E",
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary
     },
 
     genderText: {
-        color: "#0F172A",
+        color: COLORS.text
     },
 
     selectedGenderText: {
-        color: "#FFFFFF",
-        fontWeight: "600",
+        color: COLORS.white,
+        fontWeight: "700"
     },
 
     addressInput: {
         height: 100,
-        textAlignVertical: "top",
-    },
-
-    button: {
-        backgroundColor: "#0F766E",
-        padding: 15,
-        borderRadius: 12,
-        alignItems: "center",
-        marginTop: 10
-    },
-
-    buttonText: {
-        color: "#FFFFFF",
-        fontSize: 16,
-        fontWeight: "700",
+        textAlignVertical: "top"
     },
 
     switchText: {
         marginTop: 20,
         textAlign: "center",
-        color: "#0F766E",
+        color: COLORS.primary,
         fontWeight: "600"
-    },
+    }
 });

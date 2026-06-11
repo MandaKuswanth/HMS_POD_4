@@ -12,18 +12,31 @@ import {
     ScrollView
 } from "react-native";
 
-import { Picker } from "@react-native-picker/picker";
+import { Picker }
+    from "@react-native-picker/picker";
 
 import DateTimePicker
     from "@react-native-community/datetimepicker";
-
-import { SafeAreaView }
-    from "react-native-safe-area-context";
 
 import {
     getDoctors,
     bookAppointment
 } from "../../services/appointmentService";
+
+import COLORS
+    from "../../utils/colors";
+
+import AppContainer
+    from "../../components/AppContainer";
+
+import AppCard
+    from "../../components/AppCard";
+
+import AppButton
+    from "../../components/AppButton";
+
+import AppHeader
+    from "../../components/AppHeader";
 
 export default function BookAppointmentScreen({
     token,
@@ -100,14 +113,12 @@ export default function BookAppointmentScreen({
 
                 Alert.alert(
                     "Success",
-                    "Appointment request submitted"
+                    "Appointment booked successfully"
                 );
 
                 goBack();
 
             } catch (err) {
-
-                console.log(err);
 
                 Alert.alert(
                     "Error",
@@ -118,325 +129,253 @@ export default function BookAppointmentScreen({
             } finally {
 
                 setLoading(false);
-
             }
         };
 
     return (
 
-        <SafeAreaView
-            style={styles.container}
-        >
+        <AppContainer>
 
-            <ScrollView>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+            >
 
-                <TouchableOpacity
-                    onPress={goBack}
-                >
-                    <Text
-                        style={styles.back}
-                    >
-                        ← Back
-                    </Text>
-                </TouchableOpacity>
+                <AppHeader
+                    title="Book Appointment"
+                    subtitle="Schedule your consultation"
+                    onBack={goBack}
+                />
 
-                <Text
-                    style={styles.title}
-                >
-                    Confirm Appointment
-                </Text>
-                <View style={styles.summaryCard}>
+                <AppCard style={styles.summaryCard}>
 
-                    <Text style={styles.summaryTitle}>
+                    <Text style={styles.summaryLabel}>
                         Appointment Booking
                     </Text>
 
                     <Text style={styles.summaryValue}>
-                        Schedule a consultation
+                        Schedule your consultation
                     </Text>
 
-                </View>
+                </AppCard>
 
-                <Text
-                    style={styles.label}
-                >
-                    Doctor
-                </Text>
+                <AppCard>
 
-                <View
-                    style={styles.pickerContainer}
-                >
+                    <Text style={styles.label}>
+                        Select Doctor
+                    </Text>
 
-                    <Picker
-                        selectedValue={
-                            doctorEmployeeId
-                        }
-                        onValueChange={
-                            setDoctorEmployeeId
-                        }
+                    <View
+                        style={styles.pickerContainer}
                     >
 
-                        <Picker.Item
-                            label="Select Doctor"
-                            value=""
-                        />
-
-                        {
-                            doctors.map(
-                                doctor => (
-
-                                    <Picker.Item
-                                        key={
-                                            doctor.employeeCode
-                                        }
-                                        label={
-                                            `${doctor.name} (${doctor.specialization})`
-                                        }
-                                        value={
-                                            doctor.employeeCode
-                                        }
-                                    />
-                                )
-                            )
-                        }
-
-                    </Picker>
-
-                </View>
-
-                <Text
-                    style={styles.label}
-                >
-                    Appointment Date
-                </Text>
-
-                <TouchableOpacity
-                    style={styles.dateButton}
-                    onPress={() =>
-                        setShowDatePicker(true)
-                    }
-                >
-                    <Text style={styles.dateText}>
-                        📅 {date.toDateString()}
-                    </Text>
-                </TouchableOpacity>
-
-                {
-                    showDatePicker && (
-
-                        <DateTimePicker
-                            value={date}
-                            mode="date"
-                            minimumDate={
-                                new Date()
+                        <Picker
+                            selectedValue={
+                                doctorEmployeeId
                             }
-                            maximumDate={
-                                new Date(
-                                    new Date().setMonth(
-                                        new Date().getMonth() + 1
+                            onValueChange={
+                                setDoctorEmployeeId
+                            }
+                        >
+
+                            <Picker.Item
+                                label="Choose Doctor"
+                                value=""
+                            />
+
+                            {
+                                doctors.map(
+                                    (doctor) => (
+
+                                        <Picker.Item
+                                            key={
+                                                doctor.employeeCode
+                                            }
+                                            label={
+                                                `${doctor.name} (${doctor.specialization})`
+                                            }
+                                            value={
+                                                doctor.employeeCode
+                                            }
+                                        />
                                     )
                                 )
                             }
-                            onChange={(
-                                event,
-                                selectedDate
-                            ) => {
 
-                                setShowDatePicker(
-                                    false
-                                );
+                        </Picker>
 
-                                if (
-                                    selectedDate
-                                ) {
+                    </View>
 
-                                    setDate(
-                                        selectedDate
-                                    );
-
-                                }
-                            }}
-                        />
-                    )
-                }
-
-                <Text
-                    style={styles.label}
-                >
-                    Time Slot
-                </Text>
-
-                <View
-                    style={styles.pickerContainer}
-                >
-
-                    <Picker
-                        selectedValue={
-                            timeSlot
-                        }
-                        onValueChange={
-                            setTimeSlot
-                        }
-                    >
-
-                        <Picker.Item
-                            label="Select Slot"
-                            value=""
-                        />
-
-                        <Picker.Item
-                            label="09:00 AM"
-                            value="09:00 AM"
-                        />
-
-                        <Picker.Item
-                            label="10:00 AM"
-                            value="10:00 AM"
-                        />
-
-                        <Picker.Item
-                            label="11:00 AM"
-                            value="11:00 AM"
-                        />
-
-                        <Picker.Item
-                            label="12:00 PM"
-                            value="12:00 PM"
-                        />
-
-                    </Picker>
-
-                </View>
-
-                <TouchableOpacity
-                    style={styles.button}
-                    onPress={
-                        handleBookAppointment
-                    }
-                    disabled={loading}
-                >
-
-                    <Text
-                        style={styles.buttonText}
-                    >
-
-                        {
-                            loading
-                                ? "Booking..."
-                                : "Book Appointment"
-                        }
-
+                    <Text style={styles.label}>
+                        Appointment Date
                     </Text>
 
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.dateButton}
+                        onPress={() =>
+                            setShowDatePicker(
+                                true
+                            )
+                        }
+                    >
+
+                        <Text style={styles.dateText}>
+                            📅 {date.toDateString()}
+                        </Text>
+
+                    </TouchableOpacity>
+
+                    {
+                        showDatePicker && (
+
+                            <DateTimePicker
+                                value={date}
+                                mode="date"
+                                minimumDate={
+                                    new Date()
+                                }
+                                onChange={(
+                                    event,
+                                    selectedDate
+                                ) => {
+
+                                    setShowDatePicker(
+                                        false
+                                    );
+
+                                    if (
+                                        selectedDate
+                                    ) {
+
+                                        setDate(
+                                            selectedDate
+                                        );
+                                    }
+                                }}
+                            />
+                        )
+                    }
+
+                    <Text style={styles.label}>
+                        Time Slot
+                    </Text>
+
+                    <View
+                        style={styles.pickerContainer}
+                    >
+
+                        <Picker
+                            selectedValue={
+                                timeSlot
+                            }
+                            onValueChange={
+                                setTimeSlot
+                            }
+                        >
+
+                            <Picker.Item
+                                label="Choose Slot"
+                                value=""
+                            />
+
+                            <Picker.Item
+                                label="09:00 AM"
+                                value="09:00 AM"
+                            />
+
+                            <Picker.Item
+                                label="10:00 AM"
+                                value="10:00 AM"
+                            />
+
+                            <Picker.Item
+                                label="11:00 AM"
+                                value="11:00 AM"
+                            />
+
+                            <Picker.Item
+                                label="12:00 PM"
+                                value="12:00 PM"
+                            />
+
+                        </Picker>
+
+                    </View>
+
+                    <View
+                        style={styles.buttonContainer}
+                    >
+
+                        <AppButton
+                            title={
+                                loading
+                                    ? "Booking..."
+                                    : "Book Appointment"
+                            }
+                            onPress={
+                                handleBookAppointment
+                            }
+                        />
+
+                    </View>
+
+                </AppCard>
 
             </ScrollView>
 
-        </SafeAreaView>
+        </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
 
-    container: {
-        flex: 1,
-        backgroundColor: "#F8FAFC",
-        padding: 20
-    },
-
-    back: {
-        color: "#0F766E",
-        fontSize: 18,
-        fontWeight: "600"
-    },
-
-    title: {
-        fontSize: 28,
-        fontWeight: "700",
-        color: "#0F172A",
-        marginTop: 20,
-        marginBottom: 10
-    },
-
-    subtitle: {
-        color: "#64748B",
-        marginBottom: 20
-    },
-
-    label: {
-        fontSize: 15,
-        fontWeight: "600",
-        color: "#334155",
-        marginBottom: 8,
-        marginTop: 15
-    },
-
-    pickerContainer: {
-        backgroundColor: "#FFFFFF",
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: "#E2E8F0",
-        overflow: "hidden",
-
-        shadowColor: "#000",
-        shadowOpacity: 0.03,
-        shadowRadius: 5,
-        elevation: 2
-    },
-
-    dateButton: {
-        backgroundColor: "#FFFFFF",
-        padding: 18,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: "#E2E8F0",
-
-        shadowColor: "#000",
-        shadowOpacity: 0.03,
-        shadowRadius: 5,
-        elevation: 2
-    },
-
-    dateText: {
-        color: "#0F172A",
-        fontWeight: "600"
-    },
-
     summaryCard: {
-        backgroundColor: "#0F766E",
-        borderRadius: 20,
-        padding: 20,
-        marginBottom: 20
+        marginBottom: 15,
+        backgroundColor: COLORS.primary
     },
 
-    summaryTitle: {
-        color: "#CCFBF1",
+    summaryLabel: {
+        color: COLORS.primaryLight,
         fontSize: 14
     },
 
     summaryValue: {
-        color: "#FFFFFF",
+        color: COLORS.white,
         fontSize: 20,
         fontWeight: "700",
         marginTop: 5
     },
 
-    button: {
-        backgroundColor: "#0F766E",
-        paddingVertical: 18,
-        borderRadius: 16,
-        marginTop: 30,
-        alignItems: "center",
-
-        shadowColor: "#000",
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 4
+    label: {
+        fontSize: 15,
+        fontWeight: "600",
+        color: COLORS.text,
+        marginBottom: 8,
+        marginTop: 15
     },
 
-    buttonText: {
-        color: "#FFFFFF",
-        fontWeight: "700",
-        fontSize: 16
+    pickerContainer: {
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 12,
+        overflow: "hidden",
+        backgroundColor: COLORS.white
+    },
+
+    dateButton: {
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 12,
+        padding: 16,
+        backgroundColor: COLORS.white
+    },
+
+    dateText: {
+        color: COLORS.text,
+        fontWeight: "600"
+    },
+
+    buttonContainer: {
+        marginTop: 25
     }
+
 });

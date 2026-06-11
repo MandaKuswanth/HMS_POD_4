@@ -13,13 +13,17 @@ import {
     Alert
 } from "react-native";
 
-import { SafeAreaView }
-    from "react-native-safe-area-context";
-
 import {
     getMyAppointments,
     cancelAppointment
 } from "../../services/appointmentService";
+
+import COLORS from "../../utils/colors";
+
+import AppCard from "../../components/AppCard";
+import AppButton from "../../components/AppButton";
+import AppContainer from "../../components/AppContainer";
+import AppHeader from "../../components/AppHeader";
 
 export default function MyAppointmentsScreen({
     token,
@@ -27,141 +31,122 @@ export default function MyAppointmentsScreen({
     goToEditAppointment
 }) {
 
-    const [appointments,
-        setAppointments] = useState([]);
-
-    const [loading,
-        setLoading] = useState(true);
+    const [appointments, setAppointments] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadAppointments();
     }, []);
 
-    const loadAppointments =
-        async () => {
+    const loadAppointments = async () => {
 
-            try {
+        try {
 
-                const response =
-                    await getMyAppointments(
-                        token
-                    );
+            const response =
+                await getMyAppointments(token);
 
-                setAppointments(
-                    response.data
-                );
+            setAppointments(response.data);
 
-            } catch (err) {
+        } catch (err) {
 
-                console.log(err);
+            console.log(err);
 
-            } finally {
+        } finally {
 
-                setLoading(false);
+            setLoading(false);
+        }
+    };
 
-            }
-        };
+    const handleCancel = async (appointmentId) => {
 
-    const handleCancel =
-        async (appointmentId) => {
+        Alert.alert(
+            "Cancel Appointment",
+            "Are you sure you want to cancel this appointment?",
+            [
+                {
+                    text: "No"
+                },
+                {
+                    text: "Yes",
+                    onPress: async () => {
 
-            Alert.alert(
-                "Cancel Appointment",
-                "Are you sure you want to cancel this appointment?",
-                [
-                    {
-                        text: "No"
-                    },
-                    {
-                        text: "Yes",
-                        onPress: async () => {
+                        try {
 
-                            try {
+                            await cancelAppointment(
+                                appointmentId,
+                                token
+                            );
 
-                                await cancelAppointment(
-                                    appointmentId,
-                                    token
-                                );
+                            Alert.alert(
+                                "Success",
+                                "Appointment cancelled successfully"
+                            );
 
-                                Alert.alert(
-                                    "Success",
-                                    "Appointment cancelled successfully"
-                                );
+                            loadAppointments();
 
-                                loadAppointments();
+                        } catch (err) {
 
-                            } catch (err) {
-
-                                Alert.alert(
-                                    "Error",
-                                    err?.response?.data?.message ||
-                                    "Unable to cancel appointment"
-                                );
-                            }
+                            Alert.alert(
+                                "Error",
+                                err?.response?.data?.message ||
+                                "Unable to cancel appointment"
+                            );
                         }
                     }
-                ]
-            );
-        };
+                }
+            ]
+        );
+    };
 
-    const getStatusColor =
-        (status) => {
+    const getStatusColor = (status) => {
 
-            switch (status) {
+        switch (status) {
 
-                case "PENDING":
-                    return "#F59E0B";
+            case "PENDING":
+                return "#F59E0B";
 
-                case "BOOKED":
-                    return "#10B981";
+            case "BOOKED":
+                return "#10B981";
 
-                case "COMPLETED":
-                    return "#2563EB";
+            case "COMPLETED":
+                return "#2563EB";
 
-                case "CANCELLED":
-                    return "#DC2626";
+            case "CANCELLED":
+                return "#DC2626";
 
-                default:
-                    return "#64748B";
-            }
-        };
+            default:
+                return "#64748B";
+        }
+    };
 
     if (loading) {
 
         return (
 
-            <SafeAreaView
-                style={styles.loaderContainer}
-            >
-                <ActivityIndicator
-                    size="large"
-                    color="#0F766E"
-                />
-            </SafeAreaView>
+            <AppContainer>
+
+                <View style={styles.loaderContainer}>
+
+                    <ActivityIndicator
+                        size="large"
+                        color={COLORS.primary}
+                    />
+
+                </View>
+
+            </AppContainer>
         );
     }
 
     return (
 
-        <SafeAreaView
-            style={styles.container}
-        >
+        <AppContainer>
 
-            <TouchableOpacity
-                onPress={goBack}
-            >
-                <Text
-                    style={styles.back}
-                >
-                    ← Back
-                </Text>
-            </TouchableOpacity>
-
-            <Text
-                style={styles.title}
-            >
-                My Appointments
-            </Text>
+            <AppHeader
+                title="My Appointments"
+                subtitle="View and manage your appointments"
+                onBack={goBack}
+            />
 
             <FlatList
                 data={appointments}
@@ -170,115 +155,88 @@ export default function MyAppointmentsScreen({
                 }
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
-                    <Text
-                        style={styles.emptyText}
-                    >
+
+                    <Text style={styles.emptyText}>
                         No appointments found
                     </Text>
                 }
                 renderItem={({ item }) => (
 
-                    <View style={styles.card}>
+                    <AppCard style={styles.card}>
 
-                        <View
-                            style={styles.doctorHeader}
-                        >
+                        <View style={styles.topRow}>
 
-                            <View
-                                style={styles.doctorAvatar}
-                            >
-                                <Text
-                                    style={styles.avatarText}
-                                >
-                                    {
-                                        item.doctorName?.charAt(0)
-                                    }
+                            <View style={styles.avatar}>
+
+                                <Text style={styles.avatarText}>
+                                    {item.doctorName?.charAt(0)}
                                 </Text>
+
                             </View>
 
-                            <View>
-                                <Text
-                                    style={styles.doctor}
-                                >
+                            <View style={{ flex: 1 }}>
+
+                                <Text style={styles.doctor}>
                                     Dr. {item.doctorName}
                                 </Text>
 
-                                <Text
-                                    style={styles.specialization}
-                                >
+                                <Text style={styles.specialization}>
                                     {item.specialization}
                                 </Text>
+
+                            </View>
+
+                            <View
+                                style={[
+                                    styles.statusBadge,
+                                    {
+                                        backgroundColor:
+                                            getStatusColor(
+                                                item.status
+                                            )
+                                    }
+                                ]}
+                            >
+
+                                <Text style={styles.statusText}>
+                                    {item.status}
+                                </Text>
+
                             </View>
 
                         </View>
 
-                        <View
-                            style={styles.infoRow}
-                        >
-                            <Text
-                                style={styles.info}
-                            >
+                        <View style={styles.infoContainer}>
+
+                            <Text style={styles.info}>
                                 📅 {new Date(item.date).toDateString()}
                             </Text>
-                        </View>
 
-                        <View
-                            style={styles.infoRow}
-                        >
-                            <Text
-                                style={styles.info}
-                            >
+                            <Text style={styles.info}>
                                 🕒 {item.timeSlot}
                             </Text>
-                        </View>
 
-                        <View
-                            style={styles.infoRow}
-                        >
-                            <Text
-                                style={styles.info}
-                            >
+                            <Text style={styles.info}>
                                 🆔 {item.appointmentId}
                             </Text>
+
                         </View>
 
-                        <View
-                            style={[
-                                styles.statusBadge,
-                                {
-                                    backgroundColor:
-                                        getStatusColor(
-                                            item.status
-                                        )
-                                }
-                            ]}
-                        >
-                            <Text
-                                style={styles.statusText}
-                            >
-                                {item.status}
-                            </Text>
-                        </View>
-
-                        <View
-                            style={styles.buttonRow}
-                        >
+                        <View style={styles.buttonRow}>
 
                             {
                                 item.status === "PENDING" && (
 
-                                    <TouchableOpacity
-                                        style={styles.editButton}
-                                        onPress={() =>
-                                            goToEditAppointment(item)
-                                        }
-                                    >
-                                        <Text
-                                            style={styles.actionText}
-                                        >
-                                            Edit
-                                        </Text>
-                                    </TouchableOpacity>
+                                    <View style={{ flex: 1 }}>
+
+                                        <AppButton
+                                            title="Edit"
+                                            onPress={() =>
+                                                goToEditAppointment(item)
+                                            }
+                                        />
+
+                                    </View>
                                 )
                             }
 
@@ -286,40 +244,33 @@ export default function MyAppointmentsScreen({
                                 item.status !== "CANCELLED" &&
                                 item.status !== "COMPLETED" && (
 
-                                    <TouchableOpacity
-                                        style={styles.cancelButton}
-                                        onPress={() =>
-                                            handleCancel(
-                                                item.appointmentId
-                                            )
-                                        }
-                                    >
-                                        <Text
-                                            style={styles.actionText}
-                                        >
-                                            Cancel
-                                        </Text>
-                                    </TouchableOpacity>
+                                    <View style={{ flex: 1 }}>
+
+                                        <AppButton
+                                            title="Cancel"
+                                            color={COLORS.danger}
+                                            onPress={() =>
+                                                handleCancel(
+                                                    item.appointmentId
+                                                )
+                                            }
+                                        />
+
+                                    </View>
                                 )
                             }
 
                         </View>
 
-                    </View>
+                    </AppCard>
                 )}
             />
 
-        </SafeAreaView>
+        </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
-
-    container: {
-        flex: 1,
-        backgroundColor: "#F8FAFC",
-        padding: 20
-    },
 
     loaderContainer: {
         flex: 1,
@@ -327,116 +278,82 @@ const styles = StyleSheet.create({
         alignItems: "center"
     },
 
-    back: {
-        color: "#0F766E",
-        fontSize: 18,
-        fontWeight: "600"
-    },
-
-    title: {
-        fontSize: 28,
-        fontWeight: "700",
-        color: "#0F172A",
-        marginVertical: 20
-    },
-
     card: {
-        backgroundColor: "#FFFFFF",
-        borderRadius: 20,
-        padding: 20,
-        marginBottom: 16,
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 3
-    },
-
-    doctorHeader: {
-        flexDirection: "row",
-        alignItems: "center",
         marginBottom: 15
     },
 
-    doctorAvatar: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: "#0F766E",
+    topRow: {
+        flexDirection: "row",
+        alignItems: "center"
+    },
+
+    avatar: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: COLORS.primary,
         justifyContent: "center",
         alignItems: "center",
-        marginRight: 12
+        marginRight: 14,
+
+        shadowColor: COLORS.primary,
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        elevation: 4
     },
 
     avatarText: {
-        color: "#fff",
-        fontSize: 20,
+        color: COLORS.white,
+        fontSize: 22,
         fontWeight: "700"
     },
 
     doctor: {
         fontSize: 18,
         fontWeight: "700",
-        color: "#0F172A"
+        color: COLORS.text
     },
 
     specialization: {
-        color: "#64748B",
+        color: COLORS.subtitle,
         marginTop: 2
     },
 
-    infoRow: {
-        marginTop: 8
-    },
-
-    info: {
-        color: "#475569",
-        fontSize: 14
-    },
-
     statusBadge: {
-        alignSelf: "flex-start",
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 20,
-        marginTop: 15
+        borderRadius: 20
     },
 
     statusText: {
-        color: "#fff",
-        fontWeight: "700",
-        fontSize: 12
+        color: COLORS.white,
+        fontSize: 12,
+        fontWeight: "700"
+    },
+
+    infoContainer: {
+        marginTop: 18,
+        paddingTop: 15,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border
+    },
+
+    info: {
+        fontSize: 14,
+        color: COLORS.text,
+        marginBottom: 8
     },
 
     buttonRow: {
         flexDirection: "row",
         gap: 10,
-        marginTop: 15
-    },
-
-    editButton: {
-        flex: 1,
-        backgroundColor: "#0F766E",
-        padding: 12,
-        borderRadius: 12,
-        alignItems: "center"
-    },
-
-    cancelButton: {
-        flex: 1,
-        backgroundColor: "#DC2626",
-        padding: 12,
-        borderRadius: 12,
-        alignItems: "center"
-    },
-
-    actionText: {
-        color: "#fff",
-        fontWeight: "700"
+        marginTop: 20
     },
 
     emptyText: {
         textAlign: "center",
         marginTop: 50,
-        color: "#64748B"
+        color: COLORS.subtitle
     }
+
 });

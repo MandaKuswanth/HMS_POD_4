@@ -3,29 +3,42 @@ import React, { useState } from "react";
 import {
     View,
     Text,
-    TextInput,
     TouchableOpacity,
     StyleSheet,
-    Alert,
+    Alert
 } from "react-native";
 
-import { SafeAreaView } from "react-native-safe-area-context";
-import { loginPatient } from "../../services/authService";
+import { loginPatient }
+    from "../../services/authService";
+
+import AppContainer
+    from "../../components/AppContainer";
+
+import AppCard
+    from "../../components/AppCard";
+
+import AppInput
+    from "../../components/AppInput";
+
+import AppButton
+    from "../../components/AppButton";
+
+import COLORS
+    from "../../utils/colors";
 
 export default function LoginScreen({
     goToRegister,
     goToHome
 }) {
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [email, setEmail] =
+        useState("");
 
-    const [loading, setLoading] = useState(false);
-    console.log("LOGIN DATA");
-    console.log({
-        email,
-        password
-    });
+    const [password, setPassword] =
+        useState("");
+
+    const [loading, setLoading] =
+        useState(false);
 
     const handleLogin = async () => {
 
@@ -49,24 +62,16 @@ export default function LoginScreen({
                     password
                 });
 
-            console.log(
-                "LOGIN RESPONSE:",
-                response
-            );
-
             Alert.alert(
                 "Success",
                 "Login successful"
             );
 
-            goToHome(response.data);
+            goToHome(
+                response.data
+            );
 
         } catch (err) {
-
-            console.log("LOGIN ERROR");
-            console.log(err.response?.status);
-            console.log(err.response?.data);
-            console.log(err.message);
 
             Alert.alert(
                 "Login Failed",
@@ -77,123 +82,110 @@ export default function LoginScreen({
         } finally {
 
             setLoading(false);
-
         }
     };
 
     return (
 
-        <SafeAreaView style={styles.container}>
+        <AppContainer>
 
-            <View style={styles.card}>
+            <View style={styles.wrapper}>
 
-                <Text style={styles.title}>
-                    HMS Patient Login
-                </Text>
+                <AppCard>
 
-                <TextInput
-                    placeholder="Email"
-                    style={styles.input}
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                />
+                    <View style={styles.logoContainer}>
+                        <Text style={styles.logo}>
+                            🏥
+                        </Text>
+                    </View>
 
-                <TextInput
-                    placeholder="Password"
-                    style={styles.input}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                />
+                    <Text style={styles.title}>
+                        Welcome Back
+                    </Text>
 
-                <TouchableOpacity
-                    style={styles.button}
-                    onPress={handleLogin}
-                    disabled={loading}
-                >
+                    <Text style={styles.subtitle}>
+                        Sign in to continue
+                    </Text>
 
-                    <Text style={styles.buttonText}>
+                    <AppInput
+                        placeholder="Email"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                    />
 
-                        {
+                    <AppInput
+                        placeholder="Password"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                    />
+
+                    <AppButton
+                        title={
                             loading
                                 ? "Logging in..."
                                 : "Login"
                         }
+                        onPress={handleLogin}
+                        disabled={loading}
+                    />
 
-                    </Text>
+                    <TouchableOpacity
+                        onPress={goToRegister}
+                    >
 
-                </TouchableOpacity>
+                        <Text style={styles.switchText}>
+                            Don't have an account? Register
+                        </Text>
 
-                <TouchableOpacity
-                    onPress={goToRegister}
-                >
+                    </TouchableOpacity>
 
-                    <Text style={styles.switchText}>
-                        Don't have an account?
-                        Register
-                    </Text>
-
-                </TouchableOpacity>
+                </AppCard>
 
             </View>
 
-        </SafeAreaView>
+        </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
 
-    container: {
+    wrapper: {
         flex: 1,
-        backgroundColor: "#F8FAFC",
         justifyContent: "center",
-        padding: 20,
+        paddingHorizontal: 20
     },
 
-    card: {
-        backgroundColor: "#FFFFFF",
-        padding: 25,
-        borderRadius: 20,
-        elevation: 4,
+    logoContainer: {
+        alignItems: "center",
+        marginBottom: 15
+    },
+
+    logo: {
+        fontSize: 60
     },
 
     title: {
         fontSize: 30,
         fontWeight: "700",
         textAlign: "center",
-        color: "#0F172A",
+        color: COLORS.text,
+        marginBottom: 8
+    },
+
+    subtitle: {
+        textAlign: "center",
+        color: COLORS.subtitle,
         marginBottom: 25,
-    },
-
-    input: {
-        borderWidth: 1,
-        borderColor: "#E2E8F0",
-        borderRadius: 12,
-        padding: 14,
-        marginBottom: 15,
-        backgroundColor: "#FFFFFF"
-    },
-
-    button: {
-        backgroundColor: "#0F766E",
-        padding: 15,
-        borderRadius: 12,
-        alignItems: "center",
-        marginTop: 5
-    },
-
-    buttonText: {
-        color: "#FFFFFF",
-        fontSize: 16,
-        fontWeight: "700",
+        fontSize: 15
     },
 
     switchText: {
         marginTop: 20,
         textAlign: "center",
-        color: "#0F766E",
+        color: COLORS.primary,
         fontWeight: "600"
-    },
+    }
 });
