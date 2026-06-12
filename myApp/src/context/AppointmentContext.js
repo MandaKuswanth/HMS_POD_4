@@ -5,7 +5,7 @@ import React, {
     useMemo,
     useState,
 } from "react";
-
+import PropTypes from "prop-types";
 import {
     bookAppointmentApi,
     cancelAppointmentApi,
@@ -186,4 +186,7 @@ export const useAppointments = () => {
     }
 
     return value;
+};
+AppointmentProvider.propTypes = {
+    children: PropTypes.node.isRequired,
 };

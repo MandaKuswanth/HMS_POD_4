@@ -8,20 +8,13 @@ const ApiError = require("../utils/ApiError");
 
 const sendEmail = require("../utils/sendEmail");
 
-const SLOT_BLOCKING_STATUSES = ["PENDING", "BOOKED", "IN-PROCESS"];
-
-const getDateRange = (dateValue) => {
-    const startOfDay = new Date(dateValue);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setDate(startOfDay.getDate() + 1);
-
-    return {
-        startOfDay,
-        endOfDay,
-    };
-};
+const {
+    SLOT_BLOCKING_STATUSES,
+    getDateRange,
+    normalizeAppointmentDate,
+    getTomorrowDate,
+    isBeforeDoctorJoiningDate,
+} = require("../utils/appointmentHelpers");
 
 exports.cancelPatientAppointments = async (patientId, reason) => {
     const result = await Appointment.updateMany(
@@ -97,16 +90,9 @@ exports.createAppointment = async (req, res) => {
             );
         }
 
-        const appointmentDate = new Date(date);
-        appointmentDate.setHours(0, 0, 0, 0);
+        const appointmentDate = normalizeAppointmentDate(date);
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-
-        if (appointmentDate < tomorrow) {
+        if (appointmentDate < getTomorrowDate()) {
             return res.status(400).json(
                 new ApiError(
                     400,
@@ -115,18 +101,13 @@ exports.createAppointment = async (req, res) => {
             );
         }
 
-        if (doctor.joiningDate) {
-            const doctorJoiningDate = new Date(doctor.joiningDate);
-            doctorJoiningDate.setHours(0, 0, 0, 0);
-
-            if (appointmentDate < doctorJoiningDate) {
-                return res.status(400).json(
-                    new ApiError(
-                        400,
-                        "Appointment cannot be booked before doctor's joining date"
-                    )
-                );
-            }
+        if (isBeforeDoctorJoiningDate(appointmentDate, doctor)) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "Appointment cannot be booked before doctor's joining date"
+                )
+            );
         }
 
         const { startOfDay, endOfDay } = getDateRange(appointmentDate);
@@ -321,8 +302,8 @@ exports.updateAppointment = async (req, res) => {
         }
 
         if (date) {
-            appointment.date = new Date(date);
-            appointment.date.setHours(0, 0, 0, 0);
+            appointment.date = normalizeAppointmentDate(date);
+
         }
 
         if (timeSlot) {
