@@ -8,6 +8,8 @@ const ApiError = require("../utils/ApiError");
 
 const sendEmail = require("../utils/sendEmail");
 
+const SLOT_BLOCKING_STATUSES = ["PENDING", "BOOKED", "IN-PROCESS"];
+
 const getDateRange = (dateValue) => {
     const startOfDay = new Date(dateValue);
     startOfDay.setHours(0, 0, 0, 0);
@@ -17,7 +19,7 @@ const getDateRange = (dateValue) => {
 
     return {
         startOfDay,
-        endOfDay
+        endOfDay,
     };
 };
 
@@ -26,14 +28,14 @@ exports.cancelPatientAppointments = async (patientId, reason) => {
         {
             patientId,
             status: {
-                $in: ["BOOKED", "IN-PROCESS"]
-            }
+                $in: ["BOOKED", "IN-PROCESS"],
+            },
         },
         {
             $set: {
                 status: "CANCELLED",
-                cancellationReason: reason
-            }
+                cancellationReason: reason,
+            },
         }
     );
 
@@ -55,9 +57,7 @@ exports.createAppointment = async (req, res) => {
             );
         }
 
-        const patient = await Patient.findOne({
-            UHID: patientId
-        });
+        const patient = await Patient.findOne({ UHID: patientId });
 
         if (!patient) {
             return res.status(404).json(
@@ -66,7 +66,7 @@ exports.createAppointment = async (req, res) => {
         }
 
         const doctor = await Employee.findOne({
-            employeeCode: doctorEmployeeId
+            employeeCode: doctorEmployeeId,
         });
 
         if (!doctor) {
@@ -76,7 +76,7 @@ exports.createAppointment = async (req, res) => {
         }
 
         const doctorUser = await User.findOne({
-            employeeId: doctor.employeeCode
+            employeeId: doctor.employeeCode,
         });
 
         if (!doctorUser) {
@@ -135,12 +135,12 @@ exports.createAppointment = async (req, res) => {
             doctorEmployeeId,
             date: {
                 $gte: startOfDay,
-                $lt: endOfDay
+                $lt: endOfDay,
             },
             timeSlot,
             status: {
-                $in: ["BOOKED", "IN-PROCESS"]
-            }
+                $in: SLOT_BLOCKING_STATUSES,
+            },
         });
 
         if (existingAppointment) {
@@ -158,7 +158,7 @@ exports.createAppointment = async (req, res) => {
             date: appointmentDate,
             timeSlot,
             createdByEmployeeId,
-            status: "BOOKED"
+            status: "BOOKED",
         });
 
         if (patient.email) {
@@ -167,30 +167,20 @@ exports.createAppointment = async (req, res) => {
                 subject: "Appointment Confirmation - HMS",
                 html: `
                     <h2>Appointment Confirmed</h2>
-
                     <p>Your appointment has been successfully booked.</p>
-
                     <p><strong>Doctor:</strong> Dr. ${doctor.name}</p>
                     <p><strong>Date:</strong> ${appointmentDate.toDateString()}</p>
                     <p><strong>Time:</strong> ${timeSlot}</p>
-
                     <p>Please arrive at least 10 minutes before your scheduled time.</p>
-
                     <p>Thank you,<br/>HMS Team</p>
-                `
+                `,
             });
         }
 
         return res.status(201).json(
-            new ApiResponse(
-                201,
-                appointment,
-                "Appointment created successfully"
-            )
+            new ApiResponse(201, appointment, "Appointment created successfully")
         );
-
     } catch (err) {
-        console.error(err);
         return res.status(500).json(
             new ApiError(500, err.message || "Internal Server Error")
         );
@@ -207,7 +197,7 @@ exports.getAppointments = async (req, res) => {
             appointments = await Appointment.find().sort({ createdAt: -1 });
         } else if (userRole === "DOCTOR") {
             const doctor = await Employee.findOne({
-                email: req.user.email
+                email: req.user.email,
             });
 
             if (!doctor) {
@@ -217,7 +207,7 @@ exports.getAppointments = async (req, res) => {
             }
 
             appointments = await Appointment.find({
-                doctorEmployeeId: doctor.employeeCode
+                doctorEmployeeId: doctor.employeeCode,
             }).sort({ createdAt: -1 });
         } else {
             return res.status(403).json(
@@ -228,16 +218,15 @@ exports.getAppointments = async (req, res) => {
         const formattedAppointments = await Promise.all(
             appointments.map(async (appointment) => {
                 const patient = await Patient.findOne({
-                    UHID: appointment.patientId
+                    UHID: appointment.patientId,
                 });
 
                 const doctor = await Employee.findOne({
-                    employeeCode: appointment.doctorEmployeeId
+                    employeeCode: appointment.doctorEmployeeId,
                 });
 
                 return {
                     _id: appointment._id,
-
                     appointmentId: appointment.appointmentId,
 
                     patientId: appointment.patientId,
@@ -259,7 +248,7 @@ exports.getAppointments = async (req, res) => {
                     createdByEmployeeId: appointment.createdByEmployeeId || null,
 
                     createdAt: appointment.createdAt,
-                    updatedAt: appointment.updatedAt
+                    updatedAt: appointment.updatedAt,
                 };
             })
         );
@@ -271,7 +260,6 @@ exports.getAppointments = async (req, res) => {
                 "Appointments fetched successfully"
             )
         );
-
     } catch (err) {
         return res.status(500).json(
             new ApiError(500, err.message || "Internal Server Error")
@@ -292,13 +280,8 @@ exports.getAppointmentById = async (req, res) => {
         }
 
         return res.status(200).json(
-            new ApiResponse(
-                200,
-                appointment,
-                "Appointment retrieved successfully"
-            )
+            new ApiResponse(200, appointment, "Appointment retrieved successfully")
         );
-
     } catch (err) {
         return res.status(500).json(
             new ApiError(500, err.message || "Internal Server Error")
@@ -321,10 +304,11 @@ exports.updateAppointment = async (req, res) => {
 
         if (status) {
             const allowedStatus = [
+                "PENDING",
                 "BOOKED",
                 "IN-PROCESS",
                 "COMPLETED",
-                "CANCELLED"
+                "CANCELLED",
             ];
 
             if (!allowedStatus.includes(status)) {
@@ -345,7 +329,7 @@ exports.updateAppointment = async (req, res) => {
             appointment.timeSlot = timeSlot;
         }
 
-        if (date || timeSlot) {
+        if (date || timeSlot || status) {
             const { startOfDay, endOfDay } = getDateRange(appointment.date);
 
             const existing = await Appointment.findOne({
@@ -353,15 +337,18 @@ exports.updateAppointment = async (req, res) => {
                 doctorEmployeeId: appointment.doctorEmployeeId,
                 date: {
                     $gte: startOfDay,
-                    $lt: endOfDay
+                    $lt: endOfDay,
                 },
                 timeSlot: appointment.timeSlot,
                 status: {
-                    $in: ["BOOKED", "IN-PROCESS"]
-                }
+                    $in: SLOT_BLOCKING_STATUSES,
+                },
             });
 
-            if (existing) {
+            if (
+                existing &&
+                SLOT_BLOCKING_STATUSES.includes(appointment.status)
+            ) {
                 return res.status(409).json(
                     new ApiError(409, "Slot already booked")
                 );
@@ -371,13 +358,8 @@ exports.updateAppointment = async (req, res) => {
         await appointment.save();
 
         return res.status(200).json(
-            new ApiResponse(
-                200,
-                appointment,
-                "Appointment updated successfully"
-            )
+            new ApiResponse(200, appointment, "Appointment updated successfully")
         );
-
     } catch (err) {
         return res.status(500).json(
             new ApiError(500, err.message || "Internal Server Error")
@@ -400,13 +382,8 @@ exports.deleteAppointment = async (req, res) => {
         await Appointment.deleteOne({ appointmentId });
 
         return res.status(200).json(
-            new ApiResponse(
-                200,
-                null,
-                "Appointment deleted successfully"
-            )
+            new ApiResponse(200, null, "Appointment deleted successfully")
         );
-
     } catch (err) {
         return res.status(500).json(
             new ApiError(500, err.message || "Internal Server Error")
@@ -433,11 +410,11 @@ exports.approveAppointment = async (req, res) => {
         }
 
         const patient = await Patient.findOne({
-            UHID: appointment.patientId
+            UHID: appointment.patientId,
         });
 
         const doctor = await Employee.findOne({
-            employeeCode: appointment.doctorEmployeeId
+            employeeCode: appointment.doctorEmployeeId,
         });
 
         const { startOfDay, endOfDay } = getDateRange(appointment.date);
@@ -447,12 +424,12 @@ exports.approveAppointment = async (req, res) => {
             doctorEmployeeId: appointment.doctorEmployeeId,
             date: {
                 $gte: startOfDay,
-                $lt: endOfDay
+                $lt: endOfDay,
             },
             timeSlot: appointment.timeSlot,
             status: {
-                $in: ["BOOKED", "IN-PROCESS"]
-            }
+                $in: ["BOOKED", "IN-PROCESS"],
+            },
         });
 
         if (conflict) {
@@ -461,29 +438,6 @@ exports.approveAppointment = async (req, res) => {
                 "Requested slot became unavailable before approval";
 
             await appointment.save();
-
-            if (patient?.email) {
-                await sendEmail({
-                    to: patient.email,
-                    subject: "Appointment Request Cancelled - HMS",
-                    html: `
-                        <h2>Appointment Request Cancelled</h2>
-
-                        <p>Hello ${patient.name},</p>
-
-                        <p>Your appointment request could not be approved because the requested slot is no longer available.</p>
-
-                        <p><strong>Appointment ID:</strong> ${appointment.appointmentId}</p>
-                        <p><strong>Doctor:</strong> Dr. ${doctor?.name || "N/A"}</p>
-                        <p><strong>Date:</strong> ${appointment.date?.toDateString()}</p>
-                        <p><strong>Time:</strong> ${appointment.timeSlot}</p>
-
-                        <p>Please book another available slot.</p>
-
-                        <p>Thank you,<br/>HMS Team</p>
-                    `
-                });
-            }
 
             return res.status(409).json(
                 new ApiResponse(
@@ -505,31 +459,21 @@ exports.approveAppointment = async (req, res) => {
                 subject: "Appointment Approved - HMS",
                 html: `
                     <h2>Appointment Approved</h2>
-
                     <p>Hello ${patient.name},</p>
-
                     <p>Your appointment request has been approved.</p>
-
                     <p><strong>Appointment ID:</strong> ${appointment.appointmentId}</p>
                     <p><strong>Doctor:</strong> Dr. ${doctor?.name || "N/A"}</p>
                     <p><strong>Date:</strong> ${appointment.date?.toDateString()}</p>
                     <p><strong>Time:</strong> ${appointment.timeSlot}</p>
-
                     <p>Please arrive at least 10 minutes before your scheduled time.</p>
-
                     <p>Thank you,<br/>HMS Team</p>
-                `
+                `,
             });
         }
 
         return res.status(200).json(
-            new ApiResponse(
-                200,
-                appointment,
-                "Appointment approved successfully"
-            )
+            new ApiResponse(200, appointment, "Appointment approved successfully")
         );
-
     } catch (err) {
         return res.status(500).json(
             new ApiError(500, err.message || "Internal Server Error")
@@ -556,11 +500,11 @@ exports.rejectAppointment = async (req, res) => {
         }
 
         const patient = await Patient.findOne({
-            UHID: appointment.patientId
+            UHID: appointment.patientId,
         });
 
         const doctor = await Employee.findOne({
-            employeeCode: appointment.doctorEmployeeId
+            employeeCode: appointment.doctorEmployeeId,
         });
 
         appointment.status = "CANCELLED";
@@ -575,31 +519,21 @@ exports.rejectAppointment = async (req, res) => {
                 subject: "Appointment Request Rejected - HMS",
                 html: `
                     <h2>Appointment Request Rejected</h2>
-
                     <p>Hello ${patient.name},</p>
-
                     <p>Your appointment request has been rejected by hospital staff.</p>
-
                     <p><strong>Appointment ID:</strong> ${appointment.appointmentId}</p>
                     <p><strong>Doctor:</strong> Dr. ${doctor?.name || "N/A"}</p>
                     <p><strong>Date:</strong> ${appointment.date?.toDateString()}</p>
                     <p><strong>Time:</strong> ${appointment.timeSlot}</p>
-
                     <p>Please contact hospital reception or book another available slot.</p>
-
                     <p>Thank you,<br/>HMS Team</p>
-                `
+                `,
             });
         }
 
         return res.status(200).json(
-            new ApiResponse(
-                200,
-                appointment,
-                "Appointment rejected successfully"
-            )
+            new ApiResponse(200, appointment, "Appointment rejected successfully")
         );
-
     } catch (err) {
         return res.status(500).json(
             new ApiError(500, err.message || "Internal Server Error")

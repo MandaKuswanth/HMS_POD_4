@@ -19,7 +19,6 @@ const AppointmentContext = createContext(null);
 
 const normalizeList = (payload) => {
     const data = payload?.data || payload;
-
     return Array.isArray(data) ? data : [];
 };
 
@@ -27,14 +26,8 @@ const normalizeSlots = (payload, fallbackSlots = []) => {
     const data = payload?.data || payload || {};
 
     return {
-        allSlots: Array.isArray(data.allSlots)
-            ? data.allSlots
-            : fallbackSlots,
-
-        bookedSlots: Array.isArray(data.bookedSlots)
-            ? data.bookedSlots
-            : [],
-
+        allSlots: Array.isArray(data.allSlots) ? data.allSlots : fallbackSlots,
+        bookedSlots: Array.isArray(data.bookedSlots) ? data.bookedSlots : [],
         availableSlots: Array.isArray(data.availableSlots)
             ? data.availableSlots
             : fallbackSlots,
@@ -58,13 +51,10 @@ export function AppointmentProvider({ children }) {
     const loadDoctors = useCallback(async () => {
         try {
             setDoctorsLoading(true);
-
             const payload = await getDoctorsApi();
-
             setDoctors(normalizeList(payload));
         } catch (err) {
             console.log("LOAD DOCTORS ERROR:", err?.response?.data || err.message);
-
             setDoctors([]);
         } finally {
             setDoctorsLoading(false);
@@ -74,16 +64,10 @@ export function AppointmentProvider({ children }) {
     const loadAppointments = useCallback(async () => {
         try {
             setAppointmentsLoading(true);
-
             const payload = await getMyAppointmentsApi();
-
             setAppointments(normalizeList(payload));
         } catch (err) {
-            console.log(
-                "LOAD APPOINTMENTS ERROR:",
-                err?.response?.data || err.message
-            );
-
+            console.log("LOAD APPOINTMENTS ERROR:", err?.response?.data || err.message);
             setAppointments([]);
         } finally {
             setAppointmentsLoading(false);
@@ -101,7 +85,6 @@ export function AppointmentProvider({ children }) {
                 bookedSlots: [],
                 availableSlots: fallbackSlots,
             });
-
             return;
         }
 
@@ -113,22 +96,9 @@ export function AppointmentProvider({ children }) {
                 date
             );
 
-            setDoctorSlots(
-                normalizeSlots(payload, fallbackSlots)
-            );
+            setDoctorSlots(normalizeSlots(payload, fallbackSlots));
         } catch (err) {
-            /*
-                If your backend does not have this route yet:
-
-                GET /patientAppointment-auth/doctors/:doctorEmployeeId/slots?date=YYYY-MM-DD
-
-                then this fallback will show doctor's availability slots.
-            */
-
-            console.log(
-                "LOAD DOCTOR SLOTS ERROR:",
-                err?.response?.data || err.message
-            );
+            console.log("LOAD DOCTOR SLOTS ERROR:", err?.response?.data || err.message);
 
             setDoctorSlots({
                 allSlots: fallbackSlots,
@@ -142,9 +112,7 @@ export function AppointmentProvider({ children }) {
 
     const bookAppointment = useCallback(async (appointmentData) => {
         const result = await bookAppointmentApi(appointmentData);
-
         await loadAppointments();
-
         return result;
     }, [loadAppointments]);
 
@@ -158,15 +126,12 @@ export function AppointmentProvider({ children }) {
         );
 
         await loadAppointments();
-
         return result;
     }, [loadAppointments]);
 
     const cancelAppointment = useCallback(async (appointmentId) => {
         const result = await cancelAppointmentApi(appointmentId);
-
         await loadAppointments();
-
         return result;
     }, [loadAppointments]);
 

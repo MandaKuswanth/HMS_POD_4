@@ -4,16 +4,23 @@ const auth = require("../middleware/authMiddleware");
 
 const {
     getDoctors,
+    getDoctorSlots,
     bookAppointment,
     getMyAppointments,
     updateMyAppointment,
-    cancelMyAppointment
+    cancelMyAppointment,
 } = require("../controllers/patientAppointmentController");
 
 router.get(
     "/doctors",
     auth,
     getDoctors
+);
+
+router.get(
+    "/slots",
+    auth,
+    getDoctorSlots
 );
 
 router.post(

@@ -12,22 +12,6 @@ export const getDoctorsApi = async () => {
     return unwrap(response);
 };
 
-export const getDoctorSlotsApi = async (
-    doctorEmployeeId,
-    date
-) => {
-    const response = await api.get(
-        `/patientAppointment-auth/doctors/${doctorEmployeeId}/slots`,
-        {
-            params: {
-                date,
-            },
-        }
-    );
-
-    return unwrap(response);
-};
-
 export const bookAppointmentApi = async (data) => {
     const response = await api.post(
         "/patientAppointment-auth/patient-appointments",
@@ -63,6 +47,19 @@ export const cancelAppointmentApi = async (
     const response = await api.put(
         `/patientAppointment-auth/patient-appointments/${appointmentId}/cancel`,
         {}
+    );
+
+    return unwrap(response);
+};
+export const getDoctorSlotsApi = async (doctorEmployeeId, date) => {
+    const response = await api.get(
+        "/patientAppointment-auth/slots",
+        {
+            params: {
+                doctorEmployeeId,
+                date,
+            },
+        }
     );
 
     return unwrap(response);

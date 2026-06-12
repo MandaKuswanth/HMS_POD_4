@@ -5,6 +5,8 @@ const User = require("../models/User");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 
+const SLOT_BLOCKING_STATUSES = ["PENDING", "BOOKED", "IN-PROCESS"];
+
 const getDateRange = (dateValue) => {
     const startOfDay = new Date(dateValue);
     startOfDay.setHours(0, 0, 0, 0);
@@ -14,7 +16,7 @@ const getDateRange = (dateValue) => {
 
     return {
         startOfDay,
-        endOfDay
+        endOfDay,
     };
 };
 
@@ -26,18 +28,18 @@ exports.getDoctors = async (req, res) => {
     try {
         const doctorUsers = await User.find({
             roles: "DOCTOR",
-            status: true
+            status: true,
         });
 
         const doctorEmployeeIds = doctorUsers.map(
-            doctor => doctor.employeeId
+            (doctor) => doctor.employeeId
         );
 
         const doctors = await Employee.find({
             employeeCode: {
-                $in: doctorEmployeeIds
+                $in: doctorEmployeeIds,
             },
-            status: true
+            status: true,
         });
 
         return res.status(200).json(
@@ -47,12 +49,78 @@ exports.getDoctors = async (req, res) => {
                 "Doctors fetched successfully"
             )
         );
+    } catch (err) {
+        return res.status(500).json(
+            new ApiError(500, err.message || "Internal Server Error")
+        );
+    }
+};
 
+exports.getDoctorSlots = async (req, res) => {
+    try {
+        const { doctorEmployeeId, date } = req.query;
+
+        if (!doctorEmployeeId || !date) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "doctorEmployeeId and date are required"
+                )
+            );
+        }
+
+        const doctor = await Employee.findOne({
+            employeeCode: doctorEmployeeId,
+            status: true,
+        });
+
+        if (!doctor) {
+            return res.status(404).json(
+                new ApiError(404, "Doctor not found")
+            );
+        }
+
+        const appointmentDate = new Date(date);
+        appointmentDate.setHours(0, 0, 0, 0);
+
+        const { startOfDay, endOfDay } = getDateRange(appointmentDate);
+
+        const allSlots =
+            Array.isArray(doctor.availabilitySlots) &&
+                doctor.availabilitySlots.length > 0
+                ? doctor.availabilitySlots
+                : [];
+
+        const appointments = await Appointment.find({
+            doctorEmployeeId,
+            date: {
+                $gte: startOfDay,
+                $lt: endOfDay,
+            },
+            status: {
+                $in: SLOT_BLOCKING_STATUSES,
+            },
+        });
+
+        const bookedSlots = appointments.map(
+            (appointment) => appointment.timeSlot
+        );
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    allSlots,
+                    bookedSlots,
+                },
+                "Doctor slots fetched successfully"
+            )
+        );
     } catch (err) {
         return res.status(500).json(
             new ApiError(
                 500,
-                err.message
+                err.message || "Failed to fetch doctor slots"
             )
         );
     }
@@ -60,11 +128,7 @@ exports.getDoctors = async (req, res) => {
 
 exports.bookAppointment = async (req, res) => {
     try {
-        const {
-            doctorEmployeeId,
-            date,
-            timeSlot
-        } = req.body;
+        const { doctorEmployeeId, date, timeSlot, reason } = req.body;
 
         const patientId = getPatientId(req);
 
@@ -77,35 +141,66 @@ exports.bookAppointment = async (req, res) => {
             );
         }
 
-        if (
-            !doctorEmployeeId ||
-            !date ||
-            !timeSlot
-        ) {
+        if (!doctorEmployeeId || !date || !timeSlot) {
             return res.status(400).json(
-                new ApiError(
-                    400,
-                    "All fields are required"
-                )
+                new ApiError(400, "All fields are required")
             );
         }
 
         const doctor = await Employee.findOne({
             employeeCode: doctorEmployeeId,
-            status: true
+            status: true,
         });
 
         if (!doctor) {
             return res.status(404).json(
-                new ApiError(
-                    404,
-                    "Doctor not found"
-                )
+                new ApiError(404, "Doctor not found")
+            );
+        }
+
+        const doctorUser = await User.findOne({
+            employeeId: doctor.employeeCode,
+            roles: "DOCTOR",
+            status: true,
+        });
+
+        if (!doctorUser) {
+            return res.status(400).json(
+                new ApiError(400, "Selected employee is not an active doctor")
             );
         }
 
         const appointmentDate = new Date(date);
         appointmentDate.setHours(0, 0, 0, 0);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+
+        if (appointmentDate < tomorrow) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "Appointments can be booked only from tomorrow onwards"
+                )
+            );
+        }
+
+        if (doctor.joiningDate) {
+            const doctorJoiningDate = new Date(doctor.joiningDate);
+            doctorJoiningDate.setHours(0, 0, 0, 0);
+
+            if (appointmentDate < doctorJoiningDate) {
+                return res.status(400).json(
+                    new ApiError(
+                        400,
+                        "Appointment cannot be booked before doctor's joining date"
+                    )
+                );
+            }
+        }
 
         const { startOfDay, endOfDay } = getDateRange(appointmentDate);
 
@@ -113,33 +208,29 @@ exports.bookAppointment = async (req, res) => {
             doctorEmployeeId,
             date: {
                 $gte: startOfDay,
-                $lt: endOfDay
+                $lt: endOfDay,
             },
             timeSlot,
             status: {
-                $in: ["BOOKED", "IN-PROCESS"]
-            }
+                $in: SLOT_BLOCKING_STATUSES,
+            },
         });
 
         if (doctorConflict) {
             return res.status(409).json(
-                new ApiError(
-                    409,
-                    "Selected slot is already booked"
-                )
+                new ApiError(409, "Selected slot is already booked")
             );
         }
-
         const patientConflict = await Appointment.findOne({
             patientId,
             date: {
                 $gte: startOfDay,
-                $lt: endOfDay
+                $lt: endOfDay,
             },
             timeSlot,
             status: {
-                $in: ["PENDING", "BOOKED", "IN-PROCESS"]
-            }
+                $in: SLOT_BLOCKING_STATUSES,
+            },
         });
 
         if (patientConflict) {
@@ -156,7 +247,8 @@ exports.bookAppointment = async (req, res) => {
             doctorEmployeeId,
             date: appointmentDate,
             timeSlot,
-            status: "PENDING"
+            reason: reason || "",
+            status: "PENDING",
         });
 
         return res.status(201).json(
@@ -166,13 +258,9 @@ exports.bookAppointment = async (req, res) => {
                 "Appointment request submitted successfully"
             )
         );
-
     } catch (err) {
         return res.status(500).json(
-            new ApiError(
-                500,
-                err.message
-            )
+            new ApiError(500, err.message || "Internal Server Error")
         );
     }
 };
@@ -191,25 +279,23 @@ exports.getMyAppointments = async (req, res) => {
         }
 
         const appointments = await Appointment.find({
-            patientId
+            patientId,
         }).sort({
-            createdAt: -1
+            createdAt: -1,
         });
 
         const appointmentList = await Promise.all(
-            appointments.map(
-                async appointment => {
-                    const doctor = await Employee.findOne({
-                        employeeCode: appointment.doctorEmployeeId
-                    });
+            appointments.map(async (appointment) => {
+                const doctor = await Employee.findOne({
+                    employeeCode: appointment.doctorEmployeeId,
+                });
 
-                    return {
-                        ...appointment.toObject(),
-                        doctorName: doctor?.name || "",
-                        specialization: doctor?.specialization || ""
-                    };
-                }
-            )
+                return {
+                    ...appointment.toObject(),
+                    doctorName: doctor?.name || "",
+                    specialization: doctor?.specialization || "",
+                };
+            })
         );
 
         return res.status(200).json(
@@ -219,13 +305,9 @@ exports.getMyAppointments = async (req, res) => {
                 "Appointments fetched successfully"
             )
         );
-
     } catch (err) {
         return res.status(500).json(
-            new ApiError(
-                500,
-                err.message
-            )
+            new ApiError(500, err.message || "Internal Server Error")
         );
     }
 };
@@ -233,11 +315,7 @@ exports.getMyAppointments = async (req, res) => {
 exports.updateMyAppointment = async (req, res) => {
     try {
         const { appointmentId } = req.params;
-
-        const {
-            date,
-            timeSlot
-        } = req.body;
+        const { date, timeSlot } = req.body;
 
         const patientId = getPatientId(req);
 
@@ -252,78 +330,109 @@ exports.updateMyAppointment = async (req, res) => {
 
         const appointment = await Appointment.findOne({
             appointmentId,
-            patientId
+            patientId,
         });
 
         if (!appointment) {
             return res.status(404).json(
-                new ApiError(
-                    404,
-                    "Appointment not found"
-                )
+                new ApiError(404, "Appointment not found")
             );
         }
 
-        if (appointment.status !== "PENDING") {
+        if (!["PENDING", "BOOKED"].includes(appointment.status)) {
             return res.status(400).json(
                 new ApiError(
                     400,
-                    "Only pending appointments can be edited"
+                    "Only pending or booked appointments can be edited"
                 )
             );
         }
 
         if (!date || !timeSlot) {
             return res.status(400).json(
-                new ApiError(
-                    400,
-                    "Date and time slot are required"
-                )
+                new ApiError(400, "Date and time slot are required")
             );
         }
 
         const appointmentDate = new Date(date);
         appointmentDate.setHours(0, 0, 0, 0);
 
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+
+        if (appointmentDate < tomorrow) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "Appointments can be booked only from tomorrow onwards"
+                )
+            );
+        }
+
+        const doctor = await Employee.findOne({
+            employeeCode: appointment.doctorEmployeeId,
+            status: true,
+        });
+
+        if (!doctor) {
+            return res.status(404).json(
+                new ApiError(404, "Doctor not found or inactive")
+            );
+        }
+
+        if (doctor.joiningDate) {
+            const doctorJoiningDate = new Date(doctor.joiningDate);
+            doctorJoiningDate.setHours(0, 0, 0, 0);
+
+            if (appointmentDate < doctorJoiningDate) {
+                return res.status(400).json(
+                    new ApiError(
+                        400,
+                        "Appointment cannot be booked before doctor's joining date"
+                    )
+                );
+            }
+        }
+
         const { startOfDay, endOfDay } = getDateRange(appointmentDate);
 
         const doctorConflict = await Appointment.findOne({
             _id: {
-                $ne: appointment._id
+                $ne: appointment._id,
             },
             doctorEmployeeId: appointment.doctorEmployeeId,
             date: {
                 $gte: startOfDay,
-                $lt: endOfDay
+                $lt: endOfDay,
             },
             timeSlot,
             status: {
-                $in: ["BOOKED", "IN-PROCESS"]
-            }
+                $in: SLOT_BLOCKING_STATUSES,
+            },
         });
 
         if (doctorConflict) {
             return res.status(409).json(
-                new ApiError(
-                    409,
-                    "Selected slot is already booked"
-                )
+                new ApiError(409, "Selected slot is already booked")
             );
         }
 
         const patientConflict = await Appointment.findOne({
             _id: {
-                $ne: appointment._id
+                $ne: appointment._id,
             },
             patientId,
             date: {
                 $gte: startOfDay,
-                $lt: endOfDay
+                $lt: endOfDay,
             },
             timeSlot,
             status: {
-                $in: ["PENDING", "BOOKED", "IN-PROCESS"]
-            }
+                $in: SLOT_BLOCKING_STATUSES,
+            },
         });
 
         if (patientConflict) {
@@ -347,22 +456,16 @@ exports.updateMyAppointment = async (req, res) => {
                 "Appointment updated successfully"
             )
         );
-
     } catch (err) {
         return res.status(500).json(
-            new ApiError(
-                500,
-                err.message
-            )
+            new ApiError(500, err.message || "Internal Server Error")
         );
     }
 };
 
 exports.cancelMyAppointment = async (req, res) => {
     try {
-        const {
-            appointmentId
-        } = req.params;
+        const { appointmentId } = req.params;
 
         const patientId = getPatientId(req);
 
@@ -377,15 +480,12 @@ exports.cancelMyAppointment = async (req, res) => {
 
         const appointment = await Appointment.findOne({
             appointmentId,
-            patientId
+            patientId,
         });
 
         if (!appointment) {
             return res.status(404).json(
-                new ApiError(
-                    404,
-                    "Appointment not found"
-                )
+                new ApiError(404, "Appointment not found")
             );
         }
 
@@ -394,6 +494,15 @@ exports.cancelMyAppointment = async (req, res) => {
                 new ApiError(
                     400,
                     "Completed appointment cannot be cancelled"
+                )
+            );
+        }
+
+        if (appointment.status === "CANCELLED") {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "Appointment is already cancelled"
                 )
             );
         }
@@ -410,13 +519,9 @@ exports.cancelMyAppointment = async (req, res) => {
                 "Appointment cancelled successfully"
             )
         );
-
     } catch (err) {
         return res.status(500).json(
-            new ApiError(
-                500,
-                err.message
-            )
+            new ApiError(500, err.message || "Internal Server Error")
         );
     }
 };
