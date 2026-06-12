@@ -23,11 +23,11 @@ import COLORS from "../../utils/colors";
 import { formatDateDisplay } from "../../utils/dateUtils";
 
 const canEdit = (status) => {
-    return ["PENDING", "BOOKED"].includes(status);
+    return status === "PENDING";
 };
 
 const canCancel = (status) => {
-    return !["COMPLETED", "CANCELLED"].includes(status);
+    return status !== "COMPLETED" && status !== "CANCELLED";
 };
 
 export default function MyAppointmentsScreen({

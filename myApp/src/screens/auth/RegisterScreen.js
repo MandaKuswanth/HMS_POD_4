@@ -2,7 +2,6 @@ import React, { useState } from "react";
 
 import {
     Alert,
-    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -10,13 +9,16 @@ import {
     View,
 } from "react-native";
 
-import DateTimePicker from "@react-native-community/datetimepicker";
-
 import AppButton from "../../components/AppButton";
 import AppCard from "../../components/AppCard";
 import AppContainer from "../../components/AppContainer";
 import AppInput from "../../components/AppInput";
 import SectionLabel from "../../components/SectionLabel";
+
+import ChipSelector from "../../components/forms/ChipSelector";
+import DatePickerField from "../../components/forms/DatePickerField";
+import AddressForm from "../../components/forms/AddressForm";
+import EmergencyContactForm from "../../components/forms/EmergencyContactForm";
 
 import { useAuth } from "../../context/AuthContext";
 
@@ -26,24 +28,12 @@ import { formatDateForApi } from "../../utils/dateUtils";
 import {
     firstErrorMessage,
     isEmpty,
-    isFutureDate,
     isValidEmail,
     isValidIndianMobile,
     isValidPassword,
     isValidPincode,
     validateRegisterSubmit,
 } from "../../utils/validators";
-
-const BLOOD_GROUPS = [
-    "A+",
-    "A-",
-    "B+",
-    "B-",
-    "AB+",
-    "AB-",
-    "O+",
-    "O-",
-];
 
 export default function RegisterScreen({ navigation }) {
     const { register } = useAuth();
@@ -57,7 +47,6 @@ export default function RegisterScreen({ navigation }) {
     const [bloodGroup, setBloodGroup] = useState("");
 
     const [dob, setDob] = useState(null);
-    const [showDobPicker, setShowDobPicker] = useState(false);
 
     const [street, setStreet] = useState("");
     const [city, setCity] = useState("");
@@ -67,6 +56,26 @@ export default function RegisterScreen({ navigation }) {
     const [ecName, setEcName] = useState("");
     const [ecRelation, setEcRelation] = useState("");
     const [ecPhone, setEcPhone] = useState("");
+    const GENDER_OPTIONS = [
+        "male",
+        "female",
+        "others",
+    ];
+
+    const BLOOD_GROUPS = [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "O+",
+        "O-",
+    ];
+
+    const formatGender = (gender) => {
+        return gender.charAt(0).toUpperCase() + gender.slice(1);
+    };
 
     const [errors, setErrors] = useState({
         name: "",
@@ -206,12 +215,6 @@ export default function RegisterScreen({ navigation }) {
         try {
             setLoading(true);
 
-            /*
-                If your backend patient model expects address as STRING,
-                replace address object with:
-                address: [street, city, stateName, pincode].filter(Boolean).join(", ")
-            */
-
             await register({
                 name: name.trim(),
                 phone: phone.trim(),
@@ -305,197 +308,57 @@ export default function RegisterScreen({ navigation }) {
                             error={errors.password}
                         />
 
-                        <Text style={styles.label}>
-                            Gender *
-                        </Text>
-
-                        <View style={styles.chipRow}>
-                            {["male", "female", "others"].map((g) => (
-                                <TouchableOpacity
-                                    key={g}
-                                    style={[
-                                        styles.chip,
-                                        gender === g &&
-                                        styles.chipActive,
-                                    ]}
-                                    onPress={() => {
-                                        setGender(g);
-                                        updateError("gender", "");
-                                    }}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.chipText,
-                                            gender === g &&
-                                            styles.chipTextActive,
-                                        ]}
-                                    >
-                                        {g.charAt(0).toUpperCase() +
-                                            g.slice(1)}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-
-                        {errors.gender ? (
-                            <Text style={styles.inlineError}>
-                                {errors.gender}
-                            </Text>
-                        ) : null}
-
-                        <Text style={styles.label}>
-                            Blood Group
-                        </Text>
-
-                        <View style={styles.chipRow}>
-                            {BLOOD_GROUPS.map((bg) => (
-                                <TouchableOpacity
-                                    key={bg}
-                                    style={[
-                                        styles.chip,
-                                        bloodGroup === bg &&
-                                        styles.chipActive,
-                                    ]}
-                                    onPress={() =>
-                                        setBloodGroup(bg)
-                                    }
-                                >
-                                    <Text
-                                        style={[
-                                            styles.chipText,
-                                            bloodGroup === bg &&
-                                            styles.chipTextActive,
-                                        ]}
-                                    >
-                                        {bg}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-
-                        <Text style={styles.label}>
-                            Date of Birth *
-                        </Text>
-
-                        <TouchableOpacity
-                            style={[
-                                styles.dateBtn,
-                                errors.dob &&
-                                styles.dateBtnError,
-                            ]}
-                            onPress={() =>
-                                setShowDobPicker(true)
-                            }
-                        >
-                            <Text
-                                style={[
-                                    styles.dateBtnText,
-                                    !dob && {
-                                        color: COLORS.subtitle,
-                                    },
-                                ]}
-                            >
-                                {dob
-                                    ? formatDateForApi(dob)
-                                    : "Select date of birth"}
-                            </Text>
-                        </TouchableOpacity>
-
-                        {errors.dob ? (
-                            <Text style={styles.inlineError}>
-                                {errors.dob}
-                            </Text>
-                        ) : null}
-
-                        {showDobPicker && (
-                            <DateTimePicker
-                                value={
-                                    dob ||
-                                    new Date(2000, 0, 1)
-                                }
-                                mode="date"
-                                maximumDate={new Date()}
-                                onChange={(
-                                    event,
-                                    selectedDate
-                                ) => {
-                                    if (
-                                        Platform.OS ===
-                                        "android"
-                                    ) {
-                                        setShowDobPicker(false);
-                                    }
-
-                                    if (selectedDate) {
-                                        setDob(selectedDate);
-
-                                        updateError(
-                                            "dob",
-                                            isFutureDate(
-                                                selectedDate
-                                            )
-                                                ? "Date of birth cannot be a future date"
-                                                : ""
-                                        );
-                                    }
-
-                                    if (
-                                        Platform.OS === "ios"
-                                    ) {
-                                        setShowDobPicker(false);
-                                    }
-                                }}
-                            />
-                        )}
-
-                        <SectionLabel text="Address" />
-
-                        <AppInput
-                            placeholder="Street Address"
-                            value={street}
-                            onChangeText={setStreet}
+                        <ChipSelector
+                            label="Gender"
+                            options={GENDER_OPTIONS}
+                            value={gender}
+                            required
+                            error={errors.gender}
+                            formatLabel={formatGender}
+                            onChange={(value) => {
+                                setGender(value);
+                                updateError("gender", "");
+                            }}
                         />
 
-                        <AppInput
-                            placeholder="City"
-                            value={city}
-                            onChangeText={setCity}
+                        <ChipSelector
+                            label="Blood Group"
+                            options={BLOOD_GROUPS}
+                            value={bloodGroup}
+                            onChange={setBloodGroup}
                         />
 
-                        <AppInput
-                            placeholder="State"
-                            value={stateName}
-                            onChangeText={setStateName}
+                        <DatePickerField
+                            label="Date of Birth"
+                            value={dob}
+                            required
+                            error={errors.dob}
+                            onChange={(selectedDate) => {
+                                setDob(selectedDate);
+                                updateError("dob", "");
+                            }}
                         />
 
-                        <AppInput
-                            placeholder="Pincode"
-                            value={pincode}
-                            onChangeText={handlePincodeChange}
-                            keyboardType="numeric"
-                            error={errors.pincode}
+                        <AddressForm
+                            street={street}
+                            city={city}
+                            stateName={stateName}
+                            pincode={pincode}
+                            onStreetChange={setStreet}
+                            onCityChange={setCity}
+                            onStateChange={setStateName}
+                            onPincodeChange={handlePincodeChange}
+                            pincodeError={errors.pincode}
                         />
 
-                        <SectionLabel text="Emergency Contact" />
-
-                        <AppInput
-                            placeholder="Contact Name"
-                            value={ecName}
-                            onChangeText={setEcName}
-                        />
-
-                        <AppInput
-                            placeholder="Relation"
-                            value={ecRelation}
-                            onChangeText={setEcRelation}
-                        />
-
-                        <AppInput
-                            placeholder="Contact Phone"
-                            value={ecPhone}
-                            onChangeText={handleEmergencyPhoneChange}
-                            keyboardType="phone-pad"
-                            error={errors.emergencyPhone}
+                        <EmergencyContactForm
+                            name={ecName}
+                            relation={ecRelation}
+                            phone={ecPhone}
+                            onNameChange={setEcName}
+                            onRelationChange={setEcRelation}
+                            onPhoneChange={handleEmergencyPhoneChange}
+                            phoneError={errors.emergencyPhone}
                         />
 
                         <AppButton
@@ -551,70 +414,6 @@ const styles = StyleSheet.create({
         color: COLORS.subtitle,
         marginTop: 6,
         marginBottom: 24,
-    },
-
-    label: {
-        fontSize: 15,
-        fontWeight: "800",
-        color: COLORS.text,
-        marginBottom: 10,
-    },
-
-    chipRow: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 8,
-        marginBottom: 14,
-    },
-
-    chip: {
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 50,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        backgroundColor: COLORS.surface,
-    },
-
-    chipActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-
-    chipText: {
-        fontSize: 14,
-        fontWeight: "800",
-        color: COLORS.text,
-    },
-
-    chipTextActive: {
-        color: "#fff",
-    },
-
-    dateBtn: {
-        backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        paddingHorizontal: 14,
-        paddingVertical: 14,
-        marginBottom: 6,
-    },
-
-    dateBtnError: {
-        borderColor: COLORS.danger,
-    },
-
-    dateBtnText: {
-        fontSize: 15,
-        color: COLORS.text,
-    },
-
-    inlineError: {
-        color: COLORS.danger,
-        fontSize: 12,
-        fontWeight: "700",
-        marginBottom: 10,
     },
 
     submitBtn: {

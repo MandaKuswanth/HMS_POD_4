@@ -14,9 +14,19 @@ export const isValidEmail = (email) => {
 };
 
 export const isValidIndianMobile = (phone) => {
-    return /^[6-9]\d{9}$/.test(
-        String(phone).trim()
-    );
+    const value = String(phone).trim();
+
+    // Only 10 digits, starts with 6/7/8/9
+    if (!/^[6-9]\d{9}$/.test(value)) {
+        return false;
+    }
+
+    // Reject all same numbers like 9999999999, 8888888888
+    if (/^(\d)\1{9}$/.test(value)) {
+        return false;
+    }
+
+    return true;
 };
 
 export const isValidPassword = (password) => {
@@ -89,7 +99,7 @@ export const validateRegisterSubmit = ({
     if (isEmpty(phone)) {
         errors.phone = "Phone number is required";
     } else if (!isValidIndianMobile(phone)) {
-        errors.phone = "Phone must be a valid 10-digit Indian mobile number";
+        errors.phone = "Phone must be a valid 10-digit Indian mobile number, start with 6-9, and cannot contain all same digits";
     }
 
     if (isEmpty(email)) {
@@ -122,8 +132,7 @@ export const validateRegisterSubmit = ({
         !isEmpty(emergencyPhone) &&
         !isValidIndianMobile(emergencyPhone)
     ) {
-        errors.emergencyPhone =
-            "Emergency contact phone must be a valid 10-digit mobile number";
+        errors.emergencyPhone = "Emergency contact phone must be a valid 10-digit mobile number, start with 6-9, and cannot contain all same digits";
     }
 
     return errors;
