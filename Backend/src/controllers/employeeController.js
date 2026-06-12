@@ -98,6 +98,7 @@ exports.adminAddEmployee = async (req, res) => {
         }
 
         const tempPassword = crypto.randomBytes(8).toString("hex");
+        console.log(tempPassword);
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
         const employee = await Employee.create({
