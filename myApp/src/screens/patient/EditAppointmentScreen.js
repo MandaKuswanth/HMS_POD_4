@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
 
 import {
     ActivityIndicator,
@@ -27,27 +28,21 @@ import {
     getTomorrowDate,
 } from "../../utils/dateUtils";
 
-import {
-    isTomorrowOrFuture,
-} from "../../utils/validators";
+import { isTomorrowOrFuture } from "../../utils/validators";
 
 const DEFAULT_TIME_SLOTS = [
-    "09:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "12:00 PM",
-    "01:00 PM",
-    "02:00 PM",
-    "03:00 PM",
-    "04:00 PM",
+    "09:00 AM - 10:00 AM",
+    "10:00 AM - 11:00 AM",
+    "11:00 AM - 12:00 PM",
+    "12:00 PM - 01:00 PM",
+    "01:00 PM - 02:00 PM",
+    "02:00 PM - 03:00 PM",
+    "03:00 PM - 04:00 PM",
+    "04:00 PM - 05:00 PM",
 ];
 
-export default function EditAppointmentScreen({
-    navigation,
-    route,
-}) {
-    const appointment =
-        route?.params?.appointment;
+export default function EditAppointmentScreen({ navigation, route }) {
+    const appointment = route?.params?.appointment;
 
     const {
         doctors,
@@ -58,36 +53,23 @@ export default function EditAppointmentScreen({
         updateAppointment,
     } = useAppointments();
 
-    const [date, setDate] =
-        useState(
-            appointment?.date
-                ? new Date(appointment.date)
-                : getTomorrowDate()
-        );
-
-    const [timeSlot, setTimeSlot] =
-        useState(appointment?.timeSlot || "");
-
-    const [showPicker, setShowPicker] =
-        useState(false);
-
-    const [slotError, setSlotError] =
-        useState("");
-
-    const [loading, setLoading] =
-        useState(false);
+    const [date, setDate] = useState(
+        appointment?.date ? new Date(appointment.date) : getTomorrowDate()
+    );
+    const [timeSlot, setTimeSlot] = useState(appointment?.timeSlot || "");
+    const [showPicker, setShowPicker] = useState(false);
+    const [slotError, setSlotError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         loadDoctors();
     }, [loadDoctors]);
 
     const doctor = useMemo(() => {
-        return doctors.find((d) => {
+        return doctors.find((item) => {
             return (
-                d.employeeCode ===
-                appointment?.doctorEmployeeId ||
-                d.employeeCode ===
-                appointment?.doctor?.employeeCode
+                item.employeeCode === appointment?.doctorEmployeeId ||
+                item.employeeCode === appointment?.doctor?.employeeCode
             );
         });
     }, [doctors, appointment]);
@@ -104,24 +86,12 @@ export default function EditAppointmentScreen({
     }, [doctor]);
 
     useEffect(() => {
-        const doctorId =
-            appointment?.doctorEmployeeId ||
-            doctor?.employeeCode;
+        const doctorId = appointment?.doctorEmployeeId || doctor?.employeeCode;
 
         if (doctorId && date) {
-            loadDoctorSlots(
-                doctorId,
-                formatDateForApi(date),
-                fallbackSlots
-            );
+            loadDoctorSlots(doctorId, formatDateForApi(date), fallbackSlots);
         }
-    }, [
-        appointment,
-        doctor,
-        date,
-        fallbackSlots,
-        loadDoctorSlots,
-    ]);
+    }, [appointment, doctor, date, fallbackSlots, loadDoctorSlots]);
 
     const allSlots = useMemo(() => {
         if (
@@ -135,30 +105,53 @@ export default function EditAppointmentScreen({
     }, [doctorSlots, fallbackSlots]);
 
     const isBookedSlot = (slot) => {
-        const ownSlot =
-            slot === appointment?.timeSlot &&
-            formatDateForApi(date) ===
-            formatDateForApi(appointment?.date);
+        const sameSlot = slot === appointment?.timeSlot;
+        const sameDate =
+            formatDateForApi(date) === formatDateForApi(appointment?.date);
 
-        if (ownSlot) return false;
+        if (sameSlot && sameDate) {
+            return false;
+        }
 
         return doctorSlots.bookedSlots?.includes(slot);
     };
 
-    const handleUpdate = async () => {
-        if (!appointment?.appointmentId) {
+    const handleDateChange = (event, selectedDate) => {
+        if (Platform.OS === "android") {
+            setShowPicker(false);
+        }
+
+        if (selectedDate) {
+            setDate(selectedDate);
+            setTimeSlot("");
+            setSlotError("");
+        }
+
+        if (Platform.OS === "ios") {
+            setShowPicker(false);
+        }
+    };
+
+    const handleSelectSlot = (slot, booked) => {
+        if (booked) {
             Alert.alert(
-                "Error",
-                "Appointment ID missing"
+                "Slot Booked",
+                "This slot is already booked. Please select another slot."
             );
             return;
         }
 
-        if (
-            !["PENDING", "BOOKED"].includes(
-                appointment.status
-            )
-        ) {
+        setTimeSlot(slot);
+        setSlotError("");
+    };
+
+    const handleUpdate = async () => {
+        if (!appointment?.appointmentId) {
+            Alert.alert("Error", "Appointment ID missing");
+            return;
+        }
+
+        if (!["PENDING", "BOOKED"].includes(appointment.status)) {
             Alert.alert(
                 "Not Allowed",
                 "Only pending or booked appointments can be edited"
@@ -167,10 +160,7 @@ export default function EditAppointmentScreen({
         }
 
         if (!date) {
-            Alert.alert(
-                "Validation Error",
-                "Please select appointment date"
-            );
+            Alert.alert("Validation Error", "Please select appointment date");
             return;
         }
 
@@ -184,17 +174,12 @@ export default function EditAppointmentScreen({
 
         if (!timeSlot) {
             setSlotError("Time slot is required");
-
-            Alert.alert(
-                "Validation Error",
-                "Please select time slot"
-            );
+            Alert.alert("Validation Error", "Please select time slot");
             return;
         }
 
         if (isBookedSlot(timeSlot)) {
             setSlotError("This slot is already booked");
-
             Alert.alert(
                 "Slot Booked",
                 "This slot is already booked. Please select another slot."
@@ -205,29 +190,66 @@ export default function EditAppointmentScreen({
         try {
             setLoading(true);
 
-            await updateAppointment(
-                appointment.appointmentId,
-                {
-                    date: formatDateForApi(date),
-                    timeSlot,
-                }
-            );
+            await updateAppointment(appointment.appointmentId, {
+                date: formatDateForApi(date),
+                timeSlot,
+            });
 
-            Alert.alert(
-                "Success",
-                "Appointment updated successfully"
-            );
+            Alert.alert("Success", "Appointment updated successfully");
 
             navigation.goBack();
         } catch (err) {
             Alert.alert(
                 "Error",
-                err?.response?.data?.message ||
-                "Update failed"
+                err?.response?.data?.message || "Update failed"
             );
         } finally {
             setLoading(false);
         }
+    };
+
+    const renderSlots = () => {
+        if (slotsLoading) {
+            return (
+                <ActivityIndicator
+                    color={COLORS.primary}
+                    style={styles.loader}
+                />
+            );
+        }
+
+        return (
+            <View style={styles.slotsGrid}>
+                {allSlots.map((slot) => {
+                    const booked = isBookedSlot(slot);
+                    const selected = timeSlot === slot;
+                    const slotLabel = booked ? `${slot} (Booked)` : slot;
+
+                    return (
+                        <TouchableOpacity
+                            key={slot}
+                            disabled={booked}
+                            style={[
+                                styles.slotChip,
+                                selected && styles.slotChipActive,
+                                booked && styles.slotChipDisabled,
+                            ]}
+                            onPress={() => handleSelectSlot(slot, booked)}
+                        >
+                            <Text
+                                style={[
+                                    styles.slotText,
+                                    selected && styles.slotTextActive,
+                                    booked && styles.slotTextDisabled,
+                                ]}
+                            >
+                                {slotLabel}
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        );
     };
 
     return (
@@ -239,9 +261,7 @@ export default function EditAppointmentScreen({
             />
 
             <AppCard style={styles.card}>
-                <Text style={styles.label}>
-                    Appointment Date
-                </Text>
+                <Text style={styles.label}>Appointment Date</Text>
 
                 <TouchableOpacity
                     style={styles.dateButton}
@@ -258,93 +278,16 @@ export default function EditAppointmentScreen({
                         value={date}
                         mode="date"
                         minimumDate={getTomorrowDate()}
-                        onChange={(
-                            event,
-                            selectedDate
-                        ) => {
-                            if (Platform.OS === "android") {
-                                setShowPicker(false);
-                            }
-
-                            if (selectedDate) {
-                                setDate(selectedDate);
-                                setTimeSlot("");
-                                setSlotError("");
-                            }
-
-                            if (Platform.OS === "ios") {
-                                setShowPicker(false);
-                            }
-                        }}
+                        onChange={handleDateChange}
                     />
                 )}
 
-                <Text style={styles.label}>
-                    Time Slot
-                </Text>
+                <Text style={styles.label}>Time Slot</Text>
 
-                {slotsLoading ? (
-                    <ActivityIndicator
-                        color={COLORS.primary}
-                        style={{ marginVertical: 12 }}
-                    />
-                ) : (
-                    <View style={styles.slotsGrid}>
-                        {allSlots.map((slot) => {
-                            const booked =
-                                isBookedSlot(slot);
-
-                            const selected =
-                                timeSlot === slot;
-
-                            return (
-                                <TouchableOpacity
-                                    key={slot}
-                                    disabled={booked}
-                                    style={[
-                                        styles.slotChip,
-                                        selected &&
-                                        styles.slotChipActive,
-                                        booked &&
-                                        styles.slotChipDisabled,
-                                    ]}
-                                    onPress={() => {
-                                        if (booked) {
-                                            Alert.alert(
-                                                "Slot Booked",
-                                                "This slot is already booked. Please select another slot."
-                                            );
-                                            return;
-                                        }
-
-                                        setTimeSlot(slot);
-                                        setSlotError("");
-                                    }}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.slotText,
-                                            selected &&
-                                            styles.slotTextActive,
-                                            booked &&
-                                            styles.slotTextDisabled,
-                                        ]}
-                                    >
-                                        {slot}{" "}
-                                        {booked
-                                            ? "(Booked)"
-                                            : ""}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                )}
+                {renderSlots()}
 
                 {slotError ? (
-                    <Text style={styles.inlineError}>
-                        {slotError}
-                    </Text>
+                    <Text style={styles.inlineError}>{slotError}</Text>
                 ) : null}
 
                 <AppButton
@@ -358,6 +301,38 @@ export default function EditAppointmentScreen({
         </AppContainer>
     );
 }
+
+EditAppointmentScreen.propTypes = {
+    navigation: PropTypes.shape({
+        goBack: PropTypes.func.isRequired,
+    }).isRequired,
+
+    route: PropTypes.shape({
+        params: PropTypes.shape({
+            appointment: PropTypes.shape({
+                appointmentId: PropTypes.string,
+                doctorEmployeeId: PropTypes.string,
+                date: PropTypes.oneOfType([
+                    PropTypes.string,
+                    PropTypes.instanceOf(Date),
+                ]),
+                timeSlot: PropTypes.string,
+                status: PropTypes.string,
+                doctor: PropTypes.shape({
+                    employeeCode: PropTypes.string,
+                }),
+            }),
+        }),
+    }),
+};
+
+EditAppointmentScreen.defaultProps = {
+    route: {
+        params: {
+            appointment: null,
+        },
+    },
+};
 
 const styles = StyleSheet.create({
     card: {
@@ -431,6 +406,10 @@ const styles = StyleSheet.create({
         color: COLORS.danger,
         fontSize: 12,
         fontWeight: "700",
+    },
+
+    loader: {
+        marginVertical: 12,
     },
 
     button: {
