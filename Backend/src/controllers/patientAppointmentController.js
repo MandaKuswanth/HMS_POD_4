@@ -11,7 +11,9 @@ const {
     normalizeAppointmentDate,
     getTomorrowDate,
     isBeforeDoctorJoiningDate,
+    findSlotConflict,
 } = require("../utils/appointmentHelpers");
+
 
 const getPatientId = (req) => {
     return req.user?.UHID || req.user?.uhid || req.user?.patientId;
@@ -71,7 +73,7 @@ exports.getDoctorSlots = async (req, res) => {
 
         const allSlots =
             Array.isArray(doctor.availabilitySlots) &&
-            doctor.availabilitySlots.length > 0
+                doctor.availabilitySlots.length > 0
                 ? doctor.availabilitySlots
                 : [];
 
@@ -168,18 +170,10 @@ exports.bookAppointment = async (req, res) => {
             );
         }
 
-        const { startOfDay, endOfDay } = getDateRange(appointmentDate);
-
-        const doctorConflict = await Appointment.findOne({
+        const doctorConflict = await findSlotConflict({
             doctorEmployeeId,
-            date: {
-                $gte: startOfDay,
-                $lt: endOfDay,
-            },
+            date: appointmentDate,
             timeSlot,
-            status: {
-                $in: SLOT_BLOCKING_STATUSES,
-            },
         });
 
         if (doctorConflict) {
@@ -188,16 +182,10 @@ exports.bookAppointment = async (req, res) => {
             );
         }
 
-        const patientConflict = await Appointment.findOne({
+        const patientConflict = await findSlotConflict({
             patientId,
-            date: {
-                $gte: startOfDay,
-                $lt: endOfDay,
-            },
+            date: appointmentDate,
             timeSlot,
-            status: {
-                $in: SLOT_BLOCKING_STATUSES,
-            },
         });
 
         if (patientConflict) {
@@ -345,22 +333,11 @@ exports.updateMyAppointment = async (req, res) => {
                 )
             );
         }
-
-        const { startOfDay, endOfDay } = getDateRange(appointmentDate);
-
-        const doctorConflict = await Appointment.findOne({
-            _id: {
-                $ne: appointment._id,
-            },
+        const doctorConflict = await findSlotConflict({
             doctorEmployeeId: appointment.doctorEmployeeId,
-            date: {
-                $gte: startOfDay,
-                $lt: endOfDay,
-            },
+            date: appointmentDate,
             timeSlot,
-            status: {
-                $in: SLOT_BLOCKING_STATUSES,
-            },
+            excludeAppointmentId: appointment._id,
         });
 
         if (doctorConflict) {
@@ -369,19 +346,11 @@ exports.updateMyAppointment = async (req, res) => {
             );
         }
 
-        const patientConflict = await Appointment.findOne({
-            _id: {
-                $ne: appointment._id,
-            },
+        const patientConflict = await findSlotConflict({
             patientId,
-            date: {
-                $gte: startOfDay,
-                $lt: endOfDay,
-            },
+            date: appointmentDate,
             timeSlot,
-            status: {
-                $in: SLOT_BLOCKING_STATUSES,
-            },
+            excludeAppointmentId: appointment._id,
         });
 
         if (patientConflict) {

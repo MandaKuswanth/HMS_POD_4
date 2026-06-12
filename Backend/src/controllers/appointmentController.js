@@ -9,12 +9,19 @@ const ApiError = require("../utils/ApiError");
 const sendEmail = require("../utils/sendEmail");
 
 const {
-    SLOT_BLOCKING_STATUSES,
-    getDateRange,
     normalizeAppointmentDate,
     getTomorrowDate,
     isBeforeDoctorJoiningDate,
+    findSlotConflict,
 } = require("../utils/appointmentHelpers");
+
+const ALLOWED_STATUSES = [
+    "PENDING",
+    "BOOKED",
+    "IN-PROCESS",
+    "COMPLETED",
+    "CANCELLED",
+];
 
 exports.cancelPatientAppointments = async (patientId, reason) => {
     const result = await Appointment.updateMany(
@@ -38,7 +45,6 @@ exports.cancelPatientAppointments = async (patientId, reason) => {
 exports.createAppointment = async (req, res) => {
     try {
         const { patientId, doctorEmployeeId, date, timeSlot } = req.body;
-
         const createdByEmployeeId = req.user.employeeId || req.user.id;
 
         if (!patientId || !doctorEmployeeId || !date || !timeSlot) {
@@ -80,7 +86,10 @@ exports.createAppointment = async (req, res) => {
 
         if (!doctorUser.roles.includes("DOCTOR")) {
             return res.status(400).json(
-                new ApiError(400, "Invalid doctorEmployeeId, employee is not a doctor")
+                new ApiError(
+                    400,
+                    "Invalid doctorEmployeeId, employee is not a doctor"
+                )
             );
         }
 
@@ -110,18 +119,10 @@ exports.createAppointment = async (req, res) => {
             );
         }
 
-        const { startOfDay, endOfDay } = getDateRange(appointmentDate);
-
-        const existingAppointment = await Appointment.findOne({
+        const existingAppointment = await findSlotConflict({
             doctorEmployeeId,
-            date: {
-                $gte: startOfDay,
-                $lt: endOfDay,
-            },
+            date: appointmentDate,
             timeSlot,
-            status: {
-                $in: SLOT_BLOCKING_STATUSES,
-            },
         });
 
         if (existingAppointment) {
@@ -171,7 +172,6 @@ exports.createAppointment = async (req, res) => {
 exports.getAppointments = async (req, res) => {
     try {
         const userRole = req.user.role;
-
         let appointments = [];
 
         if (userRole === "ADMIN" || userRole === "RECEPTIONIST") {
@@ -261,7 +261,11 @@ exports.getAppointmentById = async (req, res) => {
         }
 
         return res.status(200).json(
-            new ApiResponse(200, appointment, "Appointment retrieved successfully")
+            new ApiResponse(
+                200,
+                appointment,
+                "Appointment retrieved successfully"
+            )
         );
     } catch (err) {
         return res.status(500).json(
@@ -284,15 +288,7 @@ exports.updateAppointment = async (req, res) => {
         }
 
         if (status) {
-            const allowedStatus = [
-                "PENDING",
-                "BOOKED",
-                "IN-PROCESS",
-                "COMPLETED",
-                "CANCELLED",
-            ];
-
-            if (!allowedStatus.includes(status)) {
+            if (!ALLOWED_STATUSES.includes(status)) {
                 return res.status(400).json(
                     new ApiError(400, "Invalid appointment status")
                 );
@@ -303,7 +299,6 @@ exports.updateAppointment = async (req, res) => {
 
         if (date) {
             appointment.date = normalizeAppointmentDate(date);
-
         }
 
         if (timeSlot) {
@@ -311,24 +306,18 @@ exports.updateAppointment = async (req, res) => {
         }
 
         if (date || timeSlot || status) {
-            const { startOfDay, endOfDay } = getDateRange(appointment.date);
-
-            const existing = await Appointment.findOne({
-                _id: { $ne: appointment._id },
+            const existing = await findSlotConflict({
                 doctorEmployeeId: appointment.doctorEmployeeId,
-                date: {
-                    $gte: startOfDay,
-                    $lt: endOfDay,
-                },
+                date: appointment.date,
                 timeSlot: appointment.timeSlot,
-                status: {
-                    $in: SLOT_BLOCKING_STATUSES,
-                },
+                excludeAppointmentId: appointment._id,
             });
 
             if (
                 existing &&
-                SLOT_BLOCKING_STATUSES.includes(appointment.status)
+                ["PENDING", "BOOKED", "IN-PROCESS"].includes(
+                    appointment.status
+                )
             ) {
                 return res.status(409).json(
                     new ApiError(409, "Slot already booked")
@@ -398,19 +387,11 @@ exports.approveAppointment = async (req, res) => {
             employeeCode: appointment.doctorEmployeeId,
         });
 
-        const { startOfDay, endOfDay } = getDateRange(appointment.date);
-
-        const conflict = await Appointment.findOne({
-            _id: { $ne: appointment._id },
+        const conflict = await findSlotConflict({
             doctorEmployeeId: appointment.doctorEmployeeId,
-            date: {
-                $gte: startOfDay,
-                $lt: endOfDay,
-            },
+            date: appointment.date,
             timeSlot: appointment.timeSlot,
-            status: {
-                $in: ["BOOKED", "IN-PROCESS"],
-            },
+            excludeAppointmentId: appointment._id,
         });
 
         if (conflict) {
