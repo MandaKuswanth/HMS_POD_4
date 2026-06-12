@@ -1,0 +1,1 @@
+import React from"react";import{View,StyleSheet}from"react-native";import COLORS from"../utils/colors";export default function AppContainer({children,style}){return <View style={[s.container,style]}>{children}</View>}const s=StyleSheet.create({container:{flex:1,backgroundColor:COLORS.background}});

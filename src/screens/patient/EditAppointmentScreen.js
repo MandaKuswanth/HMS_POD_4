@@ -1,0 +1,1 @@
+import React from "react";import{Text,View}from"react-native";import AppContainer from"../../components/AppContainer";export default function Placeholder(){return <AppContainer><View style={{flex:1,alignItems:"center",justifyContent:"center"}}><Text>This screen is scaffolded. Replace with full screen code from ChatGPT response.</Text></View></AppContainer>}
