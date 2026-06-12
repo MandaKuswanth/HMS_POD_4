@@ -15,13 +15,13 @@ const {
     findSlotConflict,
 } = require("../utils/appointmentHelpers");
 
-const ALLOWED_STATUSES = [
+const ALLOWED_STATUSES = new Set([
     "PENDING",
     "BOOKED",
     "IN-PROCESS",
     "COMPLETED",
     "CANCELLED",
-];
+]);
 
 exports.cancelPatientAppointments = async (patientId, reason) => {
     const result = await Appointment.updateMany(
@@ -288,7 +288,7 @@ exports.updateAppointment = async (req, res) => {
         }
 
         if (status) {
-            if (!ALLOWED_STATUSES.includes(status)) {
+            if (!ALLOWED_STATUSES.has(status)) {
                 return res.status(400).json(
                     new ApiError(400, "Invalid appointment status")
                 );
