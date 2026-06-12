@@ -1,0 +1,123 @@
+<h2 mat-dialog-title>
+  Add Appointment
+</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
+
+    <div class="form-grid">
+
+      <mat-form-field appearance="outline">
+        <mat-label>Patient</mat-label>
+
+        <mat-select formControlName="patientId">
+          @if (patientsLoading) {
+            <mat-option disabled>
+              Loading patients...
+            </mat-option>
+          } @else if (patients.length > 0) {
+            <mat-option *ngFor="let patient of patients" [value]="patient.UHID">
+              {{ patient.name }} ({{ patient.UHID }})
+            </mat-option>
+          } @else {
+            <mat-option disabled>
+              No patients available
+            </mat-option>
+          }
+        </mat-select>
+
+        <mat-error *ngIf="form.get('patientId')?.hasError('required')">
+          Patient is required
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Doctor</mat-label>
+
+        <mat-select formControlName="doctorEmployeeId">
+          @if (doctorsLoading) {
+            <mat-option disabled>
+              Loading doctors...
+            </mat-option>
+          } @else if (doctors.length > 0) {
+            <mat-option *ngFor="let doctor of doctors" [value]="doctor.employeeCode">
+              Dr. {{ doctor.name }} ({{ doctor.employeeCode }})
+            </mat-option>
+          } @else {
+            <mat-option disabled>
+              No active doctors available
+            </mat-option>
+          }
+        </mat-select>
+
+        <mat-error *ngIf="form.get('doctorEmployeeId')?.hasError('required')">
+          Doctor is required
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Appointment Date</mat-label>
+
+        <input
+          matInput
+          [matDatepicker]="picker"
+          [min]="minDate"
+          formControlName="date"
+        />
+
+        <mat-datepicker-toggle matIconSuffix [for]="picker">
+        </mat-datepicker-toggle>
+
+        <mat-datepicker #picker></mat-datepicker>
+
+        <mat-error *ngIf="form.get('date')?.hasError('required')">
+          Appointment date is required
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Available Slot</mat-label>
+
+        <mat-select formControlName="timeSlot">
+          @if (availableSlots.length > 0) {
+            <mat-option *ngFor="let slot of availableSlots" [value]="slot">
+              {{ slot }}
+            </mat-option>
+          } @else {
+            <mat-option disabled>
+              Select a doctor to view slots
+            </mat-option>
+          }
+        </mat-select>
+
+        <mat-error *ngIf="form.get('timeSlot')?.hasError('required')">
+          Time slot is required
+        </mat-error>
+      </mat-form-field>
+
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    type="button"
+    [disabled]="loading"
+    (click)="onCancel()"
+  >
+    Cancel
+  </button>
+
+  <button
+    mat-raised-button
+    color="primary"
+    type="button"
+    [disabled]="loading || patientsLoading || doctorsLoading"
+    (click)="onSubmit()"
+  >
+    <mat-icon>{{ loading ? 'hourglass_empty' : 'event_available' }}</mat-icon>
+    {{ loading ? 'Creating...' : 'Create Appointment' }}
+  </button>
+</mat-dialog-actions>

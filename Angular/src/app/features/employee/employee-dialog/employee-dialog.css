@@ -1,0 +1,189 @@
+.dialog-form {
+    padding: 8px 0 4px;
+    min-width: 620px;
+}
+
+/* FORM GRID */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 16px;
+}
+
+mat-form-field {
+    width: 100%;
+}
+
+/* MEDICAL SECTION */
+.medical-section {
+    margin-top: 22px;
+    padding: 18px;
+    border-radius: 18px;
+    background: #f8fbff;
+    border: 1px solid #dbeafe;
+}
+
+.medical-section h3 {
+    margin: 0 0 16px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0d47a1;
+}
+
+/* SLOTS SECTION */
+.slots-section {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #dbeafe;
+}
+
+.slots-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.slots-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+    color: #0d47a1;
+}
+
+/* SLOT GRID */
+.slot-checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* SLOT CARD */
+.slot-checkbox {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 46px;
+    padding: 12px 14px;
+
+    border: 1.5px solid #dbeafe;
+    border-radius: 14px;
+    background: #ffffff;
+
+    cursor: pointer;
+    user-select: none;
+
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2937;
+    text-align: center;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+/* HIDE DEFAULT CHECKBOX BOX */
+.slot-checkbox input {
+    display: none;
+}
+
+/* SLOT TEXT */
+.slot-checkbox span {
+    line-height: 1.3;
+}
+
+/* HOVER EFFECT */
+.slot-checkbox:hover {
+    background: #e3f2fd;
+    border-color: #64b5f6;
+    color: #0d47a1;
+    box-shadow: 0 6px 16px rgba(25, 118, 210, 0.14);
+    transform: translateY(-1px);
+}
+
+/* SELECTED SLOT */
+.slot-checkbox.selected {
+    background: linear-gradient(135deg, #0d47a1, #1976d2);
+    border-color: #0d47a1;
+    color: #ffffff;
+    box-shadow: 0 8px 20px rgba(25, 118, 210, 0.28);
+}
+
+/* SELECTED SLOT HOVER */
+.slot-checkbox.selected:hover {
+    background: linear-gradient(135deg, #0b3d91, #1565c0);
+    border-color: #0b3d91;
+    color: #ffffff;
+    box-shadow: 0 10px 24px rgba(25, 118, 210, 0.34);
+}
+
+/* SLOT ERROR */
+.slot-error {
+    margin: 10px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #d32f2f;
+}
+
+/* DIALOG CONTENT */
+mat-dialog-content {
+    max-height: 72vh;
+    overflow-y: auto;
+    padding-top: 8px !important;
+}
+
+/* DIALOG ACTIONS */
+mat-dialog-actions {
+    padding: 14px 24px 18px !important;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* DIALOG BUTTONS */
+mat-dialog-actions button {
+    border-radius: 10px !important;
+    font-weight: 700;
+}
+
+/* OLD SLOT ROW SUPPORT */
+.slot-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.slot-input {
+    flex: 1;
+}
+
+/* RESPONSIVE */
+@media (max-width: 760px) {
+    .dialog-form {
+        min-width: 100%;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .slot-checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .medical-section {
+        padding: 14px;
+    }
+
+    .slots-section {
+        padding: 14px;
+    }
+}

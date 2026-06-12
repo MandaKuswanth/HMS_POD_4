@@ -1,0 +1,290 @@
+
+.layout {
+  display: flex;
+  align-items: stretch;
+  height: calc(100vh - 72px);
+  min-height: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.patient-page {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.page-header h2 {
+  margin: 0;
+  color: #0b2f6b;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.page-header p {
+  margin: 0;
+  color: #455a64;
+  font-size: 13px;
+}
+
+
+.filter-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+
+  background: #ffffff;
+  border: 1px solid #cfe3ff;
+  border-radius: 14px;
+
+  padding: 10px 12px;
+  margin-bottom: 8px;
+
+  box-shadow: 0 6px 14px rgba(13, 71, 161, 0.05);
+}
+
+.search-field {
+  flex: 1;
+  min-width: 180px;
+}
+
+.filter-card mat-form-field {
+  min-width: 130px;
+}
+
+
+.table-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  overflow: hidden;
+
+  box-shadow: 0 10px 24px rgba(13, 71, 161, 0.08);
+}
+
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+
+  padding: 14px 16px;
+  background: #f1f7ff;
+  border-bottom: 1px solid #dbeafe;
+}
+
+.table-header h3 {
+  margin: 0;
+  color: #0b2f6b;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.table-header span {
+  color: #455a64;
+  font-size: 12px;
+}
+
+
+.table-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+
+table {
+  width: 100%;
+  min-width: 900px;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8fbff;
+  color: #0b2f6b;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+td {
+  color: #263238;
+  white-space: nowrap;
+}
+
+
+.patient-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #dbeafe;
+  color: #0d47a1;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+
+.gender-badge,
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.gender-badge {
+  background: #dbeafe;
+  color: #0d47a1;
+}
+
+.status-badge.active {
+  background: #dbeafe;
+  color: #0d47a1;
+}
+
+.status-badge.inactive {
+  background: #fff3e0;
+  color: #7a2e00;
+}
+
+
+.patient-row {
+  cursor: pointer;
+}
+
+.patient-action-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 10px 14px;
+  background: #f1f7ff;
+  border-top: 1px solid #dbeafe;
+
+  overflow: hidden;
+}
+
+.patient-action-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.patient-action-info strong {
+  color: #0b2f6b;
+  font-size: 13px;
+}
+
+.patient-action-info span {
+  font-size: 12px;
+  color: #455a64;
+}
+
+.patient-action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+
+.detail-row {
+  height: 0 !important;
+}
+
+.detail-row td {
+  padding: 0 !important;
+  border: none !important;
+}
+
+.detail-row.hidden {
+  display: none !important;
+}
+
+
+.status-btn {
+  width: 140px !important;
+  min-width: 140px !important;
+}
+
+/* ICON BUTTONS */
+.edit-btn,
+.delete-btn,
+.view-btn {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 8px !important;
+}
+
+/* hover */
+.view-btn:hover,
+.edit-btn:hover,
+.delete-btn:hover {
+  transform: scale(1.05);
+}
+
+
+.no-data {
+  text-align: center;
+  padding: 30px 10px;
+  color: #455a64;
+  font-size: 13px;
+}
+
+
+@media (max-width: 900px) {
+  .content {
+    padding: 16px;
+  }
+
+  .filter-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-field,
+  .filter-card mat-form-field {
+    width: 100%;
+  }
+}
