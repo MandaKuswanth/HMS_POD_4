@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
+import PropTypes from "prop-types";
 
 import {
     ActivityIndicator,
@@ -24,11 +25,7 @@ import COLORS from "../../utils/colors";
 export default function DashboardScreen({ navigation }) {
     const { patient } = useAuth();
 
-    const {
-        doctors,
-        doctorsLoading,
-        loadDoctors,
-    } = useAppointments();
+    const { doctors, doctorsLoading, loadDoctors } = useAppointments();
 
     const [search, setSearch] = useState("");
     const [activeFilter, setActiveFilter] = useState("All");
@@ -51,9 +48,9 @@ export default function DashboardScreen({ navigation }) {
     }, [doctors]);
 
     const filteredDoctors = useMemo(() => {
-        return doctors.filter((doctor) => {
-            const searchText = search.trim().toLowerCase();
+        const searchText = search.trim().toLowerCase();
 
+        return doctors.filter((doctor) => {
             const matchSearch =
                 !searchText ||
                 doctor.name?.toLowerCase().includes(searchText) ||
@@ -66,6 +63,51 @@ export default function DashboardScreen({ navigation }) {
             return matchSearch && matchFilter;
         });
     }, [doctors, search, activeFilter]);
+
+    const goToProfile = () => {
+        navigation.navigate("Profile");
+    };
+
+    const goToBookAppointment = () => {
+        navigation.navigate("BookAppointment");
+    };
+
+    const goToMyAppointments = () => {
+        navigation.navigate("MyAppointments");
+    };
+
+    const goToBookWithDoctor = (doctor) => {
+        navigation.navigate("BookAppointment", {
+            doctor,
+        });
+    };
+
+    const renderDoctorsContent = () => {
+        if (doctorsLoading) {
+            return (
+                <ActivityIndicator
+                    color={COLORS.primary}
+                    style={styles.loader}
+                />
+            );
+        }
+
+        if (filteredDoctors.length === 0) {
+            return (
+                <Text style={styles.emptyText}>
+                    No doctors found
+                </Text>
+            );
+        }
+
+        return filteredDoctors.map((doctor) => (
+            <DoctorCard
+                key={doctor.employeeCode || doctor._id}
+                doctor={doctor}
+                onBook={goToBookWithDoctor}
+            />
+        ));
+    };
 
     return (
         <AppContainer>
@@ -81,9 +123,7 @@ export default function DashboardScreen({ navigation }) {
                         </Text>
                     </View>
 
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate("Profile")}
-                    >
+                    <TouchableOpacity onPress={goToProfile}>
                         <AppAvatar name={patient?.name} size={48} />
                     </TouchableOpacity>
                 </View>
@@ -91,7 +131,9 @@ export default function DashboardScreen({ navigation }) {
                 <AppCard style={styles.uhidCard}>
                     <View style={styles.uhidRow}>
                         <View>
-                            <Text style={styles.uhidLabel}>Patient UHID</Text>
+                            <Text style={styles.uhidLabel}>
+                                Patient UHID
+                            </Text>
                             <Text style={styles.uhidValue}>
                                 {patient?.UHID || "—"}
                             </Text>
@@ -106,7 +148,7 @@ export default function DashboardScreen({ navigation }) {
                 <View style={styles.quickRow}>
                     <TouchableOpacity
                         style={styles.quickCard}
-                        onPress={() => navigation.navigate("BookAppointment")}
+                        onPress={goToBookAppointment}
                     >
                         <AppCard style={styles.quickCardInner}>
                             <Text style={styles.quickIcon}>＋</Text>
@@ -117,9 +159,7 @@ export default function DashboardScreen({ navigation }) {
 
                     <TouchableOpacity
                         style={styles.quickCard}
-                        onPress={() =>
-                            navigation.navigate("MyAppointments")
-                        }
+                        onPress={goToMyAppointments}
                     >
                         <AppCard style={styles.quickCardInner}>
                             <Text style={styles.quickIcon}>📋</Text>
@@ -154,14 +194,14 @@ export default function DashboardScreen({ navigation }) {
                             style={[
                                 styles.filterChip,
                                 activeFilter === spec &&
-                                styles.filterChipActive,
+                                    styles.filterChipActive,
                             ]}
                         >
                             <Text
                                 style={[
                                     styles.filterText,
                                     activeFilter === spec &&
-                                    styles.filterTextActive,
+                                        styles.filterTextActive,
                                 ]}
                             >
                                 {spec}
@@ -171,53 +211,24 @@ export default function DashboardScreen({ navigation }) {
                 </ScrollView>
 
                 <View style={styles.doctorsHeader}>
-                    <Text style={styles.sectionTitle}>Available Doctors</Text>
+                    <Text style={styles.sectionTitle}>
+                        Available Doctors
+                    </Text>
                     <Text style={styles.countText}>
                         {filteredDoctors.length} found
                     </Text>
                 </View>
 
-                {doctorsLoading ? (
-                    <ActivityIndicator
-                        color={COLORS.primary}
-                        style={{ marginTop: 30 }}
-                    />
-                ) : (
-                    <>
-                        {filteredDoctors.map((doctor) => (
-                            <DoctorCard
-                                key={doctor.employeeCode || doctor._id}
-                                doctor={doctor}
-                                onBook={() =>
-                                    navigation.navigate("BookAppointment", {
-                                        doctor,
-                                    })
-                                }
-                            />
-                        ))}
-
-                        {filteredDoctors.length === 0 && (
-                            <Text style={styles.emptyText}>
-                                No doctors found
-                            </Text>
-                        )}
-                    </>
-                )}
+                {renderDoctorsContent()}
             </ScrollView>
         </AppContainer>
     );
 }
 
 function DoctorCard({ doctor, onBook }) {
-    const qualification = Array.isArray(doctor.qualification)
-        ? doctor.qualification.join(", ")
-        : doctor.qualification || "MBBS";
-
-    const availability =
-        Array.isArray(doctor.availabilitySlots) &&
-            doctor.availabilitySlots.length > 0
-            ? doctor.availabilitySlots.join(", ")
-            : "Not available";
+    const qualification = getQualification(doctor.qualification);
+    const availability = getAvailability(doctor.availabilitySlots);
+    const fee = doctor.consultationFee || doctor.fee || "—";
 
     return (
         <AppCard style={styles.doctorCard}>
@@ -229,7 +240,7 @@ function DoctorCard({ doctor, onBook }) {
                     textColor={COLORS.primary}
                 />
 
-                <View style={{ flex: 1 }}>
+                <View style={styles.doctorHeaderText}>
                     <Text style={styles.doctorName}>
                         Dr. {doctor.name}
                     </Text>
@@ -242,13 +253,13 @@ function DoctorCard({ doctor, onBook }) {
             <View style={styles.doctorInfoBox}>
                 <InfoRow label="Qualification" value={qualification} />
                 <InfoRow label="Availability" value={availability} />
-                <InfoRow
-                    label="Fee"
-                    value={`₹${doctor.consultationFee || "—"}`}
-                />
+                <InfoRow label="Fee" value={`₹${fee}`} />
             </View>
 
-            <TouchableOpacity style={styles.bookBtn} onPress={onBook}>
+            <TouchableOpacity
+                style={styles.bookBtn}
+                onPress={() => onBook(doctor)}
+            >
                 <Text style={styles.bookBtnText}>
                     Book Appointment
                 </Text>
@@ -265,6 +276,70 @@ function InfoRow({ label, value }) {
         </View>
     );
 }
+
+function getQualification(qualification) {
+    if (Array.isArray(qualification)) {
+        return qualification.length > 0
+            ? qualification.join(", ")
+            : "MBBS";
+    }
+
+    return qualification || "MBBS";
+}
+
+function getAvailability(availabilitySlots) {
+    if (
+        !Array.isArray(availabilitySlots) ||
+        availabilitySlots.length === 0
+    ) {
+        return "Not available";
+    }
+
+    const firstSlot = availabilitySlots.at(0);
+    const lastSlot = availabilitySlots.at(-1);
+
+    const startTime = firstSlot.split(" - ")[0];
+    const endTime = lastSlot.split(" - ")[1];
+
+    return `${startTime} - ${endTime}`;
+}
+
+DashboardScreen.propTypes = {
+    navigation: PropTypes.shape({
+        navigate: PropTypes.func.isRequired,
+    }).isRequired,
+};
+
+DoctorCard.propTypes = {
+    doctor: PropTypes.shape({
+        _id: PropTypes.string,
+        employeeCode: PropTypes.string,
+        name: PropTypes.string,
+        specialization: PropTypes.string,
+        qualification: PropTypes.oneOfType([
+            PropTypes.string,
+            PropTypes.arrayOf(PropTypes.string),
+        ]),
+        availabilitySlots: PropTypes.arrayOf(PropTypes.string),
+        consultationFee: PropTypes.oneOfType([
+            PropTypes.string,
+            PropTypes.number,
+        ]),
+        fee: PropTypes.oneOfType([
+            PropTypes.string,
+            PropTypes.number,
+        ]),
+    }).isRequired,
+    onBook: PropTypes.func.isRequired,
+};
+
+InfoRow.propTypes = {
+    label: PropTypes.string.isRequired,
+    value: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number,
+    ]).isRequired,
+};
 
 const styles = StyleSheet.create({
     scroll: {
@@ -426,6 +501,10 @@ const styles = StyleSheet.create({
         marginTop: 30,
     },
 
+    loader: {
+        marginTop: 30,
+    },
+
     doctorCard: {
         marginHorizontal: 20,
         marginBottom: 14,
@@ -436,6 +515,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 12,
         marginBottom: 14,
+    },
+
+    doctorHeaderText: {
+        flex: 1,
     },
 
     doctorName: {
