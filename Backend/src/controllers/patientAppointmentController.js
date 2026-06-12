@@ -5,20 +5,13 @@ const User = require("../models/User");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 
-const SLOT_BLOCKING_STATUSES = ["PENDING", "BOOKED", "IN-PROCESS"];
-
-const getDateRange = (dateValue) => {
-    const startOfDay = new Date(dateValue);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setDate(startOfDay.getDate() + 1);
-
-    return {
-        startOfDay,
-        endOfDay,
-    };
-};
+const {
+    SLOT_BLOCKING_STATUSES,
+    getDateRange,
+    normalizeAppointmentDate,
+    getTomorrowDate,
+    isBeforeDoctorJoiningDate,
+} = require("../utils/appointmentHelpers");
 
 const getPatientId = (req) => {
     return req.user?.UHID || req.user?.uhid || req.user?.patientId;
@@ -43,11 +36,7 @@ exports.getDoctors = async (req, res) => {
         });
 
         return res.status(200).json(
-            new ApiResponse(
-                200,
-                doctors,
-                "Doctors fetched successfully"
-            )
+            new ApiResponse(200, doctors, "Doctors fetched successfully")
         );
     } catch (err) {
         return res.status(500).json(
@@ -62,10 +51,7 @@ exports.getDoctorSlots = async (req, res) => {
 
         if (!doctorEmployeeId || !date) {
             return res.status(400).json(
-                new ApiError(
-                    400,
-                    "doctorEmployeeId and date are required"
-                )
+                new ApiError(400, "doctorEmployeeId and date are required")
             );
         }
 
@@ -80,14 +66,12 @@ exports.getDoctorSlots = async (req, res) => {
             );
         }
 
-        const appointmentDate = new Date(date);
-        appointmentDate.setHours(0, 0, 0, 0);
-
+        const appointmentDate = normalizeAppointmentDate(date);
         const { startOfDay, endOfDay } = getDateRange(appointmentDate);
 
         const allSlots =
             Array.isArray(doctor.availabilitySlots) &&
-                doctor.availabilitySlots.length > 0
+            doctor.availabilitySlots.length > 0
                 ? doctor.availabilitySlots
                 : [];
 
@@ -118,10 +102,7 @@ exports.getDoctorSlots = async (req, res) => {
         );
     } catch (err) {
         return res.status(500).json(
-            new ApiError(
-                500,
-                err.message || "Failed to fetch doctor slots"
-            )
+            new ApiError(500, err.message || "Failed to fetch doctor slots")
         );
     }
 };
@@ -134,10 +115,7 @@ exports.bookAppointment = async (req, res) => {
 
         if (!patientId) {
             return res.status(401).json(
-                new ApiError(
-                    401,
-                    "Patient UHID missing. Please login again."
-                )
+                new ApiError(401, "Patient UHID missing. Please login again.")
             );
         }
 
@@ -170,16 +148,9 @@ exports.bookAppointment = async (req, res) => {
             );
         }
 
-        const appointmentDate = new Date(date);
-        appointmentDate.setHours(0, 0, 0, 0);
+        const appointmentDate = normalizeAppointmentDate(date);
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-
-        if (appointmentDate < tomorrow) {
+        if (appointmentDate < getTomorrowDate()) {
             return res.status(400).json(
                 new ApiError(
                     400,
@@ -188,18 +159,13 @@ exports.bookAppointment = async (req, res) => {
             );
         }
 
-        if (doctor.joiningDate) {
-            const doctorJoiningDate = new Date(doctor.joiningDate);
-            doctorJoiningDate.setHours(0, 0, 0, 0);
-
-            if (appointmentDate < doctorJoiningDate) {
-                return res.status(400).json(
-                    new ApiError(
-                        400,
-                        "Appointment cannot be booked before doctor's joining date"
-                    )
-                );
-            }
+        if (isBeforeDoctorJoiningDate(appointmentDate, doctor)) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "Appointment cannot be booked before doctor's joining date"
+                )
+            );
         }
 
         const { startOfDay, endOfDay } = getDateRange(appointmentDate);
@@ -221,6 +187,7 @@ exports.bookAppointment = async (req, res) => {
                 new ApiError(409, "Selected slot is already booked")
             );
         }
+
         const patientConflict = await Appointment.findOne({
             patientId,
             date: {
@@ -271,10 +238,7 @@ exports.getMyAppointments = async (req, res) => {
 
         if (!patientId) {
             return res.status(401).json(
-                new ApiError(
-                    401,
-                    "Patient UHID missing. Please login again."
-                )
+                new ApiError(401, "Patient UHID missing. Please login again.")
             );
         }
 
@@ -321,10 +285,7 @@ exports.updateMyAppointment = async (req, res) => {
 
         if (!patientId) {
             return res.status(401).json(
-                new ApiError(
-                    401,
-                    "Patient UHID missing. Please login again."
-                )
+                new ApiError(401, "Patient UHID missing. Please login again.")
             );
         }
 
@@ -354,16 +315,9 @@ exports.updateMyAppointment = async (req, res) => {
             );
         }
 
-        const appointmentDate = new Date(date);
-        appointmentDate.setHours(0, 0, 0, 0);
+        const appointmentDate = normalizeAppointmentDate(date);
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-
-        if (appointmentDate < tomorrow) {
+        if (appointmentDate < getTomorrowDate()) {
             return res.status(400).json(
                 new ApiError(
                     400,
@@ -383,18 +337,13 @@ exports.updateMyAppointment = async (req, res) => {
             );
         }
 
-        if (doctor.joiningDate) {
-            const doctorJoiningDate = new Date(doctor.joiningDate);
-            doctorJoiningDate.setHours(0, 0, 0, 0);
-
-            if (appointmentDate < doctorJoiningDate) {
-                return res.status(400).json(
-                    new ApiError(
-                        400,
-                        "Appointment cannot be booked before doctor's joining date"
-                    )
-                );
-            }
+        if (isBeforeDoctorJoiningDate(appointmentDate, doctor)) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "Appointment cannot be booked before doctor's joining date"
+                )
+            );
         }
 
         const { startOfDay, endOfDay } = getDateRange(appointmentDate);
@@ -471,10 +420,7 @@ exports.cancelMyAppointment = async (req, res) => {
 
         if (!patientId) {
             return res.status(401).json(
-                new ApiError(
-                    401,
-                    "Patient UHID missing. Please login again."
-                )
+                new ApiError(401, "Patient UHID missing. Please login again.")
             );
         }
 
@@ -491,19 +437,13 @@ exports.cancelMyAppointment = async (req, res) => {
 
         if (appointment.status === "COMPLETED") {
             return res.status(400).json(
-                new ApiError(
-                    400,
-                    "Completed appointment cannot be cancelled"
-                )
+                new ApiError(400, "Completed appointment cannot be cancelled")
             );
         }
 
         if (appointment.status === "CANCELLED") {
             return res.status(400).json(
-                new ApiError(
-                    400,
-                    "Appointment is already cancelled"
-                )
+                new ApiError(400, "Appointment is already cancelled")
             );
         }
 
