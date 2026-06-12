@@ -1,1 +1,0 @@
-import React from"react";import{View,StyleSheet}from"react-native";import COLORS from"../utils/colors";export default function AppCard({children,style}){return <View style={[s.card,style]}>{children}</View>}const s=StyleSheet.create({card:{backgroundColor:COLORS.white,borderRadius:22,padding:18,shadowColor:"#000",shadowOpacity:.06,shadowRadius:8,elevation:2}});
