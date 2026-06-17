@@ -1,10 +1,22 @@
-const allowRoles = (...roles) => {
+const allowPermission = (...permissions) => {
     return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({ message: "Access denied" });
+
+        const userPermissions =
+            req.user.permissions || [];
+
+        const allowed =
+            permissions.some(permission =>
+                userPermissions.includes(permission)
+            );
+
+        if (!allowed) {
+            return res.status(403).json({
+                message: "Access denied"
+            });
         }
+
         next();
     };
 };
 
-module.exports = allowRoles;
+module.exports = allowPermission;

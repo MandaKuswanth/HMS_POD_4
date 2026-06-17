@@ -1,6 +1,8 @@
 const express = require("express");
-const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
+
+const verifyJWT = require("../middleware/authMiddleware");
+const allowPermission = require("../middleware/checkPermission");
 
 const {
     registerPatient,
@@ -11,19 +13,35 @@ const {
     getPatientById,
     updatePatient
 } = require("../controllers/patientController");
+
+/*
+|--------------------------------------------------------------------------
+| Patient Authentication
+|--------------------------------------------------------------------------
+*/
+
 router.post("/register", registerPatient);
 
 router.post("/login", loginPatient);
 
-//react-native
-router.put(
-    "/patient-profile/:uhid",
-    authMiddleware,
-    updatePatient
-);
+/*
+|--------------------------------------------------------------------------
+| Patient Profile
+|--------------------------------------------------------------------------
+*/
+
 router.get(
-    "/patient-profile/:uhid",
-    authMiddleware,
+    "/profile/:uhid",
+    verifyJWT,
+    allowPermission("PATIENT_PROFILE_VIEW"),
     getPatientById
 );
+
+router.put(
+    "/profile/:uhid",
+    verifyJWT,
+    allowPermission("PATIENT_PROFILE_UPDATE"),
+    updatePatient
+);
+
 module.exports = router;

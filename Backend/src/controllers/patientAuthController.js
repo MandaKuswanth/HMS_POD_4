@@ -3,10 +3,9 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
+const Role = require("../models/Role");
 
 exports.registerPatient = async (req, res) => {
-    console.log("REGISTER API HIT");
-    console.log(req.body);
     try {
         const {
             name,
@@ -38,22 +37,25 @@ exports.registerPatient = async (req, res) => {
 
         const existingPatient = await Patient.findOne({
             $or: [
-                { email },
+                { email: email.trim().toLowerCase() },
                 { phone }
             ]
         });
 
         if (existingPatient) {
             return res.status(409).json(
-                new ApiError(409, "Patient already exists")
+                new ApiError(
+                    409,
+                    "Patient already exists"
+                )
             );
         }
 
-        const existingUser =
-            await User.findOne({ email });
+        const existingUser = await User.findOne({
+            email: email.trim().toLowerCase()
+        });
 
         if (existingUser) {
-
             return res.status(409).json(
                 new ApiError(
                     409,
@@ -62,10 +64,24 @@ exports.registerPatient = async (req, res) => {
             );
         }
 
+        const patientRole = await Role.findOne({
+            name: "PATIENT",
+            status: true
+        });
+
+        if (!patientRole) {
+            return res.status(404).json(
+                new ApiError(
+                    404,
+                    "PATIENT role not found"
+                )
+            );
+        }
+
         const patient = await Patient.create({
             name,
             phone,
-            email,
+            email: email.trim().toLowerCase(),
             bloodGroup,
             gender,
             dob,
@@ -73,33 +89,56 @@ exports.registerPatient = async (req, res) => {
             emergencyContact
         });
 
-        const passwordHash = await bcrypt.hash(password, 10);
+        const passwordHash = await bcrypt.hash(
+            password,
+            10
+        );
 
-        await User.create({
-            email,
+        const user = await User.create({
+            email: email.trim().toLowerCase(),
             passwordHash,
+
             isEmployee: false,
-            UHID: patient.UHID
+
+            UHID: patient.UHID,
+
+            roleIds: [
+                patientRole.roleId
+            ],
+
+            status: true,
+
+            mustResetPassword: false
         });
 
         return res.status(201).json(
             new ApiResponse(
                 201,
-                patient,
+                {
+                    patient,
+                    user: {
+                        id: user._id,
+                        email: user.email,
+                        UHID: user.UHID,
+                        roleIds: user.roleIds,
+                        status: user.status
+                    }
+                },
                 "Patient registered successfully"
             )
         );
 
-
     } catch (err) {
+        console.error(err);
+
         return res.status(500).json(
             new ApiError(
                 500,
-                err.message
+                err.message || "Internal Server Error"
             )
         );
     }
-}
+};
 
 exports.loginPatient = async (req, res) => {
     try {
@@ -109,7 +148,6 @@ exports.loginPatient = async (req, res) => {
         } = req.body;
 
         if (!email || !password) {
-
             return res.status(400).json(
                 new ApiError(
                     400,
@@ -119,7 +157,7 @@ exports.loginPatient = async (req, res) => {
         }
 
         const user = await User.findOne({
-            email,
+            email: email.trim().toLowerCase(),
             isEmployee: false
         });
 
@@ -131,13 +169,22 @@ exports.loginPatient = async (req, res) => {
                 )
             );
         }
+
+        if (!user.status) {
+            return res.status(403).json(
+                new ApiError(
+                    403,
+                    "Your account is inactive"
+                )
+            );
+        }
+
         const isValidPassword =
             await user.isPasswordCorrect(
                 password
             );
 
         if (!isValidPassword) {
-
             return res.status(401).json(
                 new ApiError(
                     401,
@@ -145,11 +192,28 @@ exports.loginPatient = async (req, res) => {
                 )
             );
         }
-        const token = user.generateAccessToken();
 
         const patient = await Patient.findOne({
             UHID: user.UHID
         });
+
+        const roles = await Role.find({
+            roleId: { $in: user.roleIds }
+        }).select(
+            "roleId name permissions"
+        );
+
+        const permissions = [
+            ...new Set(
+                roles.flatMap(
+                    role =>
+                        role.permissions || []
+                )
+            )
+        ];
+
+        const token =
+            user.generateAccessToken();
 
         user.lastLogin = new Date();
 
@@ -159,18 +223,51 @@ exports.loginPatient = async (req, res) => {
             new ApiResponse(
                 200,
                 {
+                    token,
+
                     patient,
-                    token
+
+                    user: {
+                        id: user._id,
+
+                        email: user.email,
+
+                        UHID: user.UHID,
+
+                        roleIds:
+                            user.roleIds,
+
+                        roles: roles.map(
+                            role => ({
+                                roleId:
+                                    role.roleId,
+                                name:
+                                    role.name
+                            })
+                        ),
+
+                        permissions,
+
+                        status:
+                            user.status,
+
+                        mustResetPassword:
+                            user.mustResetPassword
+                    }
                 },
                 "Patient logged in successfully"
             )
         );
+
     } catch (err) {
+        console.error(err);
+
         return res.status(500).json(
             new ApiError(
                 500,
-                err.message
+                err.message ||
+                "Internal Server Error"
             )
         );
     }
-}
+};

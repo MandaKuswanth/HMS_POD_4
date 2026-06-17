@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const authMiddleware = require("../middleware/authMiddleware");
-const allowRoles = require("../middleware/roleMiddleware");
+const allowPermission = require("../middleware/checkPermission");
 
 const {
     createPatient,
@@ -13,57 +13,46 @@ const {
     togglePatientStatus
 } = require("../controllers/patientController");
 
-
 router.post(
     "/",
     authMiddleware,
-    allowRoles("ADMIN", "RECEPTIONIST"),
+    allowPermission("PATIENT_CREATE"),
     createPatient
 );
-
 
 router.get(
     "/",
     authMiddleware,
-    allowRoles("ADMIN", "RECEPTIONIST", "DOCTOR", "NURSE"),
+    allowPermission("PATIENT_VIEW"),
     getPatients
 );
-
 
 router.get(
     "/:uhid",
     authMiddleware,
-    allowRoles("ADMIN", "RECEPTIONIST", "DOCTOR", "NURSE"),
+    allowPermission("PATIENT_VIEW"),
     getPatientById
 );
-
 
 router.put(
     "/:uhid",
     authMiddleware,
-    allowRoles("ADMIN", "RECEPTIONIST"),
+    allowPermission("PATIENT_UPDATE"),
     updatePatient
 );
-
 
 router.delete(
     "/:uhid",
     authMiddleware,
-    allowRoles("ADMIN", "RECEPTIONIST"),
+    allowPermission("PATIENT_DELETE"),
     deletePatient
 );
-
 
 router.patch(
     "/:uhid/status",
     authMiddleware,
-    allowRoles("ADMIN", "RECEPTIONIST"),
+    allowPermission("PATIENT_UPDATE"),
     togglePatientStatus
 );
-
-
-
-
-
 
 module.exports = router;

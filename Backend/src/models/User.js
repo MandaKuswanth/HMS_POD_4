@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -8,8 +9,13 @@ const userSchema = new Schema(
     {
         email: {
             type: String,
-            unique: true,
             required: true,
+            trim: true,
+            lowercase: true
+        },
+
+        mobile: {
+            type: String,
             trim: true
         },
 
@@ -28,34 +34,32 @@ const userSchema = new Schema(
             default: true
         },
 
-        roles: {
-            type: String,
-            enum: [
-                "OWNER",
-                "ADMIN",
-                "DOCTOR",
-                "RECEPTIONIST",
-                "CASHIER",
-                "NURSE",
-                "LAB_TECH",
-                "PHARMACIST",
-                "TECHNICIAN"
-            ],
-            required: function () {
-                return this.isEmployee;
+        roleIds: {
+            type: [String],
+            required: true,
+            default: [],
+            validate: {
+                validator: function (value) {
+                    return Array.isArray(value) && value.length > 0;
+                },
+                message: "At least one role is required"
             }
         },
 
         UHID: {
             type: String,
-            default: null
+            required: function () {
+                return !this.isEmployee;
+            },
+            trim: true
         },
 
         employeeId: {
             type: String,
             required: function () {
                 return this.isEmployee;
-            }
+            },
+            trim: true
         },
 
         lastLogin: {
@@ -68,6 +72,16 @@ const userSchema = new Schema(
             default: function () {
                 return this.isEmployee;
             }
+        },
+
+        createdBy: {
+            type: String,
+            default: null
+        },
+
+        updatedBy: {
+            type: String,
+            default: null
         }
     },
     {
@@ -78,29 +92,62 @@ const userSchema = new Schema(
     }
 );
 
+userSchema.index({ email: 1 }, { unique: true });
+
+userSchema.index(
+    { mobile: 1 },
+    {
+        unique: true,
+        sparse: true
+    }
+);
+
+userSchema.index({ roleIds: 1 });
+
+userSchema.index(
+    { employeeId: 1 },
+    {
+        unique: true,
+        sparse: true
+    }
+);
+
+userSchema.index(
+    { UHID: 1 },
+    {
+        unique: true,
+        sparse: true
+    }
+);
 
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.passwordHash);
 };
 
-
-
 userSchema.methods.generateAccessToken = function () {
+    const payload = {
+        id: this._id,
+        email: this.email,
+        roleIds: this.roleIds,
+        isEmployee: this.isEmployee,
+        status: this.status
+    };
+
+    if (this.isEmployee) {
+        payload.employeeId = this.employeeId;
+    } else {
+        payload.UHID = this.UHID;
+    }
+
     return jwt.sign(
-        {
-            id: this._id,
-            email: this.email,
-            role: this.roles,
-            isEmployee: this.isEmployee,
-            employeeId: this.employeeId,
-            UHID: this.UHID
-        },
+        payload,
         process.env.ACCESS_TOKEN_SECRET,
         {
             expiresIn: process.env.JWT_EXPIRES_IN || "1h"
         }
     );
 };
+
 
 
 module.exports = mongoose.model("User", userSchema);
