@@ -1,4 +1,10 @@
-import { Component, inject, OnInit } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef
+} from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -19,6 +25,7 @@ import { PatientDialog } from '../patient-dialog/patient-dialog';
 @Component({
   selector: 'app-patient-list',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush, // Added for performance
   imports: [
     CommonModule,
     FormsModule,
@@ -41,6 +48,7 @@ export class PatientList implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly patientService = inject(PatientService);
   private readonly toastr = inject(ToastrService);
+  private readonly cdr = inject(ChangeDetectorRef); // Added for UI reactivity
 
   displayedColumns: string[] = [
     'UHID',
@@ -61,48 +69,61 @@ export class PatientList implements OnInit {
 
   expandedPatient: PatientRequest | null = null;
 
+  // --- Dynamic RBAC Permission Checks ---
+  get canAddPatient(): boolean {
+    return this.authService.hasPermission('PATIENT_CREATE');
+  }
+
+  get canEditPatient(): boolean {
+    return this.authService.hasPermission('PATIENT_UPDATE');
+  }
+
+  get canDeletePatient(): boolean {
+    return this.authService.hasPermission('PATIENT_DELETE');
+  }
+
+  get canViewPatientDetails(): boolean {
+    return this.authService.hasPermission('PATIENT_VIEW');
+  }
+  // --------------------------------------
+
   ngOnInit(): void {
     this.loadPatients();
   }
 
   loadPatients(): void {
     this.patientService.getPatients().subscribe({
-      next: (response) => {
-        const patients = response?.data?.patients ?? [];
+      next: (response: any) => {
+        // Handle various backend response structures safely
+        const patients = response?.data?.patients || response?.data || response || [];
         this.allPatients = patients;
         this.dataSource.data = patients;
+        this.expandedPatient = null;
+        this.cdr.markForCheck(); // Trigger UI update
       },
       error: (err) => {
         console.error('PATIENT LOAD ERROR:', err);
         this.toastr.error('Failed to load patients');
+        this.allPatients = [];
+        this.dataSource.data = [];
+        this.cdr.markForCheck();
       }
     });
   }
 
-  get canAddOrUpdatePatient(): boolean {
-    const role = (this.authService.getRole() ?? '').toUpperCase();
-    return ['ADMIN', 'RECEPTIONIST'].includes(role);
-  }
-  get canViewPatient(): boolean {
-    const role = (this.authService.getRole() ?? '').toUpperCase();
-    return ['ADMIN', 'RECEPTIONIST','NURSE'].includes(role);
-  }
-
   toggleRow(row: PatientRequest): void {
     this.expandedPatient = this.expandedPatient === row ? null : row;
+    this.cdr.markForCheck();
   }
 
   onRowClick(row: PatientRequest, event: Event): void {
     const target = event.target as HTMLElement;
-
     if (target.closest('button')) return;
-
     this.toggleRow(row);
   }
 
   applyFilters(): void {
     let filtered = [...this.allPatients];
-
     const search = this.searchText.trim().toLowerCase();
 
     if (search) {
@@ -116,7 +137,7 @@ export class PatientList implements OnInit {
     }
 
     if (this.selectedGender !== 'ALL') {
-      filtered = filtered.filter(p => p.gender === this.selectedGender);
+      filtered = filtered.filter(p => p.gender?.toLowerCase() === this.selectedGender.toLowerCase());
     }
 
     if (this.selectedStatus !== 'ALL') {
@@ -125,6 +146,8 @@ export class PatientList implements OnInit {
     }
 
     this.dataSource.data = filtered;
+    this.expandedPatient = null;
+    this.cdr.markForCheck();
   }
 
   clearFilters(): void {
@@ -132,6 +155,8 @@ export class PatientList implements OnInit {
     this.selectedGender = 'ALL';
     this.selectedStatus = 'ALL';
     this.dataSource.data = this.allPatients;
+    this.expandedPatient = null;
+    this.cdr.markForCheck();
   }
 
   openAddDialog(): void {
@@ -171,16 +196,12 @@ export class PatientList implements OnInit {
       return;
     }
 
-    const confirmed = confirm(
-      `Delete ${patient.name}? This action cannot be undone.`
-    );
-
+    const confirmed = confirm(`Delete ${patient.name}? This action cannot be undone.`);
     if (!confirmed) return;
 
     this.patientService.deletePatient(patient.UHID).subscribe({
       next: () => {
         this.toastr.success('Patient deleted successfully');
-        this.expandedPatient = null;
         this.loadPatients();
       },
       error: (err) => {
@@ -196,14 +217,12 @@ export class PatientList implements OnInit {
       next: () => {
         const updatedStatus = !patient.status;
 
-        patient.status = updatedStatus;
-
+        // Update local state without making a full API call to save bandwidth
         this.allPatients = this.allPatients.map(p =>
           p.UHID === patient.UHID ? { ...p, status: updatedStatus } : p
         );
 
-        this.dataSource.data = [...this.allPatients];
-
+        this.applyFilters(); // Re-apply current filters to the updated data
         this.toastr.success('Status updated successfully');
       },
       error: (err) => {

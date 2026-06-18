@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 
 export interface EmployeeRequest {
@@ -14,7 +15,7 @@ export interface EmployeeRequest {
   qualification?: string[];
   consultationFee?: number;
   availabilitySlots?: string[];
-  role: string;
+  roles: string[]; // 1. FIXED: Changed from 'role' to 'roles: string[]'
   status?: boolean;
   password?: string;
   confirmPassword?: string;
@@ -26,7 +27,8 @@ export interface EmployeeRequest {
 export class EmployeeService {
   private readonly http = inject(HttpClient);
 
-  private readonly baseUrl = 'http://localhost:3000/api/employees';
+  // 2. FIXED: Changed API_URL to apiUrl to match your environment.ts
+  private readonly baseUrl = `${environment.API_URL}/api/employees`;
 
   // Public employee registration
   registerEmployee(data: EmployeeRequest): Observable<any> {

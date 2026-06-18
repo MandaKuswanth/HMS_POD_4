@@ -5,11 +5,14 @@
 
     <main class="content">
 
-        <div class="loader" *ngIf="loading === true">
+        @if (loading) {
+        <div class="loader">
             <mat-spinner diameter="50"></mat-spinner>
         </div>
+        }
 
-        <mat-card class="profile-card" *ngIf="employee && loading === false">
+        @if (!loading && employee) {
+        <mat-card class="profile-card">
 
             <div class="profile-header">
                 <div class="profile-avatar" aria-hidden="true">
@@ -23,89 +26,85 @@
             </div>
 
             <div class="profile-grid">
-
                 <div class="profile-item">
                     <strong>Email</strong>
-                    <span>{{ employee.email }}</span>
+                    <span>{{ employee.email || 'N/A' }}</span>
                 </div>
 
                 <div class="profile-item">
                     <strong>Phone</strong>
-                    <span>{{ employee.phone }}</span>
+                    <span>{{ employee.phone || 'N/A' }}</span>
                 </div>
 
                 <div class="profile-item">
                     <strong>Department</strong>
-                    <span>{{ employee.department }}</span>
+                    <span>{{ employee.department || 'N/A' }}</span>
                 </div>
 
                 <div class="profile-item">
                     <strong>Designation</strong>
-                    <span>{{ employee.designation }}</span>
+                    <span>{{ employee.designation || 'N/A' }}</span>
                 </div>
 
                 <div class="profile-item">
                     <strong>Employee Code</strong>
-                    <span>{{ employee.employeeCode }}</span>
+                    <span>{{ employee.employeeCode || 'N/A' }}</span>
                 </div>
 
                 <div class="profile-item">
                     <strong>Status</strong>
-                    <span>
-                        {{ employee.status ? 'Active' : 'Inactive' }}
-                    </span>
+                    <span>{{ employee.status ? 'Active' : 'Inactive' }}</span>
                 </div>
-
             </div>
 
-            <!-- Doctor Section -->
-
-            <div *ngIf="isDoctor()" class="doctor-section">
-
+            @if (isDoctor()) {
+            <div class="doctor-section">
                 <h3>Doctor Information</h3>
 
                 <div class="profile-grid">
-
                     <div class="profile-item">
                         <strong>Medical Registration No</strong>
-                        <span>{{ employee.medicalRegistrationNo }}</span>
+                        <span>{{ employee.medicalRegistrationNo || 'N/A' }}</span>
                     </div>
 
                     <div class="profile-item">
                         <strong>Specialization</strong>
-                        <span>{{ employee.specialization }}</span>
+                        <span>{{ employee.specialization || 'N/A' }}</span>
                     </div>
 
                     <div class="profile-item">
                         <strong>Consultation Fee</strong>
-                        <span>₹{{ employee.consultationFee }}</span>
+                        <span>₹{{ employee.consultationFee || 0 }}</span>
                     </div>
-
                 </div>
 
                 <div class="extra-section">
                     <strong>Qualifications</strong>
-
                     <div class="chips">
-                        <span class="chip" *ngFor="let qualification of employee.qualification">
-                            {{ qualification }}
-                        </span>
+                        @for (qualification of employee.qualification; track qualification) {
+                        <span class="chip">{{ qualification }}</span>
+                        } @empty {
+                        <span class="chip">No qualifications listed</span>
+                        }
                     </div>
                 </div>
 
                 <div class="extra-section">
                     <strong>Availability Slots</strong>
-
                     <div class="chips">
-                        <span class="chip" *ngFor="let slot of employee.availabilitySlots">
-                            {{ slot }}
-                        </span>
+                        @for (slot of employee.availabilitySlots; track slot) {
+                        <span class="chip">{{ slot }}</span>
+                        } @empty {
+                        <span class="chip">No slots configured</span>
+                        }
                     </div>
                 </div>
 
             </div>
+            }
 
         </mat-card>
+        }
 
     </main>
 </div>

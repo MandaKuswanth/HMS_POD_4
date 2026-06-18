@@ -53,7 +53,7 @@ const nodes = [
         permissions: ["NODE_READ"],
         order: 7
     },
-    
+
 ];
 
 const seedNodes = async () => {
@@ -88,7 +88,7 @@ const seedNodes = async () => {
     }
 };
 
-seedNodes(); 
+seedNodes();
 
 // require("dotenv").config();
 

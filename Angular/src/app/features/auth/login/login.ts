@@ -1,23 +1,13 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  inject
-} from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators
-} from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { finalize } from 'rxjs';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../../core/services/auth';
@@ -25,16 +15,15 @@ import { AuthService } from '../../../core/services/auth';
 @Component({
   selector: 'app-login',
   standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
     MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule
   ],
   templateUrl: './login.html',
   styleUrl: './login.css'
@@ -44,92 +33,48 @@ export class Login {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
-  private readonly cdr = inject(ChangeDetectorRef);
 
   hidePassword = true;
   loading = false;
 
-  readonly loginForm = this.fb.nonNullable.group({
-    email: [
-      '',
-      [
-        Validators.required,
-        Validators.email,
-        Validators.pattern(
-          /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-        )
-      ]
-    ],
+  loginForm = this.fb.group({
+    email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required]
   });
 
-  get email() {
-    return this.loginForm.controls.email;
-  }
+  // Convenience getters for HTML template
+  get email() { return this.loginForm.get('email')!; }
+  get password() { return this.loginForm.get('password')!; }
 
-  get password() {
-    return this.loginForm.controls.password;
+  togglePasswordVisibility(): void {
+    this.hidePassword = !this.hidePassword;
   }
 
   onSubmit(): void {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
-      this.toastr.error('Please enter valid login details');
       return;
     }
 
     this.loading = true;
-    this.cdr.markForCheck();
+    const credentials = this.loginForm.getRawValue();
 
-    this.authService
-      .login(this.loginForm.getRawValue())
-      .pipe(
-        finalize(() => {
-          this.loading = false;
-          this.cdr.markForCheck();
-        })
-      )
-      .subscribe({
-        next: (response) => this.handleLoginSuccess(response),
+    this.authService.login({ email: credentials.email!, password: credentials.password! }).subscribe({
+      next: () => {
+        this.loading = false;
+        this.toastr.success('Login successful');
+        this.router.navigate(['/dashboard']); // Route to your main app
+      },
+      error: (err) => {
+        this.loading = false;
 
-        error: (error) => this.handleLoginError(error)
-      });
-  }
-
-  private handleLoginSuccess(response: any): void {
-    this.authService.saveLoginData(response);
-
-    const redirectUrl = this.authService.mustResetPassword()
-      ? '/reset-password'
-      : '/dashboard';
-
-    this.router.navigate([redirectUrl]).then(() => {
-      this.toastr.success('Login successful');
+        // Check if the backend rejected the login because the account is inactive
+        if (err.status === 403 || err.error?.message?.toLowerCase().includes('inactive')) {
+          this.router.navigate(['/account-inactive']);
+        } else {
+          this.toastr.error(err.error?.message || 'Invalid credentials');
+        }
+      }
     });
-  }
-
-  private handleLoginError(error: any): void {
-    console.error('Login Error:', error);
-
-    if (error.status === 403) {
-      this.router.navigate(['/account-inactive']);
-      return;
-    }
-
-    this.toastr.error(
-      this.getErrorMessage(error)
-    );
-  }
-
-  private getErrorMessage(error: any): string {
-    return (
-      error?.error?.message ??
-      error?.error?.errors?.[0] ??
-      'Invalid credentials'
-    );
-  }
-
-  togglePasswordVisibility(): void {
-    this.hidePassword = !this.hidePassword;
   }
 }

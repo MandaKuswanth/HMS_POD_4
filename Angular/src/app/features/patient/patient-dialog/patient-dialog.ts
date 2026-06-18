@@ -23,12 +23,24 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 
 import { ToastrService } from 'ngx-toastr';
-
 import { PatientService } from '../../../core/services/patient';
 
 export interface PatientDialogData {
     mode: 'add' | 'edit' | 'view';
     patient?: any;
+}
+
+// 1. Added Interface to fix the "never" TypeScript error
+interface PatientFormValue {
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    gender: string | null;
+    dob: string | Date | null;
+    address: string | null;
+    emergencyName: string | null;
+    emergencyRelation: string | null;
+    emergencyPhone: string | null;
 }
 
 @Component({
@@ -58,12 +70,11 @@ export class PatientDialog implements OnInit {
     readonly data = inject<PatientDialogData>(MAT_DIALOG_DATA);
 
     loading = false;
-
     genders = ['male', 'female', 'others'];
 
     form = this.fb.group({
         name: [
-            null,
+            null as string | null,
             [
                 Validators.required,
                 Validators.minLength(3),
@@ -71,57 +82,49 @@ export class PatientDialog implements OnInit {
                 Validators.pattern(/^[A-Za-z ]+$/)
             ]
         ],
-
         email: [
-            null,
+            null as string | null,
             [
                 Validators.required,
                 Validators.email,
                 Validators.maxLength(80)
             ]
         ],
-
         phone: [
-            null,
+            null as string | null,
             [
                 Validators.required,
                 Validators.pattern(/^[6-9]\d{9}$/)
             ]
         ],
-
         gender: [
-            null,
+            null as string | null,
             Validators.required
         ],
-
         dob: [
-            null,
+            null as string | Date | null,
             [
                 Validators.required,
-                this.futureDateValidator
+                (control: AbstractControl) => this.futureDateValidator(control)
             ]
         ],
-
         address: [
-            null,
+            null as string | null,
             Validators.maxLength(200)
         ],
-
         emergencyName: [
-            null,
+            null as string | null,
             [
                 Validators.maxLength(50),
                 Validators.pattern(/^[A-Za-z ]*$/)
             ]
         ],
-
         emergencyRelation: [
-            null,
+            null as string | null,
             Validators.maxLength(30)
         ],
-
         emergencyPhone: [
-            null,
+            null as string | null,
             Validators.pattern(/^[6-9]\d{9}$/)
         ]
     });
@@ -131,11 +134,9 @@ export class PatientDialog implements OnInit {
     }
 
     ngOnInit(): void {
-
         this.resetForm();
 
         if (this.data?.patient) {
-
             const patient = this.data.patient;
 
             this.form.patchValue({
@@ -160,10 +161,7 @@ export class PatientDialog implements OnInit {
         }
     }
 
-    private futureDateValidator(
-        control: AbstractControl
-    ): ValidationErrors | null {
-
+    private futureDateValidator(control: AbstractControl): ValidationErrors | null {
         if (!control.value) {
             return null;
         }
@@ -174,119 +172,58 @@ export class PatientDialog implements OnInit {
         selectedDate.setHours(0, 0, 0, 0);
         today.setHours(0, 0, 0, 0);
 
-        return selectedDate > today
-            ? { futureDate: true }
-            : null;
+        return selectedDate > today ? { futureDate: true } : null;
     }
 
     private resetForm(): void {
-
-        this.form.reset({
-            name: null,
-            email: null,
-            phone: null,
-            gender: null,
-            dob: null,
-            address: null,
-            emergencyName: null,
-            emergencyRelation: null,
-            emergencyPhone: null
-        });
-
+        this.form.reset();
         this.form.enable();
     }
 
     onSubmit(): void {
-
         if (this.form.invalid) {
             this.form.markAllAsTouched();
-            this.toastr.error(
-                'Please fill all required fields correctly'
-            );
+            this.toastr.error('Please fill all required fields correctly');
             return;
         }
 
         this.loading = true;
 
-        const formValue = this.form.getRawValue();
+        // 2. Explicitly cast the raw value to our interface
+        const f = this.form.getRawValue() as PatientFormValue;
 
         const payload = {
-            name: formValue.name ?? '',
-            email: formValue.email ?? '',
-            phone: formValue.phone ?? '',
-            gender: formValue.gender ?? '',
-            dob: formValue.dob
-                ? formatDate(
-                    new Date(formValue.dob),
-                    'yyyy-MM-dd',
-                    'en-US'
-                )
+            name: f.name?.trim() ?? '',
+            email: f.email?.trim() ?? '',
+            phone: f.phone?.trim() ?? '',
+            gender: f.gender ?? '',
+            dob: f.dob
+                ? formatDate(new Date(f.dob), 'yyyy-MM-dd', 'en-US')
                 : '',
-            address: formValue.address ?? '',
+            address: f.address?.trim() ?? '',
             emergencyContact: {
-                name: formValue.emergencyName ?? '',
-                relation: formValue.emergencyRelation ?? '',
-                phone: formValue.emergencyPhone ?? ''
+                name: f.emergencyName?.trim() ?? '',
+                relation: f.emergencyRelation?.trim() ?? '',
+                phone: f.emergencyPhone?.trim() ?? ''
             }
         };
 
-        // EDIT MODE
-        if (this.data.mode === 'edit') {
+        // 3. Consolidated API Call for both Edit and Add
+        const action$ = this.data.mode === 'edit'
+            ? this.patientService.updatePatient(this.data.patient.UHID, payload)
+            : this.patientService.createPatient(payload);
 
-            this.patientService
-                .updatePatient(
-                    this.data.patient.UHID,
-                    payload
-                )
-                .subscribe({
-
-                    next: () => {
-                        this.loading = false;
-
-                        this.toastr.success(
-                            'Patient updated successfully'
-                        );
-
-                        this.dialogRef.close(true);
-                    },
-
-                    error: (err) => {
-                        this.loading = false;
-
-                        this.toastr.error(
-                            err?.error?.message ||
-                            'Failed to update patient'
-                        );
-                    }
-                });
-
-            return;
-        }
-
-        // ADD MODE
-        this.patientService
-            .createPatient(payload)
-            .subscribe({
-
-                next: () => {
-                    this.loading = false;
-
-                    this.toastr.success(
-                        'Patient created successfully'
-                    );
-
-                    this.dialogRef.close(true);
-                },
-
-                error: (err) => {
-                    this.loading = false;
-
-                    this.toastr.error(
-                        err?.error?.message ||
-                        'Failed to create patient'
-                    );
-                }
-            });
+        action$.subscribe({
+            next: () => {
+                this.loading = false;
+                this.toastr.success(`Patient ${this.data.mode === 'edit' ? 'updated' : 'created'} successfully`);
+                this.dialogRef.close(true);
+            },
+            error: (err) => {
+                this.loading = false;
+                this.toastr.error(err?.error?.message || `Failed to ${this.data.mode} patient`);
+            }
+        });
     }
 
     onCancel(): void {

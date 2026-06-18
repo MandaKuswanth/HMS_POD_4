@@ -1,208 +1,159 @@
 <h2 mat-dialog-title class="dialog-title">
-  <span *ngIf="data.mode === 'add'">Add Patient</span>
-  <span *ngIf="data.mode === 'edit'">Edit Patient</span>
-  <span *ngIf="data.mode === 'view'">Patient Details</span>
+  @if (data.mode === 'add') { Add Patient }
+  @else if (data.mode === 'edit') { Edit Patient }
+  @else { Patient Details }
 </h2>
 
 <mat-dialog-content class="dialog-content">
-
   <form [formGroup]="form" class="dialog-form">
 
     <div class="form-grid">
 
-      <!-- Name -->
       <mat-form-field appearance="outline">
-        <mat-label>Name</mat-label>
+        <mat-label>Full Name *</mat-label>
+        <input matInput formControlName="name" placeholder="John Doe" />
 
-        <input matInput formControlName="name" />
-
-        <mat-error *ngIf="form.get('name')?.hasError('required')">
-          Name is required
-        </mat-error>
-
-        <mat-error *ngIf="form.get('name')?.hasError('minlength')">
-          Name must be at least 3 characters
-        </mat-error>
-
-        <mat-error *ngIf="form.get('name')?.hasError('maxlength')">
-          Name cannot exceed 50 characters
-        </mat-error>
-
-        <mat-error *ngIf="form.get('name')?.hasError('pattern')">
-          Name should contain only letters and spaces
-        </mat-error>
+        @if (form.get('name')?.hasError('required')) {
+        <mat-error>Name is required</mat-error>
+        }
+        @if (form.get('name')?.hasError('minlength')) {
+        <mat-error>Name must be at least 3 characters</mat-error>
+        }
+        @if (form.get('name')?.hasError('maxlength')) {
+        <mat-error>Name cannot exceed 50 characters</mat-error>
+        }
+        @if (form.get('name')?.hasError('pattern')) {
+        <mat-error>Name should contain only letters and spaces</mat-error>
+        }
       </mat-form-field>
 
-      <!-- Email -->
       <mat-form-field appearance="outline">
-        <mat-label>Email</mat-label>
+        <mat-label>Email Address *</mat-label>
+        <input matInput type="email" formControlName="email" placeholder="patient@example.com" />
 
-        <input
-          matInput
-          type="email"
-          formControlName="email"
-        />
-
-        <mat-error *ngIf="form.get('email')?.hasError('required')">
-          Email is required
-        </mat-error>
-
-        <mat-error *ngIf="form.get('email')?.hasError('email')">
-          Enter a valid email address
-        </mat-error>
-
-        <mat-error *ngIf="form.get('email')?.hasError('maxlength')">
-          Email cannot exceed 80 characters
-        </mat-error>
+        @if (form.get('email')?.hasError('required')) {
+        <mat-error>Email is required</mat-error>
+        }
+        @if (form.get('email')?.hasError('email')) {
+        <mat-error>Enter a valid email address</mat-error>
+        }
+        @if (form.get('email')?.hasError('maxlength')) {
+        <mat-error>Email cannot exceed 80 characters</mat-error>
+        }
       </mat-form-field>
 
-      <!-- Phone -->
       <mat-form-field appearance="outline">
-        <mat-label>Phone</mat-label>
+        <mat-label>Phone Number *</mat-label>
+        <input matInput formControlName="phone" maxlength="10" placeholder="9876543210" />
 
-        <input
-          matInput
-          formControlName="phone"
-          maxlength="10"
-        />
-
-        <mat-error *ngIf="form.get('phone')?.hasError('required')">
-          Phone number is required
-        </mat-error>
-
-        <mat-error *ngIf="form.get('phone')?.hasError('pattern')">
-          Enter a valid 10 digit phone number
-        </mat-error>
+        @if (form.get('phone')?.hasError('required')) {
+        <mat-error>Phone number is required</mat-error>
+        }
+        @if (form.get('phone')?.hasError('pattern')) {
+        <mat-error>Enter a valid 10 digit phone number</mat-error>
+        }
       </mat-form-field>
 
-      <!-- Gender -->
       <mat-form-field appearance="outline">
-        <mat-label>Gender</mat-label>
-
-        <mat-select formControlName="gender">
-          <mat-option
-            *ngFor="let g of genders"
-            [value]="g"
-          >
-            {{ g }}
+        <mat-label>Gender *</mat-label>
+        <mat-select formControlName="gender" placeholder="Select Gender">
+          @for (g of genders; track g) {
+          <mat-option [value]="g">
+            {{ g | titlecase }}
           </mat-option>
+          }
         </mat-select>
 
-        <mat-error *ngIf="form.get('gender')?.hasError('required')">
-          Gender is required
-        </mat-error>
+        @if (form.get('gender')?.hasError('required')) {
+        <mat-error>Gender is required</mat-error>
+        }
       </mat-form-field>
 
-      <!-- DOB -->
       <mat-form-field appearance="outline">
-        <mat-label>Date of Birth</mat-label>
-
-        <input
-          matInput
-          [matDatepicker]="picker"
-          formControlName="dob"
-        />
-
-        <mat-datepicker-toggle
-          matIconSuffix
-          [for]="picker">
+        <mat-label>Date of Birth *</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="dob" placeholder="Choose a date" />
+        <mat-datepicker-toggle matIconSuffix [for]="picker">
         </mat-datepicker-toggle>
-
         <mat-datepicker #picker></mat-datepicker>
 
-        <mat-error *ngIf="form.get('dob')?.hasError('required')">
-          Date of birth is required
-        </mat-error>
-
-        <mat-error *ngIf="form.get('dob')?.hasError('futureDate')">
-          Date of birth cannot be in the future
-        </mat-error>
+        @if (form.get('dob')?.hasError('required')) {
+        <mat-error>Date of birth is required</mat-error>
+        }
+        @if (form.get('dob')?.hasError('futureDate')) {
+        <mat-error>Date of birth cannot be in the future</mat-error>
+        }
       </mat-form-field>
 
-      <!-- Address -->
       <mat-form-field appearance="outline">
-        <mat-label>Address</mat-label>
+        <mat-label>Residential Address</mat-label>
+        <input matInput formControlName="address" placeholder="123 Main St, City" />
 
-        <input matInput formControlName="address" />
-
-        <mat-error *ngIf="form.get('address')?.hasError('maxlength')">
-          Address cannot exceed 200 characters
-        </mat-error>
+        @if (form.get('address')?.hasError('maxlength')) {
+        <mat-error>Address cannot exceed 200 characters</mat-error>
+        }
       </mat-form-field>
 
     </div>
 
     <div class="medical-section">
-
-      <h3>Emergency Contact</h3>
+      <h3>
+        <mat-icon style="vertical-align: middle; margin-right: 8px;">contact_phone</mat-icon>
+        Emergency Contact
+      </h3>
 
       <div class="form-grid">
 
-        <!-- Emergency Name -->
         <mat-form-field appearance="outline">
           <mat-label>Contact Name</mat-label>
+          <input matInput formControlName="emergencyName" placeholder="Jane Doe" />
 
-          <input matInput formControlName="emergencyName" />
-
-          <mat-error *ngIf="form.get('emergencyName')?.hasError('maxlength')">
-            Contact name cannot exceed 50 characters
-          </mat-error>
-
-          <mat-error *ngIf="form.get('emergencyName')?.hasError('pattern')">
-            Contact name should contain only letters and spaces
-          </mat-error>
+          @if (form.get('emergencyName')?.hasError('maxlength')) {
+          <mat-error>Contact name cannot exceed 50 characters</mat-error>
+          }
+          @if (form.get('emergencyName')?.hasError('pattern')) {
+          <mat-error>Contact name should contain only letters and spaces</mat-error>
+          }
         </mat-form-field>
 
-        <!-- Relation -->
         <mat-form-field appearance="outline">
           <mat-label>Relation</mat-label>
+          <input matInput formControlName="emergencyRelation" placeholder="Spouse, Sibling, etc." />
 
-          <input matInput formControlName="emergencyRelation" />
-
-          <mat-error *ngIf="form.get('emergencyRelation')?.hasError('maxlength')">
-            Relation cannot exceed 30 characters
-          </mat-error>
+          @if (form.get('emergencyRelation')?.hasError('maxlength')) {
+          <mat-error>Relation cannot exceed 30 characters</mat-error>
+          }
         </mat-form-field>
 
-        <!-- Emergency Phone -->
         <mat-form-field appearance="outline">
           <mat-label>Emergency Phone</mat-label>
+          <input matInput formControlName="emergencyPhone" maxlength="10" placeholder="9876543210" />
 
-          <input
-            matInput
-            formControlName="emergencyPhone"
-            maxlength="10"
-          />
-
-          <mat-error *ngIf="form.get('emergencyPhone')?.hasError('pattern')">
-            Enter a valid 10 digit phone number
-          </mat-error>
+          @if (form.get('emergencyPhone')?.hasError('pattern')) {
+          <mat-error>Enter a valid 10 digit phone number</mat-error>
+          }
         </mat-form-field>
 
       </div>
-
     </div>
 
   </form>
-
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="dialog-actions">
 
-  <button
-    mat-button
-    (click)="onCancel()">
+  <button mat-button type="button" (click)="onCancel()">
     Close
   </button>
 
-  <button
-    *ngIf="!isViewMode"
-    mat-raised-button
-    color="primary"
-    (click)="onSubmit()">
+  @if (!isViewMode) {
+  <button mat-flat-button color="primary" type="button" [disabled]="loading" (click)="onSubmit()">
 
-    {{ data.mode === 'add' ? 'Create' : 'Update' }}
-
+    @if (loading) {
+    {{ data.mode === 'add' ? 'Creating...' : 'Updating...' }}
+    } @else {
+    {{ data.mode === 'add' ? 'Create Patient' : 'Save Changes' }}
+    }
   </button>
+  }
 
 </mat-dialog-actions>

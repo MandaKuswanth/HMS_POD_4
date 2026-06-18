@@ -1,9 +1,10 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { Navbar } from '../../shared/components/navbar/navbar';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
@@ -16,10 +17,12 @@ import { PatientService } from '../../core/services/patient';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush, // Added for max performance
   imports: [
     CommonModule,
     MatCardModule,
     MatIconModule,
+    MatProgressSpinnerModule,
     Navbar,
     Sidebar
   ],
@@ -35,184 +38,125 @@ export class Dashboard implements OnInit {
   private readonly router = inject(Router);
 
   user: any = null;
-  role: string | null = null;
+  role: string = '';
 
-  canViewEmployeeStats = false;
+  // Loading States
+  isLoadingProfile = true;
+  isLoadingEmployees = false;
+  isLoadingAppointments = false;
+  isLoadingPatients = false;
 
+  // Counts
   totalEmployees = 0;
   activeEmployees = 0;
   pendingEmployees = 0;
-  totalPatients=0;
+  totalPatients = 0;
   appointmentsCount = 0;
 
+  // RBAC Getters
+  get isAdminOrTechnician(): boolean { return ['ADMIN', 'TECHNICIAN'].includes(this.role); }
+  get isDoctor(): boolean { return this.role === 'DOCTOR'; }
+  get isNurse(): boolean { return this.role === 'NURSE'; }
+  get isReceptionist(): boolean { return this.role === 'RECEPTIONIST'; }
+  get canViewAppointments(): boolean { return ['ADMIN', 'RECEPTIONIST', 'DOCTOR'].includes(this.role); }
+  get canViewPatients(): boolean { return ['ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR'].includes(this.role); }
+
   ngOnInit(): void {
-    this.role = this.authService.getRole()?.toUpperCase() || null;
+    // 1. Establish Role immediately from token/local storage
+    this.role = this.authService.getRole()?.toUpperCase().trim() || '';
 
-    console.log('DASHBOARD ROLE:', this.role);
-
-    this.canViewEmployeeStats = this.isAdminOrTechnician();
-
+    // 2. Fetch all required data concurrently rather than waiting for profile to finish
     this.loadProfile();
 
-    if (this.canViewEmployeeStats) {
+    if (this.isAdminOrTechnician) {
       this.loadEmployeesCount();
     }
 
-    if (this.canViewAppointments()) {
+    if (this.canViewAppointments) {
       this.loadAppointmentsCount();
     }
-    this.loadPatientsCount();
-  }
 
-  isAdminOrTechnician(): boolean {
-    const currentRole = this.role?.toUpperCase()?.trim();
-    return currentRole === 'ADMIN' || currentRole === 'TECHNICIAN';
+    if (this.canViewPatients) {
+      this.loadPatientsCount();
+    }
   }
 
   private loadProfile(): void {
     this.employeeService.getProfile().subscribe({
       next: (response: any) => {
-        console.log('PROFILE RESPONSE:', response);
-
-        this.user =
-          response?.data?.employee ||
-          response?.employee ||
-          response?.data ||
-          response;
-
-        if (!this.role && this.user?.role) {
-          this.role = this.user.role.toUpperCase();
-        }
-
-        this.canViewEmployeeStats = this.isAdminOrTechnician();
-
-        if (this.canViewEmployeeStats) {
-          this.loadEmployeesCount();
-        }
-
-        if (this.canViewAppointments()) {
-          this.loadAppointmentsCount();
-        }
-
-        this.cdr.detectChanges();
+        this.user = response?.data?.employee || response?.employee || response?.data || response;
+        this.isLoadingProfile = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         console.error('PROFILE ERROR:', error);
+        this.isLoadingProfile = false;
+        this.cdr.markForCheck();
       }
     });
   }
 
   private loadEmployeesCount(): void {
+    this.isLoadingEmployees = true;
     this.employeeService.getEmployees().subscribe({
       next: (response: any) => {
-        console.log('DASHBOARD EMPLOYEE RESPONSE:', response);
-
-        let employees: any[] = [];
-
-        if (Array.isArray(response?.data)) {
-          employees = response.data;
-        } else if (Array.isArray(response)) {
-          employees = response;
-        }
+        const employees = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
 
         this.totalEmployees = employees.length;
+        this.activeEmployees = employees.filter((emp: any) => emp.status === true || emp.isActive === true || emp.is_active === true).length;
+        this.pendingEmployees = employees.filter((emp: any) => emp.status === false || emp.isActive === false || emp.is_active === false).length;
 
-        this.activeEmployees = employees.filter((emp: any) =>
-          emp.status === true ||
-          emp.isActive === true ||
-          emp.is_active === true
-        ).length;
-
-        this.pendingEmployees = employees.filter((emp: any) =>
-          emp.status === false ||
-          emp.isActive === false ||
-          emp.is_active === false
-        ).length;
-
-        this.cdr.detectChanges();
+        this.isLoadingEmployees = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('DASHBOARD EMPLOYEE COUNT ERROR:', err);
-
-        this.totalEmployees = 0;
-        this.activeEmployees = 0;
-        this.pendingEmployees = 0;
-
-        this.cdr.detectChanges();
+        this.isLoadingEmployees = false;
+        this.cdr.markForCheck();
       }
     });
-  }
-
-  private canViewAppointments(): boolean {
-    return ['ADMIN', 'RECEPTIONIST', 'DOCTOR'].includes(this.role || '');
   }
 
   private loadAppointmentsCount(): void {
-    this.appointmentService.getAppointments().subscribe({
+    this.isLoadingAppointments = true;
+    this.appointmentService.getStaffAppointments().subscribe({
       next: (response: any) => {
-        console.log('DASHBOARD APPOINTMENTS RESPONSE:', response);
-
-        let appointments: any[] = [];
-
-        if (Array.isArray(response?.data)) {
-          appointments = response.data;
-        } else if (Array.isArray(response)) {
-          appointments = response;
-        }
-
+        const appointments = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
         this.appointmentsCount = appointments.length;
-
-        this.cdr.detectChanges();
+        this.isLoadingAppointments = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         console.error('DASHBOARD APPOINTMENT COUNT ERROR:', error);
-
-        this.appointmentsCount = 0;
-
-        this.cdr.detectChanges();
+        this.isLoadingAppointments = false;
+        this.cdr.markForCheck();
       }
     });
   }
 
+  private loadPatientsCount(): void {
+    this.isLoadingPatients = true;
+    this.patientService.getPatients().subscribe({
+      next: (response: any) => {
+        this.totalPatients = response?.data?.count || response?.data?.patients?.length || 0;
+        this.isLoadingPatients = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('PATIENT COUNT ERROR:', error);
+        this.isLoadingPatients = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // Navigation
   goToEmployees(view: string): void {
-    if (view === 'all') {
-      this.router.navigate(['/employees']);
-    } else {
-      this.router.navigate(['/employees'], {
-        queryParams: { view }
-      });
-    }
+    const queryParams = view === 'all' ? {} : { view };
+    this.router.navigate(['/employees'], { queryParams });
   }
 
   goToAppointments(): void {
     this.router.navigate(['/appointments']);
   }
-  private loadPatientsCount(): void {
-
-  this.patientService.getPatients().subscribe({
-
-    next: (response: any) => {
-
-      console.log('PATIENT RESPONSE:', response);
-
-      this.totalPatients =
-        response?.data?.count ||
-        response?.data?.patients?.length ||
-        0;
-
-      this.cdr.detectChanges();
-    },
-
-    error: (error) => {
-
-      console.error('PATIENT COUNT ERROR:', error);
-
-      this.totalPatients = 0;
-
-      this.cdr.detectChanges();
-    }
-
-  });
-
-}
 }

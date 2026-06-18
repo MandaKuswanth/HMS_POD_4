@@ -1,7 +1,7 @@
 const router = require("express").Router();
-
 const auth = require("../middleware/authMiddleware");
 const allowPermission = require("../middleware/checkPermission");
+const { PERMISSIONS } = require("../constants/permission"); // 1. Import constants
 
 const {
     getDoctors,
@@ -15,42 +15,42 @@ const {
 router.get(
     "/doctors",
     auth,
-    allowPermission("APPOINTMENT_VIEW"),
+    allowPermission(PERMISSIONS.APPOINTMENT_VIEW), // 2. Use PERMISSIONS.KEY
     getDoctors
 );
 
 router.get(
     "/slots",
     auth,
-    allowPermission("APPOINTMENT_VIEW"),
+    allowPermission(PERMISSIONS.APPOINTMENT_VIEW),
     getDoctorSlots
 );
 
 router.post(
     "/patient-appointments",
     auth,
-    allowPermission("APPOINTMENT_CREATE"),
+    allowPermission(PERMISSIONS.APPOINTMENT_CREATE),
     bookAppointment
 );
 
 router.get(
     "/my-appointments",
     auth,
-    allowPermission("APPOINTMENT_VIEW"),
+    allowPermission(PERMISSIONS.APPOINTMENT_VIEW),
     getMyAppointments
 );
 
 router.put(
     "/patient-appointments/:appointmentId",
     auth,
-    allowPermission("APPOINTMENT_CREATE"),
+    allowPermission(PERMISSIONS.APPOINTMENT_CREATE), // Or APPOINTMENT_UPDATE if preferred
     updateMyAppointment
 );
 
 router.put(
     "/patient-appointments/:appointmentId/cancel",
     auth,
-    allowPermission("APPOINTMENT_CANCEL"),
+    allowPermission(PERMISSIONS.APPOINTMENT_CANCEL),
     cancelMyAppointment
 );
 

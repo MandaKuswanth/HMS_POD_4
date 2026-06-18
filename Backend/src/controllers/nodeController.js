@@ -1,10 +1,8 @@
 const Node = require("../models/Node");
 const Role = require("../models/Role");
-
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
-const asyncHandler = require("../middlewares/asyncHandler");
-
+const asyncHandler = require("../middleware/asyncHandler");
 
 const buildNodeResponse = (node) => {
     return {
@@ -50,7 +48,6 @@ const buildMenuTree = (nodes) => {
 
     const sortMenu = (items) => {
         items.sort((a, b) => a.order - b.order);
-
         items.forEach((item) => {
             if (item.children?.length) {
                 sortMenu(item.children);
@@ -59,7 +56,6 @@ const buildMenuTree = (nodes) => {
     };
 
     sortMenu(menu);
-
     return menu;
 };
 
@@ -68,22 +64,12 @@ const getUserPermissions = async (roleIds) => {
         roleId: { $in: roleIds },
         status: true
     });
-
     const permissions = roles.flatMap((role) => role.permissions);
-
     return [...new Set(permissions)];
 };
 
 exports.createNode = asyncHandler(async (req, res) => {
-    const {
-        name,
-        path,
-        icon,
-        permissions,
-        parentNodeId,
-        order,
-        status
-    } = req.body;
+    const { name, path, icon, permissions, parentNodeId, order, status } = req.body;
 
     if (!name || !path) {
         throw new ApiError(400, "Node name and path are required");
@@ -93,21 +79,13 @@ exports.createNode = asyncHandler(async (req, res) => {
         throw new ApiError(400, "At least one permission is required");
     }
 
-    const existingNode = await Node.findOne({
-        path,
-        isDeleted: false
-    });
-
+    const existingNode = await Node.findOne({ path, isDeleted: false });
     if (existingNode) {
         throw new ApiError(409, "Node path already exists");
     }
 
     if (parentNodeId) {
-        const parentNode = await Node.findOne({
-            nodeId: parentNodeId,
-            isDeleted: false
-        });
-
+        const parentNode = await Node.findOne({ nodeId: parentNodeId, isDeleted: false });
         if (!parentNode) {
             throw new ApiError(404, "Parent node not found");
         }
@@ -123,20 +101,13 @@ exports.createNode = asyncHandler(async (req, res) => {
         status: status !== undefined ? status : true
     });
 
-
     return res.status(201).json(
-        new ApiResponse(
-            201,
-            buildNodeResponse(node),
-            "Node created successfully"
-        )
+        new ApiResponse(201, buildNodeResponse(node), "Node created successfully")
     );
 });
 
 exports.getNodes = asyncHandler(async (req, res) => {
-    const query = {
-        isDeleted: false
-    };
+    const query = { isDeleted: false };
 
     if (req.query.status !== undefined) {
         query.status = req.query.status === "true";
@@ -146,76 +117,41 @@ exports.getNodes = asyncHandler(async (req, res) => {
         query.parentNodeId = req.query.parentNodeId;
     }
 
-    const nodes = await Node.find(query).sort({
-        order: 1,
-        createdAt: -1
-    });
+    const nodes = await Node.find(query).sort({ order: 1, createdAt: -1 });
 
     return res.status(200).json(
-        new ApiResponse(
-            200,
-            nodes.map(buildNodeResponse),
-            "Nodes fetched successfully"
-        )
+        new ApiResponse(200, nodes.map(buildNodeResponse), "Nodes fetched successfully")
     );
 });
 
 exports.getNodeById = asyncHandler(async (req, res) => {
     const { nodeId } = req.params;
-
-    const node = await Node.findOne({
-        nodeId,
-        isDeleted: false
-    });
+    const node = await Node.findOne({ nodeId, isDeleted: false });
 
     if (!node) {
         throw new ApiError(404, "Node not found");
     }
 
     return res.status(200).json(
-        new ApiResponse(
-            200,
-            buildNodeResponse(node),
-            "Node fetched successfully"
-        )
+        new ApiResponse(200, buildNodeResponse(node), "Node fetched successfully")
     );
 });
 
 exports.updateNode = asyncHandler(async (req, res) => {
     const { nodeId } = req.params;
-
-    const node = await Node.findOne({
-        nodeId,
-        isDeleted: false
-    });
+    const node = await Node.findOne({ nodeId, isDeleted: false });
 
     if (!node) {
         throw new ApiError(404, "Node not found");
     }
 
-    const oldValue = buildNodeResponse(node);
-
-    const {
-        name,
-        path,
-        icon,
-        permissions,
-        parentNodeId,
-        order,
-        status
-    } = req.body;
+    const { name, path, icon, permissions, parentNodeId, order, status } = req.body;
 
     if (path && path !== node.path) {
-        const existingNode = await Node.findOne({
-            path,
-            nodeId: { $ne: nodeId },
-            isDeleted: false
-        });
-
+        const existingNode = await Node.findOne({ path, nodeId: { $ne: nodeId }, isDeleted: false });
         if (existingNode) {
             throw new ApiError(409, "Node path already exists");
         }
-
         node.path = path;
     }
 
@@ -223,20 +159,12 @@ exports.updateNode = asyncHandler(async (req, res) => {
         if (parentNodeId === nodeId) {
             throw new ApiError(400, "Node cannot be parent of itself");
         }
-
-        const parentNode = await Node.findOne({
-            nodeId: parentNodeId,
-            isDeleted: false
-        });
-
+        const parentNode = await Node.findOne({ nodeId: parentNodeId, isDeleted: false });
         if (!parentNode) {
             throw new ApiError(404, "Parent node not found");
         }
-
         node.parentNodeId = parentNodeId;
-    }
-
-    if (parentNodeId === null) {
+    } else if (parentNodeId === null) {
         node.parentNodeId = null;
     }
 
@@ -248,26 +176,10 @@ exports.updateNode = asyncHandler(async (req, res) => {
 
     await node.save();
 
-    const newValue = buildNodeResponse(node);
-
-    await createAuditLog({
-        req,
-        action: "NODE_UPDATED",
-        entityType: "NODE",
-        entityId: node.nodeId,
-        oldValue,
-        newValue
-    });
-
     return res.status(200).json(
-        new ApiResponse(
-            200,
-            newValue,
-            "Node updated successfully"
-        )
+        new ApiResponse(200, buildNodeResponse(node), "Node updated successfully")
     );
 });
-
 
 exports.getMyMenu = asyncHandler(async (req, res) => {
     const roleIds = req.user?.roleIds || [];
@@ -281,22 +193,15 @@ exports.getMyMenu = asyncHandler(async (req, res) => {
     const nodes = await Node.find({
         status: true,
         isDeleted: false,
-        permissions: {
-            $in: userPermissions
-        }
-    }).sort({
-        order: 1
-    });
+        permissions: { $in: userPermissions }
+    }).sort({ order: 1 });
 
     const menuTree = buildMenuTree(nodes);
 
     return res.status(200).json(
         new ApiResponse(
             200,
-            {
-                permissions: userPermissions,
-                menu: menuTree
-            },
+            { permissions: userPermissions, menu: menuTree },
             "Menu fetched successfully"
         )
     );

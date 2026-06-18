@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
@@ -26,7 +26,11 @@ export class Navbar {
   private readonly toastr = inject(ToastrService);
   private readonly router = inject(Router);
 
-  role = this.authService.getRole();
+  get primaryRole(): string {
+    const user = this.authService.getUser();
+    // Return the name of the first role, or 'USER' as a fallback
+    return user?.roles?.[0]?.name ?? 'USER';
+  }
 
   logout(): void {
     this.authService.logout();

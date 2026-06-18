@@ -3,6 +3,7 @@ const router = express.Router();
 
 const authMiddleware = require("../middleware/authMiddleware");
 const allowPermission = require("../middleware/checkPermission");
+const { PERMISSIONS } = require("../constants/permission"); // 1. Import Constants
 
 const {
     createPatient,
@@ -13,45 +14,46 @@ const {
     togglePatientStatus
 } = require("../controllers/patientController");
 
+// Use PERMISSIONS.KEY instead of hardcoded strings
 router.post(
     "/",
     authMiddleware,
-    allowPermission("PATIENT_CREATE"),
+    allowPermission(PERMISSIONS.PATIENT_CREATE),
     createPatient
 );
 
 router.get(
     "/",
     authMiddleware,
-    allowPermission("PATIENT_VIEW"),
+    allowPermission(PERMISSIONS.PATIENT_VIEW), // Maps to "PATIENT_READ"
     getPatients
 );
 
 router.get(
     "/:uhid",
     authMiddleware,
-    allowPermission("PATIENT_VIEW"),
+    allowPermission(PERMISSIONS.PATIENT_VIEW), // Maps to "PATIENT_READ"
     getPatientById
 );
 
 router.put(
     "/:uhid",
     authMiddleware,
-    allowPermission("PATIENT_UPDATE"),
+    allowPermission(PERMISSIONS.PATIENT_UPDATE),
     updatePatient
 );
 
 router.delete(
     "/:uhid",
     authMiddleware,
-    allowPermission("PATIENT_DELETE"),
+    allowPermission(PERMISSIONS.PATIENT_DELETE),
     deletePatient
 );
 
 router.patch(
     "/:uhid/status",
     authMiddleware,
-    allowPermission("PATIENT_UPDATE"),
+    allowPermission(PERMISSIONS.PATIENT_UPDATE),
     togglePatientStatus
 );
 

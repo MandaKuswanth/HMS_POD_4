@@ -29,9 +29,7 @@
     border-radius: 30px;
     color: white;
     margin-bottom: 34px;
-    box-shadow:
-        0 18px 45px rgba(25, 118, 210, 0.22),
-        0 4px 12px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 18px 45px rgba(25, 118, 210, 0.22), 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .welcome h1 {
@@ -61,32 +59,21 @@
     width: 100%;
     max-width: 320px;
     min-height: 185px;
-
     padding: 28px !important;
     border-radius: 26px !important;
-
     background: #ffffff !important;
     color: #1f2937 !important;
     border: 1px solid rgba(25, 118, 210, 0.08);
-
     display: flex !important;
     flex-direction: column;
     justify-content: center;
-
-    box-shadow:
-        0 18px 40px rgba(25, 118, 210, 0.08),
-        0 4px 12px rgba(0, 0, 0, 0.04) !important;
-
-    transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease;
+    box-shadow: 0 18px 40px rgba(25, 118, 210, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .overview-card:hover {
     transform: translateY(-5px);
-    box-shadow:
-        0 24px 52px rgba(25, 118, 210, 0.14),
-        0 6px 16px rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 24px 52px rgba(25, 118, 210, 0.14), 0 6px 16px rgba(0, 0, 0, 0.06) !important;
 }
 
 .overview-card mat-icon {
@@ -124,6 +111,12 @@
 /* CLICKABLE CARD */
 .clickable-card {
     cursor: pointer;
+    outline: none;
+    /* remove default focus outline for custom */
+}
+
+.clickable-card:focus-visible {
+    box-shadow: 0 0 0 3px #90caf9, 0 18px 40px rgba(25, 118, 210, 0.08) !important;
 }
 
 .clickable-card:hover {

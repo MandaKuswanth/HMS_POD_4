@@ -1,88 +1,94 @@
+/* Container */
 .dialog-form {
     padding-top: 8px;
-    min-width: 680px;
+    min-width: 580px;
 }
-
 
 /* GRID */
-
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 18px;
 }
 
-
-/* MATERIAL */
-
-::ng-deep .mat-mdc-form-field {
+mat-form-field {
     width: 100%;
 }
 
+/* Material Override (Indigo Theme) */
 ::ng-deep .mdc-text-field--outlined {
-    border-radius: 16px !important;
-    background: rgba(248, 255, 254, 0.7);
+    border-radius: 12px !important;
+    background: #f8f9fa;
 }
-
 
 /* TITLE */
-
-::ng-deep .mat-mdc-dialog-title {
-    font-size: 28px !important;
+.dialog-title {
+    font-size: 24px !important;
     font-weight: 800 !important;
-    color: #003c35;
-    padding-bottom: 8px;
+    color: #311b92;
+    /* Deep Indigo */
+    margin: 0 0 16px 0;
+    padding: 0 0 16px 0;
+    border-bottom: 1px solid rgba(49, 27, 146, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-
-/* CONTENT */
-
-::ng-deep .mat-mdc-dialog-content {
-    padding-top: 10px !important;
+.dialog-title mat-icon {
+    font-size: 28px;
+    height: 28px;
+    width: 28px;
+    color: #3f51b5;
 }
 
-
-/* SECTION */
-
-.medical-section {
-    margin-top: 34px;
-    padding: 28px;
-    border-radius: 24px;
-    background: linear-gradient(135deg, rgba(0, 121, 107, 0.03), rgba(0, 121, 107, 0.015));
-    border: 1px solid rgba(0, 121, 107, 0.08);
+/* CONTENT & SCROLLBAR */
+.dialog-content {
+    padding-top: 16px !important;
+    max-height: 72vh;
+    overflow-y: visible;
+    /* Allows datepicker to pop out cleanly */
 }
-
-.medical-section h3 {
-    margin-top: 0;
-    color: #004d40;
-    font-size: 20px;
-    font-weight: 700;
-}
-
 
 /* ACTIONS */
-
-::ng-deep .mat-mdc-dialog-actions {
-    padding-top: 24px !important;
+.dialog-actions {
+    padding: 16px 24px 20px !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    margin-bottom: 0;
     gap: 12px;
 }
 
-
-/* BUTTONS */
-
-::ng-deep .mat-mdc-dialog-actions button {
-    border-radius: 14px !important;
+.dialog-actions button {
+    border-radius: 10px !important;
+    font-weight: 700;
+    height: 42px;
+    padding: 0 20px;
 }
 
+/* Primary Button Theming (Indigo) */
+.primary-indigo-btn {
+    background-color: #3f51b5 !important;
+    color: white !important;
+}
+
+.primary-indigo-btn:hover {
+    background-color: #303f9f !important;
+}
+
+.primary-indigo-btn:disabled {
+    background-color: #c5cae9 !important;
+    color: #311b92 !important;
+    opacity: 0.7;
+}
 
 /* RESPONSIVE */
-
-@media (max-width: 900px) {
+@media (max-width: 768px) {
     .dialog-form {
-        min-width: auto;
+        min-width: 100%;
     }
 
     .form-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
     }
 }

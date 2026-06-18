@@ -1,19 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-
 import { HttpClient } from '@angular/common/http';
-
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment'; // Make sure this path is correct
 
 export interface AppointmentRequest {
-
     patientId: string;
-
     doctorEmployeeId: string;
-
     date: string;
-
     timeSlot: string;
-
 }
 
 @Injectable({
@@ -21,49 +15,34 @@ export interface AppointmentRequest {
 })
 export class AppointmentService {
 
-    readonly http = inject(HttpClient);
+    private readonly http = inject(HttpClient);
 
-    readonly baseUrl =
-        'http://localhost:3000/api';
+    // Use environment variable instead of hardcoding localhost
+    private readonly baseUrl = `${environment.API_URL}/api`;
 
-    createAppointment(
-        data: AppointmentRequest
-    ): Observable<any> {
+    /* ==========================================================
+       STAFF / ADMIN ROUTES (Protected by adminReceptionistAccess)
+       ========================================================== */
 
-        return this.http.post(
-            `${this.baseUrl}/appointments`,
-            data
-        );
+    createStaffAppointment(data: AppointmentRequest): Observable<any> {
+        return this.http.post(`${this.baseUrl}/appointments`, data);
     }
 
-    getAppointments(): Observable<any> {
-
-        return this.http.get(
-            `${this.baseUrl}/appointments`
-        );
+    getStaffAppointments(): Observable<any> {
+        return this.http.get(`${this.baseUrl}/appointments`);
     }
 
-    deleteAppointment(
-        appointmentId: string
-    ): Observable<any> {
-
-        return this.http.delete(
-            `${this.baseUrl}/appointments/${appointmentId}`
-        );
+    deleteAppointment(appointmentId: string): Observable<any> {
+        return this.http.delete(`${this.baseUrl}/appointments/${appointmentId}`);
     }
 
     approveAppointment(appointmentId: string): Observable<any> {
-    return this.http.put(
-      `${this.baseUrl}/appointments/${appointmentId}/approve`,
-      {}
-    );
-  }
+        return this.http.put(`${this.baseUrl}/appointments/${appointmentId}/approve`, {});
+    }
 
-  rejectAppointment(appointmentId: string): Observable<any> {
-    return this.http.put(
-      `${this.baseUrl}/appointments/${appointmentId}/reject`,
-      {}
-    );
-  }
+    rejectAppointment(appointmentId: string): Observable<any> {
+        return this.http.put(`${this.baseUrl}/appointments/${appointmentId}/reject`, {});
+    }
+
 
 }

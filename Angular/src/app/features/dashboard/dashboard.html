@@ -4,70 +4,67 @@
   <app-sidebar></app-sidebar>
 
   <main class="content">
+
     <section class="welcome">
+      @if (isLoadingProfile) {
+      <h1>Welcome...</h1>
+      <p>Loading your profile...</p>
+      } @else {
       <h1>Welcome, {{ user?.name || 'User' }}</h1>
       <p>You are logged in as <strong>{{ role }}</strong></p>
+      }
     </section>
 
     <section class="cards">
 
-      @if (canViewEmployeeStats) {
-
+      @if (isAdminOrTechnician) {
       <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToEmployees('all')"
-        (keydown.enter)="goToEmployees('all')" (keydown.space)="goToEmployees('all')">
+        (keydown.enter)="goToEmployees('all')">
         <mat-icon>groups</mat-icon>
         <h3>Total Employees</h3>
-        <p class="count">{{ totalEmployees }}</p>
+        <p class="count">{{ isLoadingEmployees ? '-' : totalEmployees }}</p>
       </mat-card>
 
       <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToEmployees('active')"
-        (keydown.enter)="goToEmployees('active')" (keydown.space)="goToEmployees('active')">
+        (keydown.enter)="goToEmployees('active')">
         <mat-icon>check_circle</mat-icon>
         <h3>Active Employees</h3>
-        <p class="count">{{ activeEmployees }}</p>
+        <p class="count">{{ isLoadingEmployees ? '-' : activeEmployees }}</p>
       </mat-card>
 
       <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToEmployees('pending')"
-        (keydown.enter)="goToEmployees('pending')" (keydown.space)="goToEmployees('pending')">
+        (keydown.enter)="goToEmployees('pending')">
         <mat-icon>hourglass_empty</mat-icon>
         <h3>Pending Employees</h3>
-        <p class="count">{{ pendingEmployees }}</p>
+        <p class="count">{{ isLoadingEmployees ? '-' : pendingEmployees }}</p>
       </mat-card>
-
       }
 
-      @if (role === 'DOCTOR') {
-
+      @if (isDoctor) {
       <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToAppointments()"
-        (keydown.enter)="goToAppointments()" (keydown.space)="goToAppointments()">
+        (keydown.enter)="goToAppointments()">
         <mat-icon>event</mat-icon>
         <h3>My Appointments</h3>
-        <p class="count">{{ appointmentsCount }}</p>
+        <p class="count">{{ isLoadingAppointments ? '-' : appointmentsCount }}</p>
       </mat-card>
-
       }
 
-      @if (role === 'NURSE' || role === 'RECEPTIONIST') {
-
-      <mat-card class="overview-card clickable-card" tabindex="0" (keydown.enter)="$event.preventDefault()"
-        (keydown.space)="$event.preventDefault()">
-        <mat-icon>groups</mat-icon>
+      @if (canViewPatients) {
+      <mat-card class="overview-card clickable-card" tabindex="0">
+        <mat-icon>personal_injury</mat-icon>
         <h3>Total Patients</h3>
-        <p class="count">{{ totalPatients }}</p>
+        <p class="count">{{ isLoadingPatients ? '-' : totalPatients }}</p>
       </mat-card>
-
       }
 
-      @if (role === 'RECEPTIONIST') {
-
+      @if (isReceptionist) {
       <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToAppointments()"
-        (keydown.enter)="goToAppointments()" (keydown.space)="goToAppointments()">
+        (keydown.enter)="goToAppointments()">
         <mat-icon>event_available</mat-icon>
-        <h3>Appointments</h3>
-        <p class="count">{{ appointmentsCount }}</p>
+        <h3>All Appointments</h3>
+        <p class="count">{{ isLoadingAppointments ? '-' : appointmentsCount }}</p>
       </mat-card>
-    }
-      
+      }
 
     </section>
   </main>

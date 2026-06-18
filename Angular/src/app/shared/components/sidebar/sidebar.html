@@ -1,40 +1,43 @@
-<div class="sidebar">
-  <div class="sidebar-brand">
+<aside class="sidebar">
 
+  <div class="sidebar-header">
+    <div class="logo-box">
+      <mat-icon>local_hospital</mat-icon>
+    </div>
+    <h2>HMS <span>Pro</span></h2>
   </div>
 
-  <div class="sidebar-divider"></div>
-
   <nav class="sidebar-nav">
-    <a class="nav-item" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-      <mat-icon>dashboard</mat-icon>
-      <span class="nav-label">Dashboard</span>
-    </a>
 
-    @if (isAdminOrTechnician()) {
-    <a class="nav-item" routerLink="/employees" routerLinkActive="active">
-      <mat-icon>groups</mat-icon>
-      <span class="nav-label">Employee List</span>
-    </a>
+    @if (isLoading) {
+    <div class="loading-skeleton">
+      <div class="skeleton-item"></div>
+      <div class="skeleton-item"></div>
+      <div class="skeleton-item"></div>
+      <div class="skeleton-item"></div>
+    </div>
+    } @else {
+
+    <ul class="nav-list">
+      @for (item of menuItems; track item.path) {
+      <li>
+        <a [routerLink]="item.path" routerLinkActive="active" class="nav-link" matRipple>
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span>{{ item.name }}</span>
+        </a>
+      </li>
+      }
+    </ul>
+
     }
 
-    @if (isAdminOrReceptionistOrNurse()) {
-    <a class="nav-item" routerLink="/patients" routerLinkActive="active">
-      <mat-icon>personal_injury</mat-icon>
-      <span class="nav-label">Patients</span>
-    </a>
-    }
-
-    @if (isAdminOrReceptionistOrDoctor()) {
-    <a class="nav-item" routerLink="/appointments" routerLinkActive="active">
-      <mat-icon>event_available</mat-icon>
-      <span class="nav-label">Appointments</span>
-    </a>
-    }
-
-    <a class="nav-item" routerLink="/profile" routerLinkActive="active">
-      <mat-icon>person</mat-icon>
-      <span class="nav-label">Profile</span>
-    </a>
   </nav>
-</div>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" (click)="logout()" matRipple>
+      <mat-icon>logout</mat-icon>
+      <span>Logout</span>
+    </button>
+  </div>
+
+</aside>

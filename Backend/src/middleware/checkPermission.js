@@ -64,15 +64,27 @@ const checkPermission = (requiredPermission) => {
                 });
             }
 
-            const permissions = roles.flatMap((role) => {
-                return Array.isArray(role.permissions)
-                    ? role.permissions
-                    : [];
-            });
+            // Replace this part in your checkPermission.js
+            const permissions = roles.flatMap((role) => (Array.isArray(role.permissions) ? role.permissions : []));
 
-            console.log("REQUIRED PERMISSION:", requiredPermission);
-            console.log("HAS PERMISSION:", permissions.includes(requiredPermission));
+            // --- STRICT DEBUG BLOCK ---
+            console.log("DEBUG: Required string:", JSON.stringify(requiredPermission));
+            console.log("DEBUG: Database permission array as JSON:", JSON.stringify(permissions));
 
+            // Check specifically for matching
+            const isIncluded = permissions.includes(requiredPermission);
+            console.log("DEBUG: Does array match string exactly?", isIncluded);
+            // --------------------------
+            if (!isIncluded) {
+                return res.status(403).json({
+                    success: false,
+                    message: "403-CHECK-PERMISSION-FAILED", // Change this string!
+                    requiredPermission,
+                    roleIds
+                });
+            }
+
+            // ... rest of error code
             if (!permissions.includes(requiredPermission)) {
                 return res.status(403).json({
                     success: false,

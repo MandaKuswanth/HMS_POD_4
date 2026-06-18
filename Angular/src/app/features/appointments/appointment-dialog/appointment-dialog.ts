@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -15,12 +15,20 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ToastrService } from 'ngx-toastr';
 
 import { AppointmentService } from '../../../core/services/appointment';
-import { EmployeeService} from '../../../core/services/employee';
+import { EmployeeService } from '../../../core/services/employee';
 import { PatientService } from '../../../core/services/patient';
+
+interface AppointmentFormValue {
+  patientId: string | null;
+  doctorEmployeeId: string | null;
+  date: Date | string | null;
+  timeSlot: string | null;
+}
 
 @Component({
   selector: 'app-appointment-dialog',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -57,10 +65,10 @@ export class AppointmentDialog implements OnInit {
   doctorsLoading = false;
 
   form = this.fb.group({
-    patientId: ['', Validators.required],
-    doctorEmployeeId: ['', Validators.required],
-    date: ['', Validators.required],
-    timeSlot: [{ value: '', disabled: true }, Validators.required]
+    patientId: [null as string | null, Validators.required],
+    doctorEmployeeId: [null as string | null, Validators.required],
+    date: [null as Date | string | null, Validators.required],
+    timeSlot: [{ value: null as string | null, disabled: true }, Validators.required]
   });
 
   ngOnInit(): void {
@@ -74,62 +82,47 @@ export class AppointmentDialog implements OnInit {
 
   loadPatients(): void {
     this.patientsLoading = true;
-
     this.patientService.getPatients().subscribe({
       next: (response: any) => {
-        this.patients = Array.isArray(response?.data?.patients)
-          ? response.data.patients
-          : [];
-
+        this.patients = Array.isArray(response?.data?.patients) ? response.data.patients : [];
         this.patientsLoading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err: any) => {
         this.patients = [];
         this.patientsLoading = false;
         this.toastr.error(err?.error?.message || 'Failed to load patients');
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
 
   loadDoctors(): void {
     this.doctorsLoading = true;
-
     this.employeeService.getEmployees().subscribe({
       next: (response: any) => {
-        const employees = Array.isArray(response?.data)
-          ? response.data
-          : [];
-
-        this.doctors = employees.filter((emp: any) =>
-          emp.role === 'DOCTOR' &&
-          emp.status === true
-        );
-
+        const employees = Array.isArray(response?.data) ? response.data : [];
+        this.doctors = employees.filter((emp: any) => {
+          const isDoc = Array.isArray(emp.roles) ? emp.roles.includes('DOCTOR') : emp.role === 'DOCTOR';
+          return isDoc && emp.status === true;
+        });
         this.doctorsLoading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err: any) => {
         this.doctors = [];
         this.doctorsLoading = false;
         this.toastr.error(err?.error?.message || 'Failed to load doctors');
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
 
   onDoctorChange(doctorCode: string): void {
     const slotControl = this.form.get('timeSlot');
+    const selectedDoctor = this.doctors.find((d: any) => d.employeeCode === doctorCode);
 
-    const selectedDoctor = this.doctors.find((doctor: any) =>
-      doctor.employeeCode === doctorCode
-    );
-
-    this.availableSlots = Array.isArray(selectedDoctor?.availabilitySlots)
-      ? selectedDoctor.availabilitySlots
-      : [];
-
+    this.availableSlots = Array.isArray(selectedDoctor?.availabilitySlots) ? selectedDoctor.availabilitySlots : [];
     slotControl?.reset();
 
     if (this.availableSlots.length > 0) {
@@ -137,8 +130,7 @@ export class AppointmentDialog implements OnInit {
     } else {
       slotControl?.disable();
     }
-
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
   }
 
   onSubmit(): void {
@@ -149,21 +141,16 @@ export class AppointmentDialog implements OnInit {
     }
 
     this.loading = true;
-
-    const formValue = this.form.getRawValue();
+    const formValue = this.form.getRawValue() as AppointmentFormValue;
 
     const payload = {
       patientId: formValue.patientId || '',
       doctorEmployeeId: formValue.doctorEmployeeId || '',
-      date: formatDate(
-        new Date(formValue.date || ''),
-        'yyyy-MM-dd',
-        'en-US'
-      ),
+      date: formValue.date ? formatDate(new Date(formValue.date), 'yyyy-MM-dd', 'en-US') : '',
       timeSlot: formValue.timeSlot || ''
     };
 
-    this.appointmentService.createAppointment(payload).subscribe({
+    this.appointmentService.createStaffAppointment(payload).subscribe({
       next: () => {
         this.loading = false;
         this.toastr.success('Appointment created successfully');
@@ -172,7 +159,7 @@ export class AppointmentDialog implements OnInit {
       error: (err: any) => {
         this.loading = false;
         this.toastr.error(err?.error?.message || 'Failed to create appointment');
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }

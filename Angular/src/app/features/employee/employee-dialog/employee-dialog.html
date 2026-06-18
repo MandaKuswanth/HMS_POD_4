@@ -305,39 +305,30 @@
         </div>
 
         <!-- Availability Slots -->
-        @if (showDoctorFields()) {
-          <div class="slots-section">
-
-            <div class="slots-header">
-              <h3>Availability Slots</h3>
-            </div>
-
-            <div class="slot-checkbox-grid">
-              @for (slot of timeSlots; track slot) {
-                <label
-                  class="slot-checkbox"
-                  [class.selected]="availabilitySlots.value.includes(slot)"
-                >
-                  <input
-                    type="checkbox"
-                    [checked]="availabilitySlots.value.includes(slot)"
-                    (change)="toggleSlot(slot, $event)"
-                  />
-
-                  <span>{{ slot }}</span>
-                </label>
-              }
-            </div>
-
-            @if (availabilitySlots.hasError('required') && availabilitySlots.touched) {
-              <p class="slot-error">
-                Please select at least one availability slot
-              </p>
-            }
-
-          </div>
+      @if (showDoctorFields()) {
+      <div class="slots-section">
+        <div class="slots-header">
+          <h3>Availability Slots</h3>
+          <span class="required-hint">* Required</span>
+        </div>
+      
+        <div class="slot-checkbox-grid">
+          @for (slot of timeSlots; track slot) {
+          <label class="slot-checkbox" [class.selected]="availabilitySlots.value.includes(slot)">
+            <input type="checkbox" [checked]="availabilitySlots.value.includes(slot)" (change)="toggleSlot(slot, $event)" />
+            <span class="slot-label">{{ slot }}</span>
+          </label>
+          }
+        </div>
+      
+        @if (availabilitySlots.hasError('minlength') && availabilitySlots.touched) {
+        <p class="slot-error">
+          <mat-icon>error_outline</mat-icon>
+          Please select at least one availability slot
+        </p>
         }
-
+      </div>
+      }
       </div>
     }
 

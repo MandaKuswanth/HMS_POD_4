@@ -1,258 +1,163 @@
 <section class="register-page">
-  <div class="register-card">
+  <mat-card class="register-card">
+
     <aside class="register-intro">
-      <p class="eyebrow">Self Registration</p>
-      <h1>Employee Self Registration</h1>
+      <div class="intro-header">
+        <mat-icon>how_to_reg</mat-icon>
+        <p class="eyebrow">Self Registration</p>
+      </div>
+      <h1>Employee Portal</h1>
       <p class="subtitle">
-        Create your employee account. Your request will be reviewed by an admin before activation.
+        Create your employee account. Your request will be reviewed by an administrator before activation.
       </p>
     </aside>
 
     <section class="register-form-panel">
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate class="register-form">
 
-        <div class="field-group">
-          <label>
-            Full name
-            <input formControlName="name" type="text" placeholder="Full Name" />
-          </label>
-          @if (fieldHasError('name')) {
-            <small class="error-text">{{ fieldErrorMessage('name') }}</small>
-          }
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Full Name</mat-label>
+          <input matInput formControlName="name" placeholder="John Doe" />
+          @if (fieldHasError('name')) { <mat-error>{{ fieldErrorMessage('name') }}</mat-error> }
+        </mat-form-field>
+
+        <div class="field-grid two-up">
+          <mat-form-field appearance="outline">
+            <mat-label>Email Address</mat-label>
+            <input matInput formControlName="email" type="email" placeholder="example@hospital.com" />
+            @if (fieldHasError('email')) { <mat-error>{{ fieldErrorMessage('email') }}</mat-error> }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Phone Number</mat-label>
+            <input matInput formControlName="phone" type="tel" maxlength="10" placeholder="9876543210" />
+            @if (fieldHasError('phone')) { <mat-error>{{ fieldErrorMessage('phone') }}</mat-error> }
+          </mat-form-field>
         </div>
 
         <div class="field-grid two-up">
-          <div class="field-group">
-            <label>
-              Email
-              <input formControlName="email" type="email" placeholder="email" />
-            </label>
-            @if (fieldHasError('email')) {
-              <small class="error-text">{{ fieldErrorMessage('email') }}</small>
-            }
-          </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Department</mat-label>
+            <input matInput formControlName="department" placeholder="Cardiology, IT, etc." />
+            @if (fieldHasError('department')) { <mat-error>{{ fieldErrorMessage('department') }}</mat-error> }
+          </mat-form-field>
 
-          <div class="field-group">
-            <label>
-              Phone
-              <input formControlName="phone" type="tel" placeholder="Mob No." />
-            </label>
-            @if (fieldHasError('phone')) {
-              <small class="error-text">{{ fieldErrorMessage('phone') }}</small>
-            }
-          </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Designation</mat-label>
+            <input matInput formControlName="designation" placeholder="Senior Nurse" />
+            @if (fieldHasError('designation')) { <mat-error>{{ fieldErrorMessage('designation') }}</mat-error> }
+          </mat-form-field>
         </div>
+
+        
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Role</mat-label>
+          <mat-select formControlName="role">
+            <mat-option value="RECEPTIONIST">Receptionist</mat-option>
+            <mat-option value="DOCTOR">Doctor</mat-option>
+            <mat-option value="NURSE">Nurse</mat-option>
+            <mat-option value="LAB_TECH">Lab Technician</mat-option>
+            <mat-option value="PHARMACIST">Pharmacist</mat-option>
+            <mat-option value="CASHIER">Cashier</mat-option>
+            <mat-option value="TECHNICIAN">Technician</mat-option>
+          </mat-select>
+          @if (fieldHasError('role')) { <mat-error>{{ fieldErrorMessage('role') }}</mat-error> }
+        </mat-form-field>
 
         <div class="field-grid two-up">
-          <div class="field-group">
-            <label>
-              Department
-              <input
-                formControlName="department"
-                type="text"
-                placeholder="Cardiology, Dental, Ortho"
-              />
-            </label>
-            @if (fieldHasError('department')) {
-              <small class="error-text">{{ fieldErrorMessage('department') }}</small>
-            }
-          </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Password</mat-label>
+            <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" />
+            <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()">
+              <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (fieldHasError('password')) { <mat-error>{{ fieldErrorMessage('password') }}</mat-error> }
+          </mat-form-field>
 
-          <div class="field-group">
-            <label>
-              Designation
-              <input formControlName="designation" type="text" placeholder="Designation" />
-            </label>
-            @if (fieldHasError('designation')) {
-              <small class="error-text">{{ fieldErrorMessage('designation') }}</small>
-            }
-          </div>
-        </div>
-
-        <div class="field-group">
-          <label>
-            Role
-            <select formControlName="role">
-              <option value="RECEPTIONIST">Receptionist</option>
-              <option value="DOCTOR">Doctor</option>
-              <option value="NURSE">Nurse</option>
-              <option value="LAB_TECH">Lab Technician</option>
-              <option value="PHARMACIST">Pharmacist</option>
-              <option value="CASHIER">Cashier</option>
-              <option value="TECHNICIAN">Technician</option>
-            </select>
-          </label>
-          @if (fieldHasError('role')) {
-            <small class="error-text">{{ fieldErrorMessage('role') }}</small>
-          }
-        </div>
-
-        <div class="field-grid two-up">
-          <div class="field-group">
-            <label>
-              Password
-              <input
-                formControlName="password"
-                type="password"
-                placeholder="Minimum 6 characters"
-              />
-            </label>
-            @if (fieldHasError('password')) {
-              <small class="error-text">{{ fieldErrorMessage('password') }}</small>
-            }
-          </div>
-
-          <div class="field-group">
-            <label>
-              Confirm password
-              <input
-                formControlName="confirmPassword"
-                type="password"
-                placeholder="Re-enter password"
-              />
-            </label>
-
+          <mat-form-field appearance="outline">
+            <mat-label>Confirm Password</mat-label>
+            <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" formControlName="confirmPassword" />
+            <button mat-icon-button matSuffix type="button" (click)="toggleConfirmPasswordVisibility()">
+              <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
             @if (fieldHasError('confirmPassword') || registerForm.errors?.['passwordMismatch']) {
-              <small class="error-text">
-                {{ fieldErrorMessage('confirmPassword') || 'Passwords do not match.' }}
-              </small>
+            <mat-error>{{ fieldErrorMessage('confirmPassword') || 'Passwords do not match.' }}</mat-error>
             }
-          </div>
+          </mat-form-field>
         </div>
 
         @if (isDoctor || needsQualification) {
-          <section class="doctor-fields">
-            <h2>Role-specific details</h2>
+        <section class="doctor-fields">
+          <h2 class="section-title">Medical Credentials</h2>
 
-            <div class="field-grid two-up">
+          <div class="field-grid two-up">
+            @if (isDoctor) {
+            <mat-form-field appearance="outline">
+              <mat-label>Medical Reg. No.</mat-label>
+              <input matInput formControlName="medicalRegistrationNo" placeholder="REG-1234" />
+              @if (fieldHasError('medicalRegistrationNo')) { <mat-error>{{ fieldErrorMessage('medicalRegistrationNo')
+                }}</mat-error> }
+            </mat-form-field>
 
-              @if (isDoctor) {
-                <div class="field-group">
-                  <label>
-                    Medical registration number
-                    <input
-                      formControlName="medicalRegistrationNo"
-                      type="text"
-                      placeholder="MRN"
-                    />
-                  </label>
+            <mat-form-field appearance="outline">
+              <mat-label>Specialization</mat-label>
+              <input matInput formControlName="specialization" placeholder="Cardiology" />
+              @if (fieldHasError('specialization')) { <mat-error>{{ fieldErrorMessage('specialization') }}</mat-error> }
+            </mat-form-field>
+            }
+          </div>
 
-                  @if (fieldHasError('medicalRegistrationNo')) {
-                    <small class="error-text">
-                      {{ fieldErrorMessage('medicalRegistrationNo') }}
-                    </small>
-                  }
-                </div>
+          @if (needsQualification) {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Qualifications (Comma separated)</mat-label>
+            <input matInput formControlName="qualification" placeholder="MBBS, MD, BSc Nursing" />
+            @if (fieldHasError('qualification')) { <mat-error>{{ fieldErrorMessage('qualification') }}</mat-error> }
+          </mat-form-field>
+          }
+
+          @if (isDoctor) {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Consultation Fee</mat-label>
+            <span matTextPrefix>₹&nbsp;</span>
+            <input matInput formControlName="consultationFee" type="number" min="0" placeholder="500" />
+            @if (fieldHasError('consultationFee')) { <mat-error>{{ fieldErrorMessage('consultationFee') }}</mat-error> }
+          </mat-form-field>
+
+          <div class="slot-container">
+            <p class="slot-label">Availability Slots *</p>
+            <div class="slot-options">
+              @for (slot of availabilitySlotOptions; track slot) {
+              <mat-checkbox color="primary" [checked]="isAvailabilitySlotSelected(slot)"
+                (change)="toggleAvailabilitySlot(slot, $event)">
+                {{ slot }}
+              </mat-checkbox>
               }
-
-              @if (isDoctor) {
-                <div class="field-group">
-                  <label>
-                    Specialization
-                    <input
-                      formControlName="specialization"
-                      type="text"
-                      placeholder="Cardiology"
-                    />
-                  </label>
-
-                  @if (fieldHasError('specialization')) {
-                    <small class="error-text">
-                      {{ fieldErrorMessage('specialization') }}
-                    </small>
-                  }
-                </div>
-              }
-
             </div>
-
-            @if (needsQualification) {
-              <div class="field-group">
-                <label>
-                  Qualification
-                  <input
-                    formControlName="qualification"
-                    type="text"
-                    placeholder="MBBS, MD"
-                  />
-                </label>
-
-                @if (fieldHasError('qualification')) {
-                  <small class="error-text">
-                    {{ fieldErrorMessage('qualification') }}
-                  </small>
-                }
-              </div>
+            @if (fieldHasError('availabilitySlots')) {
+            <mat-error class="custom-error">{{ fieldErrorMessage('availabilitySlots') }}</mat-error>
             }
-
-            @if (isDoctor) {
-              <div class="field-group">
-                <label>
-                  Consultation fee
-                  <input
-                    formControlName="consultationFee"
-                    type="number"
-                    min="0"
-                    placeholder="amount"
-                  />
-                </label>
-
-                @if (fieldHasError('consultationFee')) {
-                  <small class="error-text">
-                    {{ fieldErrorMessage('consultationFee') }}
-                  </small>
-                }
-              </div>
-            }
-
-            @if (isDoctor) {
-              <div class="field-group">
-                <p class="slot-label">Availability slots</p>
-
-                <div class="slot-options">
-                  @for (slot of availabilitySlotOptions; track slot) {
-                    <label class="slot-option">
-                      <input
-                        type="checkbox"
-                        [checked]="isAvailabilitySlotSelected(slot)"
-                        (change)="toggleAvailabilitySlot(slot, $event)"
-                      />
-                      {{ slot }}
-                    </label>
-                  }
-                </div>
-
-                @if (fieldHasError('availabilitySlots')) {
-                  <small class="error-text">
-                    {{ fieldErrorMessage('availabilitySlots') }}
-                  </small>
-                }
-              </div>
-            }
-          </section>
+          </div>
+          }
+        </section>
         }
 
-        <button type="submit" [disabled]="isSubmitting">
-          {{ isSubmitting ? 'Submitting...' : 'Register' }}
+        <button mat-raised-button color="primary" type="submit" class="submit-btn" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Submitting...' : 'Register Account' }}
         </button>
 
       </form>
 
-      <p
-        class="status"
-        [class.error]="
-          statusMessage.toLowerCase().includes('failed') ||
-          statusMessage.toLowerCase().includes('correct') ||
-          statusMessage.toLowerCase().includes('already exists') ||
-          statusMessage.toLowerCase().includes('kindly')
-        "
-      >
-        
+      @if (statusMessage) {
+      <p class="status-msg"
+        [class.error]="statusMessage.includes('fail') || statusMessage.includes('exists') || statusMessage.includes('correct')">
+        {{ statusMessage }}
       </p>
+      }
 
-      <p class="link-row">
-        <a routerLink="/login">Already have an account? Login</a>
-      </p>
+      <div class="login-link">
+        <p>Already have an account? <a routerLink="/login">Login here</a></p>
+      </div>
+
     </section>
-  </div>
+  </mat-card>
 </section>

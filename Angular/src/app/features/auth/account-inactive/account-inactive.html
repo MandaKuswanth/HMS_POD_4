@@ -1,33 +1,21 @@
 <div class="inactive-page">
-
     <mat-card class="inactive-card">
 
-        <div class="icon-wrapper">
-
-            <mat-icon>
-                block
-            </mat-icon>
-
+        <div class="inactive-header">
+            <div class="icon-wrapper">
+                <mat-icon>pending_actions</mat-icon>
+            </div>
+            <h2>Account Inactive</h2>
+            <p>Your account is currently pending approval by an administrator, or has been deactivated.</p>
+            <p class="sub-text">Please contact HR or your system administrator to regain access.</p>
         </div>
 
-        <h1>
-            Account Inactive
-        </h1>
-
-        <p>
-            Your HMS account is currently inactive.
-        </p>
-
-        <p class="sub-text">
-            Please contact the hospital administrator or technician for account activation.
-        </p>
-
-        <button mat-flat-button color="primary" (click)="goToLogin()">
-
-            Back to Login
-
-        </button>
+        <div class="inactive-actions">
+            <button mat-raised-button color="primary" class="return-btn full-width" (click)="goToLogin()">
+                <mat-icon>arrow_back</mat-icon>
+                Return to Login
+            </button>
+        </div>
 
     </mat-card>
-
 </div>

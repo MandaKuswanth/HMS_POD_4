@@ -1,4 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import {
   AbstractControl,
   FormBuilder,
@@ -6,7 +8,6 @@ import {
   ValidationErrors,
   Validators
 } from '@angular/forms';
-import { Router } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -16,11 +17,11 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../../core/services/auth';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush, // Added for performance
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -38,12 +39,13 @@ export class ResetPassword {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   hideNewPassword = true;
   hideConfirmPassword = true;
   loading = false;
 
-  resetForm = this.fb.group(
+  resetForm = this.fb.nonNullable.group(
     {
       newPassword: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', Validators.required]
@@ -60,7 +62,6 @@ export class ResetPassword {
     if (newPassword && confirmPassword && newPassword !== confirmPassword) {
       return { passwordMismatch: true };
     }
-
     return null;
   }
 
@@ -72,16 +73,19 @@ export class ResetPassword {
     }
 
     this.loading = true;
+    this.cdr.markForCheck(); // Update UI to show loading state
+
+    // Safely extract strictly-typed values
+    const { newPassword, confirmPassword } = this.resetForm.getRawValue();
 
     const payload = {
-      newPassword: this.resetForm.value.newPassword!,
-      confirmPassword: this.resetForm.value.confirmPassword!
+      newPassword,
+      confirmPassword
     };
 
     this.authService.resetPassword(payload).subscribe({
       next: () => {
         this.loading = false;
-       
         this.toastr.success('Password reset successful');
         this.router.navigate(['/dashboard']);
       },
@@ -93,6 +97,7 @@ export class ResetPassword {
           'Password reset failed';
 
         this.toastr.error(message);
+        this.cdr.markForCheck(); // Update UI to hide loading state on error
       }
     });
   }

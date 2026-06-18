@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
@@ -17,7 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrl: './account-inactive.css'
 })
 export class AccountInactive {
-  constructor(private readonly router: Router) { }
+  private readonly router = inject(Router);
 
   goToLogin(): void {
     this.router.navigate(['/login']);

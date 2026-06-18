@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment'; // Ensure correct path
 
 export interface PatientRequest {
   UHID?: string;
@@ -23,60 +24,34 @@ export interface PatientRequest {
 })
 export class PatientService {
 
-  readonly http = inject(HttpClient);
+  private readonly http = inject(HttpClient);
 
-  readonly baseUrl =
-    'http://localhost:3000/api/patients';
+  // Uses environment variable for production readiness
+  private readonly baseUrl = `${environment.API_URL}/api/patients`;
 
-  createPatient(
-    data: PatientRequest
-        ): Observable<any> {
-
-        return this.http.post(
-        `${this.baseUrl}`,
-        data
-        );
-  }
-  toggleStatus(uhid: string) {
-    const token = localStorage.getItem('token');
-
-    return this.http.patch(
-      `${this.baseUrl}/${uhid}/status`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
+  createPatient(data: PatientRequest): Observable<any> {
+    return this.http.post(this.baseUrl, data);
   }
 
+  // Interceptor will automatically attach the Bearer token
+  toggleStatus(uhid: string): Observable<any> {
+    return this.http.patch(`${this.baseUrl}/${uhid}/status`, {});
+  }
 
-  updatePatient(
-    uhid: string,
-    data: any
-  ): Observable<any> {
-
-    return this.http.put(
-      `${this.baseUrl}/${uhid}`,
-      data
-    );
+  updatePatient(uhid: string, data: Partial<PatientRequest>): Observable<any> {
+    return this.http.put(`${this.baseUrl}/${uhid}`, data);
   }
 
   getPatients(): Observable<any> {
-
-    return this.http.get(
-      `${this.baseUrl}`
-    );
+    return this.http.get(this.baseUrl);
   }
 
-  deletePatient(
-    uhid: string
-  ): Observable<any> {
-
-    return this.http.delete(
-      `${this.baseUrl}/${uhid}`
-    );
+  // Added missing method to fetch a single patient by UHID
+  getPatientById(uhid: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/${uhid}`);
   }
 
+  deletePatient(uhid: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/${uhid}`);
+  }
 }
