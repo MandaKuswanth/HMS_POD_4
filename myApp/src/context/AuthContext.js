@@ -9,6 +9,8 @@ import React, {
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import api from "../utils/api";
+
 import {
     loginPatient,
     registerPatient,
@@ -127,6 +129,28 @@ export function AuthProvider({ children }) {
         setUser(null);
         setPatient(null);
     }, []);
+
+    // Response interceptor
+    // This handles expired or invalid token globally
+    useEffect(() => {
+        const interceptor = api.interceptors.response.use(
+            (response) => response,
+            async (error) => {
+                const status = error.response?.status;
+
+                if (status === 401) {
+                    console.log("TOKEN EXPIRED OR INVALID. LOGGING OUT...");
+                    await logout();
+                }
+
+                return Promise.reject(error);
+            }
+        );
+
+        return () => {
+            api.interceptors.response.eject(interceptor);
+        };
+    }, [logout]);
 
     const updatePatientState = useCallback(async (p) => {
         const n = normalizePatient(p);
