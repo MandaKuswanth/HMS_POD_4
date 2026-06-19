@@ -1,9 +1,6 @@
 import {
-  Component,
-  inject,
-  OnInit,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef
+  Component, inject, OnInit,
+  ChangeDetectionStrategy, ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -19,73 +16,40 @@ import { ToastrService } from 'ngx-toastr';
 import { PatientService, PatientRequest } from '../../../core/services/patient';
 import { Navbar } from '../../../shared/components/navbar/navbar';
 import { Sidebar } from '../../../shared/components/sidebar/sidebar';
-import { AuthService } from '../../../core/services/auth';
 import { PatientDialog } from '../patient-dialog/patient-dialog';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
+import { PERMISSIONS } from '../../../constants/permission';
 
 @Component({
   selector: 'app-patient-list',
   standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush, // Added for performance
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
-    FormsModule,
-    DatePipe,
-    MatTableModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatIconModule,
-    MatButtonModule,
-    Navbar,
-    Sidebar
+    CommonModule, FormsModule, DatePipe,
+    MatTableModule, MatFormFieldModule, MatInputModule,
+    MatSelectModule, MatIconModule, MatButtonModule,
+    Navbar, Sidebar,
+    HasPermissionDirective  // add this
   ],
   templateUrl: './patient-list.html',
   styleUrl: './patient-list.css'
 })
 export class PatientList implements OnInit {
-
-  private readonly authService = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly patientService = inject(PatientService);
   private readonly toastr = inject(ToastrService);
-  private readonly cdr = inject(ChangeDetectorRef); // Added for UI reactivity
+  private readonly cdr = inject(ChangeDetectorRef);
 
-  displayedColumns: string[] = [
-    'UHID',
-    'name',
-    'email',
-    'phone',
-    'gender',
-    'dob',
-    'status'
-  ];
+  readonly PERMISSIONS = PERMISSIONS; // expose to template
 
+  displayedColumns: string[] = ['UHID', 'name', 'email', 'phone', 'gender', 'dob', 'status'];
   dataSource = new MatTableDataSource<PatientRequest>([]);
   allPatients: PatientRequest[] = [];
 
   searchText = '';
   selectedGender = 'ALL';
   selectedStatus = 'ALL';
-
   expandedPatient: PatientRequest | null = null;
-
-  // --- Dynamic RBAC Permission Checks ---
-  get canAddPatient(): boolean {
-    return this.authService.hasPermission('PATIENT_CREATE');
-  }
-
-  get canEditPatient(): boolean {
-    return this.authService.hasPermission('PATIENT_UPDATE');
-  }
-
-  get canDeletePatient(): boolean {
-    return this.authService.hasPermission('PATIENT_DELETE');
-  }
-
-  get canViewPatientDetails(): boolean {
-    return this.authService.hasPermission('PATIENT_VIEW');
-  }
-  // --------------------------------------
 
   ngOnInit(): void {
     this.loadPatients();
@@ -94,15 +58,13 @@ export class PatientList implements OnInit {
   loadPatients(): void {
     this.patientService.getPatients().subscribe({
       next: (response: any) => {
-        // Handle various backend response structures safely
         const patients = response?.data?.patients || response?.data || response || [];
         this.allPatients = patients;
         this.dataSource.data = patients;
         this.expandedPatient = null;
-        this.cdr.markForCheck(); // Trigger UI update
+        this.cdr.markForCheck();
       },
-      error: (err) => {
-        console.error('PATIENT LOAD ERROR:', err);
+      error: () => {
         this.toastr.error('Failed to load patients');
         this.allPatients = [];
         this.dataSource.data = [];
@@ -141,8 +103,7 @@ export class PatientList implements OnInit {
     }
 
     if (this.selectedStatus !== 'ALL') {
-      const isActive = this.selectedStatus === 'ACTIVE';
-      filtered = filtered.filter(p => p.status === isActive);
+      filtered = filtered.filter(p => p.status === (this.selectedStatus === 'ACTIVE'));
     }
 
     this.dataSource.data = filtered;
@@ -160,53 +121,26 @@ export class PatientList implements OnInit {
   }
 
   openAddDialog(): void {
-    const ref = this.dialog.open(PatientDialog, {
-      width: '800px',
-      disableClose: true,
-      data: { mode: 'add' }
-    });
-
-    ref.afterClosed().subscribe((result: boolean) => {
-      if (result) this.loadPatients();
-    });
+    this.dialog.open(PatientDialog, { width: '800px', disableClose: true, data: { mode: 'add' } })
+      .afterClosed().subscribe((result: boolean) => { if (result) this.loadPatients(); });
   }
 
   editPatient(patient: PatientRequest): void {
-    const ref = this.dialog.open(PatientDialog, {
-      width: '800px',
-      disableClose: true,
-      data: { mode: 'edit', patient }
-    });
-
-    ref.afterClosed().subscribe((result: boolean) => {
-      if (result) this.loadPatients();
-    });
+    this.dialog.open(PatientDialog, { width: '800px', disableClose: true, data: { mode: 'edit', patient } })
+      .afterClosed().subscribe((result: boolean) => { if (result) this.loadPatients(); });
   }
 
   viewPatient(patient: PatientRequest): void {
-    this.dialog.open(PatientDialog, {
-      width: '800px',
-      data: { mode: 'view', patient }
-    });
+    this.dialog.open(PatientDialog, { width: '800px', data: { mode: 'view', patient } });
   }
 
   deletePatient(patient: PatientRequest): void {
-    if (!patient?.UHID) {
-      this.toastr.error('Patient ID missing');
-      return;
-    }
-
-    const confirmed = confirm(`Delete ${patient.name}? This action cannot be undone.`);
-    if (!confirmed) return;
+    if (!patient?.UHID) { this.toastr.error('Patient ID missing'); return; }
+    if (!confirm(`Delete ${patient.name}? This cannot be undone.`)) return;
 
     this.patientService.deletePatient(patient.UHID).subscribe({
-      next: () => {
-        this.toastr.success('Patient deleted successfully');
-        this.loadPatients();
-      },
-      error: (err) => {
-        this.toastr.error(err?.error?.message || 'Delete failed');
-      }
+      next: () => { this.toastr.success('Patient deleted successfully'); this.loadPatients(); },
+      error: (err) => this.toastr.error(err?.error?.message || 'Delete failed')
     });
   }
 
@@ -215,19 +149,13 @@ export class PatientList implements OnInit {
 
     this.patientService.toggleStatus(patient.UHID).subscribe({
       next: () => {
-        const updatedStatus = !patient.status;
-
-        // Update local state without making a full API call to save bandwidth
         this.allPatients = this.allPatients.map(p =>
-          p.UHID === patient.UHID ? { ...p, status: updatedStatus } : p
+          p.UHID === patient.UHID ? { ...p, status: !p.status } : p
         );
-
-        this.applyFilters(); // Re-apply current filters to the updated data
+        this.applyFilters();
         this.toastr.success('Status updated successfully');
       },
-      error: (err) => {
-        this.toastr.error(err?.error?.message || 'Status update failed');
-      }
+      error: (err) => this.toastr.error(err?.error?.message || 'Status update failed')
     });
   }
 }

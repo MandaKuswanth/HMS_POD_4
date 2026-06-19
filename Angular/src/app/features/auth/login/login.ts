@@ -42,7 +42,6 @@ export class Login {
     password: ['', Validators.required]
   });
 
-  // Convenience getters for HTML template
   get email() { return this.loginForm.get('email')!; }
   get password() { return this.loginForm.get('password')!; }
 
@@ -59,17 +58,27 @@ export class Login {
     this.loading = true;
     const credentials = this.loginForm.getRawValue();
 
-    this.authService.login({ email: credentials.email!, password: credentials.password! }).subscribe({
-      next: () => {
+    this.authService.login({
+      email: credentials.email!,
+      password: credentials.password!
+    }).subscribe({
+      next: (res) => {
         this.loading = false;
-        this.toastr.success('Login successful');
-        this.router.navigate(['/dashboard']); // Route to your main app
+
+        // FIX: backend sends resetRequired when admin creates an employee
+        // with a temp password — must redirect to reset-password first
+        if (res.data.resetRequired) {
+          this.toastr.warning('Please reset your temporary password to continue.', 'Action Required');
+          this.router.navigate(['/reset-password']);
+        } else {
+          this.toastr.success('Login successful');
+          this.router.navigate(['/dashboard']);
+        }
       },
       error: (err) => {
         this.loading = false;
 
-        // Check if the backend rejected the login because the account is inactive
-        if (err.status === 403 || err.error?.message?.toLowerCase().includes('inactive')) {
+        if (err.status === 403 || err.error?.message?.toLowerCase().includes('pending')) {
           this.router.navigate(['/account-inactive']);
         } else {
           this.toastr.error(err.error?.message || 'Invalid credentials');
@@ -77,4 +86,4 @@ export class Login {
       }
     });
   }
-}
+}  

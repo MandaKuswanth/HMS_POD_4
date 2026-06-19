@@ -15,11 +15,11 @@
           </div>
         </div>
 
-        @if (canAddAppointment) {
-        <button mat-fab class="primary-indigo-btn" matTooltip="Add Appointment" (click)="openAddDialog()">
+        <!-- FIX: was APPOINTMENT_CREATE getter, now directive -->
+        <button *appHasPermission="PERMISSIONS.APPOINTMENT_CREATE" mat-fab class="primary-indigo-btn"
+          matTooltip="Add Appointment" (click)="openAddDialog()">
           <mat-icon>add</mat-icon>
         </button>
-        }
       </div>
 
       <div class="toolbar">
@@ -66,28 +66,19 @@
 
       <div class="summary-cards">
         <div class="summary-card pending">
-          <span>Pending</span>
-          <strong>{{ getStatusCount('PENDING') }}</strong>
+          <span>Pending</span><strong>{{ getStatusCount('PENDING') }}</strong>
         </div>
-
         <div class="summary-card booked">
-          <span>Booked</span>
-          <strong>{{ getStatusCount('BOOKED') }}</strong>
+          <span>Booked</span><strong>{{ getStatusCount('BOOKED') }}</strong>
         </div>
-
         <div class="summary-card process">
-          <span>In Process</span>
-          <strong>{{ getStatusCount('IN-PROCESS') }}</strong>
+          <span>In Process</span><strong>{{ getStatusCount('IN-PROCESS') }}</strong>
         </div>
-
         <div class="summary-card completed">
-          <span>Completed</span>
-          <strong>{{ getStatusCount('COMPLETED') }}</strong>
+          <span>Completed</span><strong>{{ getStatusCount('COMPLETED') }}</strong>
         </div>
-
         <div class="summary-card cancelled">
-          <span>Cancelled</span>
-          <strong>{{ getStatusCount('CANCELLED') }}</strong>
+          <span>Cancelled</span><strong>{{ getStatusCount('CANCELLED') }}</strong>
         </div>
       </div>
 
@@ -102,9 +93,7 @@
 
           <ng-container matColumnDef="appointmentId">
             <th mat-header-cell *matHeaderCellDef>Appointment ID</th>
-            <td mat-cell *matCellDef="let a">
-              <strong>{{ a.appointmentId || '-' }}</strong>
-            </td>
+            <td mat-cell *matCellDef="let a"><strong>{{ a.appointmentId || '-' }}</strong></td>
           </ng-container>
 
           <ng-container matColumnDef="patientId">
@@ -125,24 +114,18 @@
 
           <ng-container matColumnDef="date">
             <th mat-header-cell *matHeaderCellDef>Date</th>
-            <td mat-cell *matCellDef="let a">
-              {{ a.date | date:'mediumDate' }}
-            </td>
+            <td mat-cell *matCellDef="let a">{{ a.date | date:'mediumDate' }}</td>
           </ng-container>
 
           <ng-container matColumnDef="timeSlot">
             <th mat-header-cell *matHeaderCellDef>Slot</th>
-            <td mat-cell *matCellDef="let a">
-              {{ a.timeSlot || '-' }}
-            </td>
+            <td mat-cell *matCellDef="let a">{{ a.timeSlot || '-' }}</td>
           </ng-container>
 
           <ng-container matColumnDef="status">
             <th mat-header-cell *matHeaderCellDef>Status</th>
             <td mat-cell *matCellDef="let a">
-              <span class="badge" [ngClass]="a.status?.toLowerCase()">
-                {{ a.status || '-' }}
-              </span>
+              <span class="badge" [ngClass]="a.status?.toLowerCase()">{{ a.status || '-' }}</span>
             </td>
           </ng-container>
 
@@ -151,36 +134,33 @@
               @if (expandedAppointment === a) {
               <div class="appointment-action-panel">
                 <div class="appointment-action-info">
-                  <strong>{{ a.appointmentId || 'Appointment' }}</strong>
+                  <strong>{{ a.appointmentId }}</strong>
                   <span>Patient: {{ a.patientName || 'N/A' }} <small>({{ a.patientId || '-' }})</small></span>
-                  <span>Doctor: {{ a.doctorName ? ('Dr. ' + a.doctorName) : 'N/A' }} <small>({{ a.doctorEmployeeId ||
-                      '-' }})</small></span>
+                  <span>Doctor: {{ a.doctorName ? ('Dr. ' + a.doctorName) : 'N/A' }}</span>
                   <span>Date & Slot: {{ a.date | date:'mediumDate' }} | {{ a.timeSlot || '-' }}</span>
                   <span>Status: {{ a.status || '-' }}</span>
                 </div>
 
                 <div class="appointment-action-buttons">
-                  @if (canApproveRejectAppointment && a.status === 'PENDING') {
-                  <button mat-stroked-button class="approve-action" matTooltip="Approve Appointment"
+
+                  <!-- FIX: was APPOINTMENT_UPDATE_STATUS — split into APPROVE and REJECT -->
+                  @if (a.status === 'PENDING') {
+                  <button *appHasPermission="PERMISSIONS.APPOINTMENT_APPROVE" mat-stroked-button class="approve-action"
                     (click)="approveAppointment(a); $event.stopPropagation()">
                     <mat-icon>check_circle</mat-icon> Approve
                   </button>
-                  <button mat-stroked-button class="reject-action" matTooltip="Reject Appointment"
+
+                  <button *appHasPermission="PERMISSIONS.APPOINTMENT_REJECT" mat-stroked-button class="reject-action"
                     (click)="rejectAppointment(a); $event.stopPropagation()">
                     <mat-icon>cancel</mat-icon> Reject
                   </button>
                   }
 
-                  @if (canDeleteAppointment) {
-                  <button mat-stroked-button class="delete-action" matTooltip="Delete Appointment"
+                  <button *appHasPermission="PERMISSIONS.APPOINTMENT_DELETE" mat-stroked-button class="delete-action"
                     (click)="deleteAppointment(a); $event.stopPropagation()">
                     <mat-icon>delete</mat-icon> Delete
                   </button>
-                  }
 
-                  @if (!canDeleteAppointment && (!canApproveRejectAppointment || a.status !== 'PENDING')) {
-                  <span class="no-action">No actions available</span>
-                  }
                 </div>
               </div>
               }
@@ -189,9 +169,11 @@
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns" class="appointment-row"
-            [class.selected-row]="expandedAppointment === row" (click)="toggleRow(row)" tabindex="0"></tr>
+            [class.selected-row]="expandedAppointment === row" (click)="toggleRow(row)" tabindex="0">
+          </tr>
           <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"
-            [class.hidden]="expandedAppointment !== row"></tr>
+            [class.hidden]="expandedAppointment !== row">
+          </tr>
 
         </table>
       </div>

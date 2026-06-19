@@ -1,33 +1,40 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-
 import { MatTableModule } from '@angular/material/table';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatRippleModule } from '@angular/material/core';
+import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
 
-import { Navbar } from '../../../shared/components/navbar/navbar';
-import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 import { EmployeeService } from '../../../core/services/employee';
 import { AuthService } from '../../../core/services/auth';
 import { EmployeeDialog } from '../employee-dialog/employee-dialog';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
+import { PERMISSIONS } from '../../../constants/permission';
+import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 
 @Component({
   selector: 'app-employee-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule, FormsModule, MatTableModule, MatCardModule,
-    MatIconModule, MatButtonModule, MatDialogModule, MatTooltipModule,
-    Navbar, Sidebar
+    CommonModule,
+    FormsModule,
+    MatTableModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatRippleModule,
+    MatCardModule,
+    HasPermissionDirective,
+    Sidebar
   ],
   templateUrl: './employee-list.html',
-  styleUrl: './employee-list.css',
+  styleUrl: './employee-list.css'
 })
 export class EmployeeList implements OnInit {
   private readonly employeeService = inject(EmployeeService);
@@ -35,178 +42,123 @@ export class EmployeeList implements OnInit {
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+
+  readonly PERMISSIONS = PERMISSIONS;
 
   employees: any[] = [];
   expandedEmployee: any = null;
-
-  searchText = '';
-  selectedRole = 'ALL ROLES';
-  selectedDepartment = 'ALL DEPARTMENTS';
   activeView: 'all' | 'active' | 'pending' = 'all';
+  searchText = '';
+  selectedRole = 'All Roles';
+  selectedDepartment = 'All Departments';
 
-  displayedColumns: string[] = [
-    'employeeCode', 'name', 'email', 'phone',
-    'department', 'designation', 'role', 'status'
-  ];
+  displayedColumns = ['employeeCode', 'name', 'email', 'phone', 'department', 'designation', 'role', 'status'];
 
-  // RBAC Getter restored for your HTML
-  get isAdmin(): boolean {
-    return this.authService.getRole()?.toUpperCase() === 'ADMIN';
-  }
+  // ── Permission-based flags (replaces hardcoded isAdmin) ──────────────────
+  get canCreate(): boolean { return this.authService.hasPermission(PERMISSIONS.EMPLOYEE_CREATE); }
+  get canUpdate(): boolean { return this.authService.hasPermission(PERMISSIONS.EMPLOYEE_UPDATE); }
+  get canDelete(): boolean { return this.authService.hasPermission(PERMISSIONS.EMPLOYEE_DELETE); }
 
-  // Restored count getters
-  get activeCount(): number {
-    return this.employees.filter((emp: any) => emp.status === true).length;
-  }
-
-  get pendingCount(): number {
-    return this.employees.filter((emp: any) => emp.status === false).length;
-  }
-
+  // ── Derived filter lists ──────────────────────────────────────────────────
   get roles(): string[] {
-    const allRoles = this.employees.flatMap((emp: any) => emp.roles || [emp.role]).filter(Boolean);
-    return ['ALL ROLES', ...new Set(allRoles)];
+    const all = this.employees.map(e => this.getRoleDisplay(e)).filter(Boolean);
+    return ['All Roles', ...new Set(all)];
   }
 
   get departments(): string[] {
-    const departments = this.employees.map((emp: any) => emp.department).filter(Boolean);
-    return ['ALL DEPARTMENTS', ...new Set(departments)];
+    const all = this.employees.map(e => e.department).filter(Boolean);
+    return ['All Departments', ...new Set(all)];
   }
 
+  // ── Counts ────────────────────────────────────────────────────────────────
+  get activeCount(): number { return this.employees.filter(e => e.status).length; }
+  get pendingCount(): number { return this.employees.filter(e => !e.status).length; }
+
+  // ── Filtered list ─────────────────────────────────────────────────────────
   get filteredEmployees(): any[] {
-    let employees = [...this.employees];
+    let list = [...this.employees];
 
-    if (this.activeView === 'active') {
-      employees = employees.filter((emp: any) => emp.status === true);
-    } else if (this.activeView === 'pending') {
-      employees = employees.filter((emp: any) => emp.status === false);
+    if (this.activeView === 'active') list = list.filter(e => e.status);
+    if (this.activeView === 'pending') list = list.filter(e => !e.status);
+
+    if (this.selectedRole !== 'All Roles') {
+      list = list.filter(e => this.getRoleDisplay(e).includes(this.selectedRole));
     }
 
-    if (this.selectedRole !== 'ALL ROLES') {
-      employees = employees.filter((emp: any) => {
-        return Array.isArray(emp.roles) ? emp.roles.includes(this.selectedRole) : emp.role === this.selectedRole;
-      });
-    }
-
-    if (this.selectedDepartment !== 'ALL DEPARTMENTS') {
-      employees = employees.filter((emp: any) => emp.department === this.selectedDepartment);
+    if (this.selectedDepartment !== 'All Departments') {
+      list = list.filter(e => e.department === this.selectedDepartment);
     }
 
     if (this.searchText.trim()) {
-      const search = this.searchText.toLowerCase().trim();
-      employees = employees.filter((emp: any) =>
-        emp.employeeCode?.toLowerCase().includes(search) ||
-        emp.name?.toLowerCase().includes(search) ||
-        emp.email?.toLowerCase().includes(search) ||
-        emp.phone?.includes(search)
+      const q = this.searchText.toLowerCase();
+      list = list.filter(e =>
+        e.employeeCode?.toLowerCase().includes(q) ||
+        e.name?.toLowerCase().includes(q) ||
+        e.email?.toLowerCase().includes(q) ||
+        e.phone?.toLowerCase().includes(q)
       );
     }
-    return employees;
+
+    return list;
   }
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe((params) => {
-      if (params['view'] === 'active') this.activeView = 'active';
-      else if (params['view'] === 'pending') this.activeView = 'pending';
-      else this.activeView = 'all';
-
-      this.expandedEmployee = null;
-      this.cdr.markForCheck();
-    });
     this.loadEmployees();
-  }
-
-  // Restored missing UI Methods
-  setView(view: 'all' | 'active' | 'pending'): void {
-    this.activeView = view;
-    this.expandedEmployee = null;
-    this.cdr.markForCheck();
-  }
-
-  toggleRow(employee: any): void {
-    this.expandedEmployee = this.expandedEmployee === employee ? null : employee;
-    this.cdr.markForCheck();
   }
 
   loadEmployees(): void {
     this.employeeService.getEmployees().subscribe({
-      next: (response: any) => {
-        let employees: any[] = [];
-        if (Array.isArray(response?.data)) employees = response.data;
-        else if (Array.isArray(response)) employees = response;
-
-        this.employees = employees;
-        this.expandedEmployee = null;
+      next: (res: any) => {
+        this.employees = res?.data?.employees || res?.data || res || [];
         this.cdr.markForCheck();
       },
-      error: (error) => {
-        console.error('EMPLOYEE LIST ERROR:', error);
-        this.employees = [];
-        this.expandedEmployee = null;
-        this.toastr.warning('Failed to load employees');
-        this.cdr.markForCheck();
-      },
+      error: () => this.toastr.error('Failed to load employees', 'Error')
     });
+  }
+
+  setView(view: 'all' | 'active' | 'pending'): void {
+    this.activeView = view;
+    this.cdr.markForCheck();
+  }
+
+  toggleRow(emp: any): void {
+    this.expandedEmployee = this.expandedEmployee === emp ? null : emp;
+    this.cdr.markForCheck();
+  }
+
+  getRoleDisplay(emp: any): string {
+    if (Array.isArray(emp.roles)) return emp.roles.join(', ');
+    return emp.role || emp.roleName || 'N/A';
   }
 
   openAddDialog(): void {
-    const ref = this.dialog.open(EmployeeDialog, {
-      data: { mode: 'add' }, width: '680px', disableClose: true,
-    });
-    ref.afterClosed().subscribe((result) => {
-      if (result) this.loadEmployees();
-    });
+    this.dialog.open(EmployeeDialog, { data: { mode: 'add' }, width: '680px' })
+      .afterClosed().subscribe(res => { if (res) this.loadEmployees(); });
   }
 
-  openEditDialog(employee: any): void {
-    const ref = this.dialog.open(EmployeeDialog, {
-      data: { mode: 'edit', employee }, width: '680px', disableClose: true,
-    });
-    ref.afterClosed().subscribe((result) => {
-      if (result) this.loadEmployees();
-    });
+  openEditDialog(emp: any): void {
+    this.dialog.open(EmployeeDialog, { data: { mode: 'edit', employee: emp }, width: '680px' })
+      .afterClosed().subscribe(res => { if (res) this.loadEmployees(); });
   }
 
-  deleteEmployee(employee: any): void {
-    if (!employee?.employeeCode) return;
-    const confirmed = confirm(`Delete ${employee.name}? This cannot be undone.`);
-    if (!confirmed) return;
-
-    this.employeeService.deleteEmployee(employee.employeeCode).subscribe({
+  toggleEmployeeStatus(emp: any): void {
+    this.employeeService.toggleEmployeeStatus(emp.employeeCode).subscribe({
       next: () => {
-        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-        if (currentUser?.employeeId === employee.employeeCode) {
-          this.toastr.success('Your account has been deleted. Please login again.');
-          localStorage.clear();
-          this.router.navigate(['/login']);
-          return;
-        }
-        this.toastr.success('Employee deleted successfully');
-        this.expandedEmployee = null;
+        this.toastr.success(`Employee ${emp.status ? 'deactivated' : 'activated'}`, 'Success');
         this.loadEmployees();
       },
-      error: (err) => this.toastr.error(err?.error?.message || 'Failed to delete employee'),
+      error: () => this.toastr.error('Failed to update status', 'Error')
     });
   }
 
-  toggleEmployeeStatus(employee: any): void {
-    if (!employee?.employeeCode) return;
-    const action = employee.status ? 'deactivate' : 'activate';
-    const message = employee.role === 'DOCTOR' && employee.status
-      ? `Deactivate Dr. ${employee.name}? Existing appointments may be affected.`
-      : `Are you sure you want to ${action} ${employee.name}?`;
-
-    if (!confirm(message)) return;
-
-    this.employeeService.toggleEmployeeStatus(employee.employeeCode).subscribe({
-      next: (response: any) => {
-        this.toastr.success(response?.message || `Employee ${action}d successfully`);
-        this.expandedEmployee = null;
+  deleteEmployee(emp: any): void {
+    if (!confirm(`Delete ${emp.name}? This cannot be undone.`)) return;
+    this.employeeService.deleteEmployee(emp.employeeCode).subscribe({
+      next: () => {
+        this.toastr.success('Employee deleted', 'Success');
         this.loadEmployees();
       },
-      error: (err) => this.toastr.error(err?.error?.message || 'Failed to update employee status'),
+      error: () => this.toastr.error('Failed to delete employee', 'Error')
     });
   }
 }

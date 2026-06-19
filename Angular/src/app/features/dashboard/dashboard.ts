@@ -1,30 +1,31 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { Navbar } from '../../shared/components/navbar/navbar';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
-
 import { AuthService } from '../../core/services/auth';
 import { EmployeeService } from '../../core/services/employee';
 import { AppointmentService } from '../../core/services/appointment';
 import { PatientService } from '../../core/services/patient';
+import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
+import { PERMISSIONS } from '../../constants/permission';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush, // Added for max performance
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     MatCardModule,
     MatIconModule,
     MatProgressSpinnerModule,
     Navbar,
-    Sidebar
+    Sidebar,
+    HasPermissionDirective
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
@@ -37,10 +38,11 @@ export class Dashboard implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
 
-  user: any = null;
-  role: string = '';
+  readonly PERMISSIONS = PERMISSIONS;
 
-  // Loading States
+  user: any = null;
+
+  // Loading states
   isLoadingProfile = true;
   isLoadingEmployees = false;
   isLoadingAppointments = false;
@@ -53,32 +55,34 @@ export class Dashboard implements OnInit {
   totalPatients = 0;
   appointmentsCount = 0;
 
-  // RBAC Getters
-  get isAdminOrTechnician(): boolean { return ['ADMIN', 'TECHNICIAN'].includes(this.role); }
-  get isDoctor(): boolean { return this.role === 'DOCTOR'; }
-  get isNurse(): boolean { return this.role === 'NURSE'; }
-  get isReceptionist(): boolean { return this.role === 'RECEPTIONIST'; }
-  get canViewAppointments(): boolean { return ['ADMIN', 'RECEPTIONIST', 'DOCTOR'].includes(this.role); }
-  get canViewPatients(): boolean { return ['ADMIN', 'RECEPTIONIST', 'NURSE', 'DOCTOR'].includes(this.role); }
+  // ── Permission helpers (replaces hardcoded role getters) ──────────────────
+  get canViewEmployees(): boolean {
+    return this.authService.hasPermission(PERMISSIONS.EMPLOYEE_VIEW);
+  }
+
+  get canViewAppointments(): boolean {
+    return this.authService.hasPermission(PERMISSIONS.APPOINTMENT_VIEW);
+  }
+
+  get canViewPatients(): boolean {
+    return this.authService.hasPermission(PERMISSIONS.PATIENT_VIEW);
+  }
+
+  get userName(): string {
+    return this.user?.name || this.authService.getUser()?.email || 'User';
+  }
+
+  get userRoles(): string {
+    return this.authService.getUser()?.roles?.map((r: any) => r.name).join(', ') || '';
+  }
 
   ngOnInit(): void {
-    // 1. Establish Role immediately from token/local storage
-    this.role = this.authService.getRole()?.toUpperCase().trim() || '';
-
-    // 2. Fetch all required data concurrently rather than waiting for profile to finish
     this.loadProfile();
 
-    if (this.isAdminOrTechnician) {
-      this.loadEmployeesCount();
-    }
-
-    if (this.canViewAppointments) {
-      this.loadAppointmentsCount();
-    }
-
-    if (this.canViewPatients) {
-      this.loadPatientsCount();
-    }
+    // Load only what this user has permission to see
+    if (this.canViewEmployees) this.loadEmployeesCount();
+    if (this.canViewAppointments) this.loadAppointmentsCount();
+    if (this.canViewPatients) this.loadPatientsCount();
   }
 
   private loadProfile(): void {
@@ -88,8 +92,7 @@ export class Dashboard implements OnInit {
         this.isLoadingProfile = false;
         this.cdr.markForCheck();
       },
-      error: (error) => {
-        console.error('PROFILE ERROR:', error);
+      error: () => {
         this.isLoadingProfile = false;
         this.cdr.markForCheck();
       }
@@ -101,16 +104,13 @@ export class Dashboard implements OnInit {
     this.employeeService.getEmployees().subscribe({
       next: (response: any) => {
         const employees = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
-
         this.totalEmployees = employees.length;
-        this.activeEmployees = employees.filter((emp: any) => emp.status === true || emp.isActive === true || emp.is_active === true).length;
-        this.pendingEmployees = employees.filter((emp: any) => emp.status === false || emp.isActive === false || emp.is_active === false).length;
-
+        this.activeEmployees = employees.filter((e: any) => e.status === true).length;
+        this.pendingEmployees = employees.filter((e: any) => e.status === false).length;
         this.isLoadingEmployees = false;
         this.cdr.markForCheck();
       },
-      error: (err) => {
-        console.error('DASHBOARD EMPLOYEE COUNT ERROR:', err);
+      error: () => {
         this.isLoadingEmployees = false;
         this.cdr.markForCheck();
       }
@@ -126,8 +126,7 @@ export class Dashboard implements OnInit {
         this.isLoadingAppointments = false;
         this.cdr.markForCheck();
       },
-      error: (error) => {
-        console.error('DASHBOARD APPOINTMENT COUNT ERROR:', error);
+      error: () => {
         this.isLoadingAppointments = false;
         this.cdr.markForCheck();
       }
@@ -142,18 +141,15 @@ export class Dashboard implements OnInit {
         this.isLoadingPatients = false;
         this.cdr.markForCheck();
       },
-      error: (error) => {
-        console.error('PATIENT COUNT ERROR:', error);
+      error: () => {
         this.isLoadingPatients = false;
         this.cdr.markForCheck();
       }
     });
   }
 
-  // Navigation
   goToEmployees(view: string): void {
-    const queryParams = view === 'all' ? {} : { view };
-    this.router.navigate(['/employees'], { queryParams });
+    this.router.navigate(['/employees'], { queryParams: view === 'all' ? {} : { view } });
   }
 
   goToAppointments(): void {

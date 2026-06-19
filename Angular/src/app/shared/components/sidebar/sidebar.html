@@ -17,18 +17,30 @@
       <div class="skeleton-item"></div>
     </div>
     } @else {
-
     <ul class="nav-list">
-      @for (item of menuItems; track item.path) {
+      @for (item of menuItems; track item.nodeId) {
       <li>
         <a [routerLink]="item.path" routerLinkActive="active" class="nav-link" matRipple>
           <mat-icon>{{ item.icon }}</mat-icon>
           <span>{{ item.name }}</span>
         </a>
+
+        <!-- Child nodes (one level deep) -->
+        @if (item.children && item.children.length > 0) {
+        <ul class="nav-children">
+          @for (child of item.children; track child.nodeId) {
+          <li>
+            <a [routerLink]="child.path" routerLinkActive="active" class="nav-link child-link" matRipple>
+              <mat-icon>{{ child.icon }}</mat-icon>
+              <span>{{ child.name }}</span>
+            </a>
+          </li>
+          }
+        </ul>
+        }
       </li>
       }
     </ul>
-
     }
 
   </nav>

@@ -1,13 +1,9 @@
 import {
-  Component,
-  OnInit,
-  inject,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
+  Component, OnInit, inject,
+  ChangeDetectionStrategy, ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,45 +15,38 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-
 import { ToastrService } from 'ngx-toastr';
 
 import { Navbar } from '../../../shared/components/navbar/navbar';
 import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 import { AppointmentService } from '../../../core/services/appointment';
 import { AppointmentDialog } from '../appointment-dialog/appointment-dialog';
-import { AuthService } from '../../../core/services/auth';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
+import { PERMISSIONS } from '../../../constants/permission';
 
 @Component({
   selector: 'app-appointment-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
-    FormsModule,
-    MatTableModule,
-    MatCardModule,
-    MatIconModule,
-    MatButtonModule,
-    MatDialogModule,
-    MatTooltipModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    Navbar,
-    Sidebar,
+    CommonModule, FormsModule,
+    MatTableModule, MatCardModule, MatIconModule,
+    MatButtonModule, MatDialogModule, MatTooltipModule,
+    MatFormFieldModule, MatInputModule, MatSelectModule,
+    MatDatepickerModule, MatNativeDateModule,
+    Navbar, Sidebar,
+    HasPermissionDirective  // add this
   ],
   templateUrl: './appointment-list.html',
   styleUrl: './appointment-list.css',
 })
 export class AppointmentList implements OnInit {
   private readonly appointmentService = inject(AppointmentService);
-  private readonly authService = inject(AuthService);
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
+
+  readonly PERMISSIONS = PERMISSIONS; // expose to template
 
   appointments: any[] = [];
   filteredAppointments: any[] = [];
@@ -71,28 +60,9 @@ export class AppointmentList implements OnInit {
   selectedDate: Date | null = null;
 
   displayedColumns: string[] = [
-    'appointmentId',
-    'patientId',
-    'doctorEmployeeId',
-    'date',
-    'timeSlot',
-    'status',
+    'appointmentId', 'patientId', 'doctorEmployeeId',
+    'date', 'timeSlot', 'status',
   ];
-
-  // --- Dynamic RBAC Permission Checks ---
-  get canAddAppointment(): boolean {
-    // Allows backend to dictate who can create (e.g., Receptionist, Admin)
-    return this.authService.hasPermission('APPOINTMENT_CREATE');
-  }
-
-  get canApproveRejectAppointment(): boolean {
-    return this.authService.hasPermission('APPOINTMENT_UPDATE_STATUS');
-  }
-
-  get canDeleteAppointment(): boolean {
-    return this.authService.hasPermission('APPOINTMENT_DELETE');
-  }
-  // --------------------------------------
 
   ngOnInit(): void {
     this.loadAppointments();
@@ -105,18 +75,15 @@ export class AppointmentList implements OnInit {
 
     this.appointmentService.getStaffAppointments().subscribe({
       next: (response: any) => {
-        let appointments = Array.isArray(response?.data)
+        const appointments = Array.isArray(response?.data)
           ? response.data
           : (Array.isArray(response) ? response : []);
-
         this.appointments = appointments;
         this.filteredAppointments = [...appointments];
         this.isLoading = false;
-        this.expandedAppointment = null;
         this.cdr.markForCheck();
       },
       error: (error) => {
-        console.error('APPOINTMENT LIST ERROR:', error);
         this.isLoading = false;
         this.appointments = [];
         this.filteredAppointments = [];
@@ -131,8 +98,8 @@ export class AppointmentList implements OnInit {
   }
 
   get doctors(): string[] {
-    const doctorList = this.appointments.map(a => a.doctorName).filter(Boolean);
-    return ['ALL DOCTORS', ...new Set(doctorList)];
+    const list = this.appointments.map(a => a.doctorName).filter(Boolean);
+    return ['ALL DOCTORS', ...new Set(list)];
   }
 
   getStatusCount(status: string): number {
@@ -141,7 +108,6 @@ export class AppointmentList implements OnInit {
 
   applyFilters(): void {
     const search = this.searchText.toLowerCase().trim();
-
     this.filteredAppointments = this.appointments.filter((a: any) => {
       const matchesSearch = !search ||
         a.appointmentId?.toLowerCase().includes(search) ||
@@ -149,14 +115,12 @@ export class AppointmentList implements OnInit {
         a.patientName?.toLowerCase().includes(search) ||
         a.doctorEmployeeId?.toLowerCase().includes(search) ||
         a.doctorName?.toLowerCase().includes(search);
-
       const matchesStatus = this.selectedStatus === 'ALL STATUS' || a.status === this.selectedStatus;
       const matchesDoctor = this.selectedDoctor === 'ALL DOCTORS' || a.doctorName === this.selectedDoctor;
-      const matchesDate = !this.selectedDate || new Date(a.date).toDateString() === new Date(this.selectedDate).toDateString();
-
+      const matchesDate = !this.selectedDate ||
+        new Date(a.date).toDateString() === new Date(this.selectedDate).toDateString();
       return matchesSearch && matchesStatus && matchesDoctor && matchesDate;
     });
-
     this.expandedAppointment = null;
     this.cdr.markForCheck();
   }
@@ -180,52 +144,33 @@ export class AppointmentList implements OnInit {
   }
 
   openAddDialog(): void {
-    const ref = this.dialog.open(AppointmentDialog, {
-      width: '900px',
-      maxWidth: '95vw',
-      disableClose: true,
-    });
-
-    ref.afterClosed().subscribe((result) => {
-      if (result) this.loadAppointments();
-    });
+    this.dialog.open(AppointmentDialog, { width: '900px', maxWidth: '95vw', disableClose: true })
+      .afterClosed().subscribe(result => { if (result) this.loadAppointments(); });
   }
 
   approveAppointment(appointment: any): void {
     if (!appointment?.appointmentId) return;
     if (!confirm(`Approve appointment ${appointment.appointmentId}?`)) return;
-
     this.appointmentService.approveAppointment(appointment.appointmentId).subscribe({
-      next: (res: any) => {
-        this.toastr.success(res?.message || 'Appointment approved successfully');
-        this.loadAppointments();
-      },
-      error: (err: any) => this.toastr.error(err?.error?.message || 'Failed to approve appointment')
+      next: (res: any) => { this.toastr.success(res?.message || 'Approved'); this.loadAppointments(); },
+      error: (err: any) => this.toastr.error(err?.error?.message || 'Failed to approve')
     });
   }
 
   rejectAppointment(appointment: any): void {
     if (!appointment?.appointmentId) return;
     if (!confirm(`Reject appointment ${appointment.appointmentId}?`)) return;
-
     this.appointmentService.rejectAppointment(appointment.appointmentId).subscribe({
-      next: (res: any) => {
-        this.toastr.success(res?.message || 'Appointment rejected successfully');
-        this.loadAppointments();
-      },
-      error: (err: any) => this.toastr.error(err?.error?.message || 'Failed to reject appointment')
+      next: (res: any) => { this.toastr.success(res?.message || 'Rejected'); this.loadAppointments(); },
+      error: (err: any) => this.toastr.error(err?.error?.message || 'Failed to reject')
     });
   }
 
   deleteAppointment(appointment: any): void {
     if (!appointment?.appointmentId) return;
     if (!confirm(`Delete appointment ${appointment.appointmentId}?`)) return;
-
     this.appointmentService.deleteAppointment(appointment.appointmentId).subscribe({
-      next: () => {
-        this.toastr.success('Appointment deleted successfully');
-        this.loadAppointments();
-      },
+      next: () => { this.toastr.success('Deleted'); this.loadAppointments(); },
       error: (err) => this.toastr.error(err?.error?.message || 'Delete failed')
     });
   }
