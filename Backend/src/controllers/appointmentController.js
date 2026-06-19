@@ -7,6 +7,7 @@ const Role = require("../models/Role");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const sendEmail = require("../utils/sendEmail");
+const { getPagination, buildPaginationResponse } = require("../utils/pagination");
 
 const {
     normalizeAppointmentDate,
@@ -75,17 +76,107 @@ exports.getAppointments = async (req, res) => {
         const roles = await Role.find({ roleId: { $in: user.roleIds }, status: true });
         const roleNames = roles.map(role => role.name);
 
-        let appointments = [];
+        const { page, limit, skip, sort } = getPagination(req.query);
+        const { search, status, doctor, date } = req.query;
 
-        // Logic based on role: Doctor sees their own, Admin/Reception sees all.
-        // Middleware handles permission checking, Controller handles data scoping.
+        let matchQuery = {};
         if (roleNames.includes("DOCTOR")) {
-            appointments = await Appointment.find({ doctorEmployeeId: user.employeeId }).sort({ createdAt: -1 });
-        } else {
-            appointments = await Appointment.find().sort({ createdAt: -1 });
+            matchQuery.doctorEmployeeId = user.employeeId;
         }
 
-        return res.status(200).json(new ApiResponse(200, appointments, "Appointments fetched"));
+        // Apply direct filters (status, date, doctor)
+        if (status && status !== "" && status !== "ALL STATUS" && status !== "ALL") {
+            matchQuery.status = status;
+        }
+
+        if (doctor && doctor !== "" && doctor !== "ALL DOCTORS" && doctor !== "ALL") {
+            // Find doctor by name to get their employeeCode
+            const doc = await Employee.findOne({ name: doctor });
+            if (doc) {
+                matchQuery.doctorEmployeeId = doc.employeeCode;
+            } else {
+                matchQuery.doctorEmployeeId = "NON_EXISTENT";
+            }
+        }
+
+        if (date) {
+            const parsedDate = new Date(date);
+            if (!isNaN(parsedDate.getTime())) {
+                const startOfDay = new Date(parsedDate.setHours(0, 0, 0, 0));
+                const endOfDay = new Date(parsedDate.setHours(23, 59, 59, 999));
+                matchQuery.date = { $gte: startOfDay, $lte: endOfDay };
+            }
+        }
+
+        // Pipeline stages for resolving names
+        const pipeline = [
+            { $match: matchQuery },
+            {
+                $lookup: {
+                    from: "patients",
+                    localField: "patientId",
+                    foreignField: "UHID",
+                    as: "patientInfo"
+                }
+            },
+            {
+                $lookup: {
+                    from: "employees",
+                    localField: "doctorEmployeeId",
+                    foreignField: "employeeCode",
+                    as: "doctorInfo"
+                }
+            },
+            {
+                $addFields: {
+                    patientName: { $arrayElemAt: ["$patientInfo.name", 0] },
+                    doctorName: { $arrayElemAt: ["$doctorInfo.name", 0] }
+                }
+            },
+            {
+                $project: {
+                    patientInfo: 0,
+                    doctorInfo: 0
+                }
+            }
+        ];
+
+        // If search is active, add a match stage after adding names
+        if (search) {
+            pipeline.push({
+                $match: {
+                    $or: [
+                        { appointmentId: { $regex: search, $options: "i" } },
+                        { patientId: { $regex: search, $options: "i" } },
+                        { doctorEmployeeId: { $regex: search, $options: "i" } },
+                        { patientName: { $regex: search, $options: "i" } },
+                        { doctorName: { $regex: search, $options: "i" } },
+                        { timeSlot: { $regex: search, $options: "i" } }
+                    ]
+                }
+            });
+        }
+
+        // To get total records after potential search matching, run count
+        const countPipeline = [...pipeline, { $count: "total" }];
+        const countResult = await Appointment.aggregate(countPipeline);
+        const totalRecords = countResult.length > 0 ? countResult[0].total : 0;
+
+        // Apply sort, skip and limit for actual data fetching
+        const dataPipeline = [
+            ...pipeline,
+            { $sort: sort },
+            { $skip: skip },
+            { $limit: limit }
+        ];
+
+        const appointments = await Appointment.aggregate(dataPipeline);
+
+        const pagination = buildPaginationResponse({ page, limit, totalRecords });
+        return res.status(200).json(
+            new ApiResponse(200, appointments, "Appointments fetched successfully", pagination)
+        );
+
     } catch (err) {
         return res.status(500).json(new ApiError(500, err.message));
     }

@@ -87,9 +87,9 @@
         <mat-icon>hourglass_empty</mat-icon>
         <p>Loading appointments...</p>
       </div>
-      } @else if (filteredAppointments.length > 0) {
+      } @else if (dataSource.data.length > 0) {
       <div class="table-wrapper">
-        <table mat-table [dataSource]="filteredAppointments" multiTemplateDataRows>
+        <table mat-table [dataSource]="dataSource" multiTemplateDataRows>
 
           <ng-container matColumnDef="appointmentId">
             <th mat-header-cell *matHeaderCellDef>Appointment ID</th>
@@ -177,6 +177,7 @@
 
         </table>
       </div>
+      <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" aria-label="Select page of appointments"></mat-paginator>
       } @else {
       <div class="no-data">
         <mat-icon>event_busy</mat-icon>

@@ -33,8 +33,21 @@ const PERMISSIONS = {
     // --- System / Dashboard Permissions ---
     DASHBOARD_VIEW: "DASHBOARD_READ",
     AUDIT_VIEW: "AUDIT_READ",
+
+    // --- Node Permissions ---
     NODE_VIEW: "NODE_READ",
-    BRANCH_VIEW: "BRANCH_READ"
+    NODE_CREATE: "NODE_CREATE",
+    NODE_UPDATE: "NODE_UPDATE",
+    NODE_DELETE: "NODE_DELETE",
+
+    // --- Branch Permissions ---
+    BRANCH_VIEW: "BRANCH_READ",
+
+    // --- Health Record Permissions ---
+    HEALTH_RECORD_CREATE: "HEALTH_RECORD_CREATE",
+    HEALTH_RECORD_READ: "HEALTH_RECORD_READ",
+    HEALTH_RECORD_UPDATE: "HEALTH_RECORD_UPDATE",
+    HEALTH_RECORD_DELETE: "HEALTH_RECORD_DELETE"
 };
 
 module.exports = { PERMISSIONS };

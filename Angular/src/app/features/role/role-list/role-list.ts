@@ -1,6 +1,8 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { environment } from '../../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
 
@@ -15,7 +17,7 @@ interface Role {
 @Component({
     selector: 'app-role-list',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, MatTableModule, MatPaginatorModule],
     template: `
     <div class="page-container">
       <div class="page-header">
@@ -28,38 +30,47 @@ interface Role {
 
       @if (!loading()) {
         <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Role ID</th>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Permissions</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (role of roles(); track role.roleId) {
-                <tr>
-                  <td>{{ role.roleId }}</td>
-                  <td><span class="badge">{{ role.name }}</span></td>
-                  <td>{{ role.description || '—' }}</td>
-                  <td>
-                    <div class="permissions-wrap">
-                      @for (p of role.permissions; track p) {
-                        <span class="perm-tag">{{ p }}</span>
-                      }
-                    </div>
-                  </td>
-                  <td>
-                    <span [class]="role.status ? 'status active' : 'status inactive'">
-                      {{ role.status ? 'Active' : 'Inactive' }}
-                    </span>
-                  </td>
-                </tr>
-              }
-            </tbody>
+          <table mat-table [dataSource]="dataSource">
+            
+            <ng-container matColumnDef="roleId">
+              <th mat-header-cell *matHeaderCellDef>Role ID</th>
+              <td mat-cell *matCellDef="let role">{{ role.roleId }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Name</th>
+              <td mat-cell *matCellDef="let role"><span class="badge">{{ role.name }}</span></td>
+            </ng-container>
+
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef>Description</th>
+              <td mat-cell *matCellDef="let role">{{ role.description || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="permissions">
+              <th mat-header-cell *matHeaderCellDef>Permissions</th>
+              <td mat-cell *matCellDef="let role">
+                <div class="permissions-wrap">
+                  @for (p of role.permissions; track p) {
+                    <span class="perm-tag">{{ p }}</span>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let role">
+                <span [class]="role.status ? 'status active' : 'status inactive'">
+                  {{ role.status ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
           </table>
+          <mat-paginator [pageSizeOptions]="[5, 10, 25]" aria-label="Select page of roles"></mat-paginator>
         </div>
       }
     </div>
@@ -69,10 +80,8 @@ interface Role {
     .page-header { margin-bottom: 24px; }
     h1 { font-size: 22px; font-weight: 600; color: #1a1a1a; }
     .loading { color: #666; }
-    .table-wrapper { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 8px rgba(0,0,0,0.07); }
-    th { background: #f7f7f7; padding: 12px 16px; text-align: left; font-size: 13px; color: #555; font-weight: 600; }
-    td { padding: 12px 16px; border-top: 1px solid #f0f0f0; font-size: 14px; color: #333; vertical-align: top; }
+    .table-wrapper { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 1px 8px rgba(0,0,0,0.07); }
+    table { width: 100%; }
     .badge { background: #ebf4ff; color: #2b6cb0; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
     .permissions-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
     .perm-tag { background: #f0fff4; color: #276749; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
@@ -82,10 +91,16 @@ interface Role {
   `]
 })
 export class RoleList implements OnInit {
+    @ViewChild(MatPaginator) set paginator(paginator: MatPaginator) {
+        if (paginator) {
+            this.dataSource.paginator = paginator;
+        }
+    }
     private http = inject(HttpClient);
     private toastr = inject(ToastrService);
 
-    roles = signal<Role[]>([]);
+    dataSource = new MatTableDataSource<Role>([]);
+    displayedColumns: string[] = ['roleId', 'name', 'description', 'permissions', 'status'];
     loading = signal(true);
 
     private readonly baseUrl = `${environment.API_URL}/api/roles`;
@@ -93,7 +108,7 @@ export class RoleList implements OnInit {
     ngOnInit() {
         this.http.get<any>(this.baseUrl).subscribe({
             next: res => {
-                this.roles.set(res.data ?? []);
+                this.dataSource.data = res.data ?? [];
                 this.loading.set(false);
             },
             error: () => {

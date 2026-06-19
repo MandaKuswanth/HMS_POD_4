@@ -41,31 +41,37 @@ export const routes: Routes = [
         path: 'employees',
         loadComponent: () => import('./features/employee/employee-list/employee-list').then(m => m.EmployeeList),
         canActivate: [authGuard],
-        data: { permissions: ['EMPLOYEE_VIEW'] }
+        data: { permissions: ['EMPLOYEE_READ'] }
     },
     {
         path: 'patients',
         loadComponent: () => import('./features/patient/patient-list/patient-list').then(m => m.PatientList),
         canActivate: [authGuard],
-        data: { permissions: ['PATIENT_VIEW'] }
+        data: { permissions: ['PATIENT_READ'] }
     },
     {
         path: 'appointments',
         loadComponent: () => import('./features/appointments/appointment-list/appointment-list').then(m => m.AppointmentList),
         canActivate: [authGuard],
-        data: { permissions: ['APPOINTMENT_VIEW'] }
+        data: { permissions: ['APPOINTMENT_READ'] }
     },
     {
         path: 'roles',
         loadComponent: () => import('./features/role/role-list/role-list').then(m => m.RoleList),
         canActivate: [authGuard],
-        data: { permissions: ['ROLE_VIEW'] }
+        data: { permissions: ['ROLE_READ'] }
     },
     {
         path: 'pending-employees',
         loadComponent: () => import('./features/employee/pending-employees/pending-employees').then(m => m.PendingEmployees),
         canActivate: [authGuard],
         data: { permissions: ['EMPLOYEE_APPROVE'] }
+    },
+    {
+        path: 'health-records',
+        loadComponent: () => import('./features/health-record/health-record-list/health-record-list').then(m => m.HealthRecordList),
+        canActivate: [authGuard],
+        data: { permissions: ['HEALTH_RECORD_READ'] }
     },
     {
         path: '**',

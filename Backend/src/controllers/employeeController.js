@@ -11,6 +11,7 @@ const ApiError = require("../utils/ApiError");
 const sendEmail = require("../utils/sendEmail");
 
 const jwt = require("jsonwebtoken");
+const { getPagination, buildPaginationResponse } = require("../utils/pagination");
 
 const cancelDoctorAppointments = async (doctorEmployeeId, reason) => {
     const appointments = await Appointment.find({
@@ -695,78 +696,87 @@ exports.getProfile = async (req, res) => {
 
 exports.getEmployees = async (req, res) => {
     try {
-        const employees = await Employee.find()
-            .sort({ createdAt: -1 });
+        const { page, limit, skip, sort } = getPagination(req.query);
+        const { search, status, role } = req.query;
 
-        const users = await User.find()
-            .select("-passwordHash");
+        let query = {};
+        
+        // Handle search
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+                { phone: { $regex: search, $options: "i" } },
+                { employeeCode: { $regex: search, $options: "i" } },
+                { designation: { $regex: search, $options: "i" } },
+                { department: { $regex: search, $options: "i" } }
+            ];
+        }
 
-        const roles = await Role.find().select(
-            "roleId name"
-        );
+        // Handle employee status filter
+        if (status !== undefined && status !== "" && status !== "ALL") {
+            query.status = status === "true" || status === "ACTIVE" || status === true;
+        }
+
+        // Handle role filter
+        if (role && role !== "ALL") {
+            const roleDoc = await Role.findOne({ name: role, status: true });
+            if (roleDoc) {
+                const usersWithRole = await User.find({ roleIds: roleDoc.roleId }).select("employeeId");
+                const employeeCodes = usersWithRole.map(u => u.employeeId).filter(Boolean);
+                query.employeeCode = { $in: employeeCodes };
+            } else {
+                query.employeeCode = { $in: [] };
+            }
+        }
+
+        const [employees, totalRecords] = await Promise.all([
+            Employee.find(query).sort(sort).skip(skip).limit(limit),
+            Employee.countDocuments(query)
+        ]);
+
+        const employeeEmails = employees.map(e => e.email?.toLowerCase());
+        const users = await User.find({ email: { $in: employeeEmails } }).select("-passwordHash");
+        const roles = await Role.find().select("roleId name");
 
         const roleMap = new Map(
-            roles.map(role => [
-                role.roleId,
-                role.name
-            ])
+            roles.map(r => [r.roleId, r.name])
         );
 
         const employeesWithUser = employees.map(
             (employee) => {
-
                 const empObj = employee.toObject();
-
                 const matchingUser = users.find(
-                    (user) =>
-                        user.email?.toLowerCase() ===
-                        empObj.email?.toLowerCase()
+                    (user) => user.email?.toLowerCase() === empObj.email?.toLowerCase()
                 );
 
-                const roleNames =
-                    matchingUser?.roleIds?.map(
-                        roleId =>
-                            roleMap.get(roleId)
-                    ) || [];
+                const roleNames = matchingUser?.roleIds?.map(roleId => roleMap.get(roleId)) || [];
 
                 return {
                     ...empObj,
-                    userId:
-                        matchingUser?._id || null,
-
-                    roleIds:
-                        matchingUser?.roleIds || [],
-
+                    userId: matchingUser?._id || null,
+                    roleIds: matchingUser?.roleIds || [],
                     roles: roleNames,
-
-                    userStatus:
-                        matchingUser?.status ?? false,
-
-                    mustResetPassword:
-                        matchingUser?.mustResetPassword ??
-                        false
+                    userStatus: matchingUser?.status ?? false,
+                    mustResetPassword: matchingUser?.mustResetPassword ?? false
                 };
             }
         );
 
+        const pagination = buildPaginationResponse({ page, limit, totalRecords });
         return res.status(200).json(
             new ApiResponse(
                 200,
                 employeesWithUser,
-                "Employees fetched successfully"
+                "Employees fetched successfully",
+                pagination
             )
         );
 
     } catch (err) {
-
         console.error(err);
-
         return res.status(500).json(
-            new ApiError(
-                500,
-                err.message ||
-                "Failed to fetch employees"
-            )
+            new ApiError(500, err.message || "Internal Server Error")
         );
     }
 };
@@ -997,70 +1007,55 @@ exports.deleteEmployee = async (req, res) => {
 
 exports.getPendingEmployees = async (req, res) => {
     try {
+        const { page, limit, skip, sort } = getPagination(req.query);
 
-        const pendingUsers = await User.find({
-            status: false
-        })
+        const totalRecords = await User.countDocuments({ status: false });
+
+        const pendingUsers = await User.find({ status: false })
             .select("-passwordHash")
-            .sort({ createdAt: -1 });
+            .sort(sort)
+            .skip(skip)
+            .limit(limit);
 
         const employees = await Employee.find({
             email: {
-                $in: pendingUsers.map(
-                    user => user.email
-                )
+                $in: pendingUsers.map(user => user.email)
             }
         });
 
-        const roles = await Role.find()
-            .select("roleId name");
-
+        const roles = await Role.find().select("roleId name");
         const roleMap = new Map(
-            roles.map(role => [
-                role.roleId,
-                role.name
-            ])
+            roles.map(role => [role.roleId, role.name])
         );
 
-        const pendingEmployees =
-            pendingUsers.map((user) => {
+        const pendingEmployees = pendingUsers.map((user) => {
+            const employee = employees.find(
+                emp => emp.email?.toLowerCase() === user.email?.toLowerCase()
+            );
 
-                const employee =
-                    employees.find(
-                        emp =>
-                            emp.email
-                                .toLowerCase() ===
-                            user.email
-                                .toLowerCase()
-                    );
+            const roleNames = user.roleIds?.map(roleId => roleMap.get(roleId)) || [];
 
-                const roleNames =
-                    user.roleIds?.map(
-                        roleId =>
-                            roleMap.get(roleId)
-                    ) || [];
+            return {
+                user: {
+                    ...user.toObject(),
+                    roles: roleNames
+                },
+                employee
+            };
+        });
 
-                return {
-                    user: {
-                        ...user.toObject(),
-                        roles: roleNames
-                    },
-                    employee
-                };
-            });
-
+        const pagination = buildPaginationResponse({ page, limit, totalRecords });
         return res.status(200).json(
             new ApiResponse(
                 200,
                 pendingEmployees,
-                "Pending employees fetched successfully"
+                "Pending employees fetched successfully",
+                pagination
             )
         );
 
     } catch (err) {
-
         console.error(err);
-
         return res.status(500).json(
             new ApiError(
                 500,

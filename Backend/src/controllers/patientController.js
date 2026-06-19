@@ -7,6 +7,7 @@ const crypto = require("node:crypto");
 const bcrypt = require("bcryptjs");
 const { cancelPatientAppointments } = require("../controllers/appointmentController");
 const sendEmail = require("../utils/sendEmail");
+const { getPagination, buildPaginationResponse } = require("../utils/pagination");
 
 
 
@@ -157,16 +158,43 @@ exports.createPatient = async (req, res) => {
 
 exports.getPatients = async (req, res) => {
     try {
-        const patients = await Patient.find().sort({ createdAt: -1 });
+        const { page, limit, skip, sort } = getPagination(req.query);
+        const { search, status, gender } = req.query;
 
+        let query = {};
+        
+        // Handle search
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+                { phone: { $regex: search, $options: "i" } },
+                { UHID: { $regex: search, $options: "i" } }
+            ];
+        }
+
+        // Handle status filter
+        if (status !== undefined && status !== "" && status !== "ALL") {
+            query.status = status === "true" || status === "ACTIVE" || status === true;
+        }
+
+        // Handle gender filter
+        if (gender && gender !== "ALL") {
+            query.gender = gender.toLowerCase();
+        }
+
+        const [patients, totalRecords] = await Promise.all([
+            Patient.find(query).sort(sort).skip(skip).limit(limit),
+            Patient.countDocuments(query)
+        ]);
+
+        const pagination = buildPaginationResponse({ page, limit, totalRecords });
         return res.status(200).json(
             new ApiResponse(
                 200,
-                {
-                    patients,
-                    count: patients.length
-                },
-                "Patients fetched successfully"
+                patients,
+                "Patients fetched successfully",
+                pagination
             )
         );
 

@@ -78,16 +78,6 @@ const checkPermission = (requiredPermission) => {
             if (!isIncluded) {
                 return res.status(403).json({
                     success: false,
-                    message: "403-CHECK-PERMISSION-FAILED", // Change this string!
-                    requiredPermission,
-                    roleIds
-                });
-            }
-
-            // ... rest of error code
-            if (!permissions.includes(requiredPermission)) {
-                return res.status(403).json({
-                    success: false,
                     message: "Access denied. Permission missing.",
                     requiredPermission,
                     roleIds

@@ -1,10 +1,10 @@
 import {
   Component, OnInit, inject,
-  ChangeDetectionStrategy, ChangeDetectorRef,
+  ChangeDetectionStrategy, ChangeDetectorRef, ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -34,22 +34,29 @@ import { PERMISSIONS } from '../../../constants/permission';
     MatButtonModule, MatDialogModule, MatTooltipModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatDatepickerModule, MatNativeDateModule,
+    MatPaginatorModule,
     Navbar, Sidebar,
-    HasPermissionDirective  // add this
+    HasPermissionDirective
   ],
   templateUrl: './appointment-list.html',
   styleUrl: './appointment-list.css',
 })
 export class AppointmentList implements OnInit {
+  @ViewChild(MatPaginator) set paginator(paginator: MatPaginator) {
+    if (paginator) {
+      this.dataSource.paginator = paginator;
+    }
+  }
+
   private readonly appointmentService = inject(AppointmentService);
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  readonly PERMISSIONS = PERMISSIONS; // expose to template
+  readonly PERMISSIONS = PERMISSIONS;
 
   appointments: any[] = [];
-  filteredAppointments: any[] = [];
+  dataSource = new MatTableDataSource<any>([]);
 
   searchText = '';
   isLoading = false;
@@ -79,14 +86,14 @@ export class AppointmentList implements OnInit {
           ? response.data
           : (Array.isArray(response) ? response : []);
         this.appointments = appointments;
-        this.filteredAppointments = [...appointments];
+        this.dataSource.data = [...appointments];
         this.isLoading = false;
         this.cdr.markForCheck();
       },
       error: (error) => {
         this.isLoading = false;
         this.appointments = [];
-        this.filteredAppointments = [];
+        this.dataSource.data = [];
         this.toastr.error(error?.error?.message || 'Failed to load appointments');
         this.cdr.markForCheck();
       },
@@ -108,7 +115,7 @@ export class AppointmentList implements OnInit {
 
   applyFilters(): void {
     const search = this.searchText.toLowerCase().trim();
-    this.filteredAppointments = this.appointments.filter((a: any) => {
+    this.dataSource.data = this.appointments.filter((a: any) => {
       const matchesSearch = !search ||
         a.appointmentId?.toLowerCase().includes(search) ||
         a.patientId?.toLowerCase().includes(search) ||
@@ -121,6 +128,9 @@ export class AppointmentList implements OnInit {
         new Date(a.date).toDateString() === new Date(this.selectedDate).toDateString();
       return matchesSearch && matchesStatus && matchesDoctor && matchesDate;
     });
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
     this.expandedAppointment = null;
     this.cdr.markForCheck();
   }

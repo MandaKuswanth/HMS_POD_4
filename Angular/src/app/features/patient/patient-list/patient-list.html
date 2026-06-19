@@ -145,7 +145,7 @@
 
                     <!-- Delete -->
                     <button *appHasPermission="PERMISSIONS.PATIENT_DELETE" mat-stroked-button class="delete-btn"
-                      (click)="deletePatient(row)">
+                      (click)="deletePatient(row, $event)">
                       <mat-icon>delete</mat-icon>
                       Delete
                     </button>
@@ -162,6 +162,7 @@
 
           </table>
         </div>
+        <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" aria-label="Select page of patients"></mat-paginator>
       </div>
     </div>
   </main>

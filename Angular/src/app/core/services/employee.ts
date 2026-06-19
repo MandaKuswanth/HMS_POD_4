@@ -15,7 +15,8 @@ export interface EmployeeRequest {
   qualification?: string[];
   consultationFee?: number;
   availabilitySlots?: string[];
-  roles: string[]; // 1. FIXED: Changed from 'role' to 'roles: string[]'
+  role?: string;
+  roles?: string[];
   status?: boolean;
   password?: string;
   confirmPassword?: string;

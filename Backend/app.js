@@ -1,6 +1,6 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-require("dotenv").config();
+if (!process.env.DOTENV_LOADED) require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
@@ -13,7 +13,8 @@ const appointmentRoutes = require("./src/routes/appointmentRoutes");
 const patientAuthRoutes = require("./src/routes/patientAuthRoutes");
 const patientAppointmentRoutes = require("./src/routes/patientAppointmentRoutes");
 const roleRoutes = require("./src/routes/roleRoutes");
-const NodeRoutes = require("./src/routes/nodeRoutes")
+const NodeRoutes = require("./src/routes/nodeRoutes");
+const medicalRecordRoutes = require("./src/routes/medicalRecordRoutes");
 
 const errorMiddleware = require("./src/middleware/errorMiddleware");
 
@@ -48,18 +49,23 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/patient-auth", patientAuthRoutes);
 app.use("/api/patientAppointment-auth", patientAppointmentRoutes);
 app.use("/api/roles", roleRoutes);
-app.use("/api/nodes", NodeRoutes)
+app.use("/api/nodes", NodeRoutes);
+app.use("/api/medical-records", medicalRecordRoutes);
 // Global error middleware should always be last
 app.use(errorMiddleware);
 
-// Database connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err.message);
-  });
+// Database connection (skip if already connected via devstart.js)
+if (mongoose.connection.readyState === 0) {
+  mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => {
+      console.log("MongoDB connected");
+    })
+    .catch((err) => {
+      console.error("MongoDB connection error:", err.message);
+    });
+} else {
+  console.log("MongoDB already connected");
+}
 
 module.exports = app;

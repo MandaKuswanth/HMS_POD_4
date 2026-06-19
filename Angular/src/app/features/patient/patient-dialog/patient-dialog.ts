@@ -145,7 +145,9 @@ export class PatientDialog implements OnInit {
                 phone: patient.phone || '',
                 gender: patient.gender || '',
                 dob: patient.dob || '',
-                address: patient.address || '',
+                address: typeof patient.address === 'object' && patient.address !== null
+                    ? Object.values(patient.address).filter(Boolean).join(', ')
+                    : (patient.address || ''),
                 emergencyName: patient.emergencyContact?.name || '',
                 emergencyRelation: patient.emergencyContact?.relation || '',
                 emergencyPhone: patient.emergencyContact?.phone || ''
@@ -192,6 +194,10 @@ export class PatientDialog implements OnInit {
         // 2. Explicitly cast the raw value to our interface
         const f = this.form.getRawValue() as PatientFormValue;
 
+        const addressStr = typeof f.address === 'string' 
+            ? f.address.trim() 
+            : (f.address ? Object.values(f.address).filter(Boolean).join(', ') : '');
+
         const payload = {
             name: f.name?.trim() ?? '',
             email: f.email?.trim() ?? '',
@@ -200,7 +206,7 @@ export class PatientDialog implements OnInit {
             dob: f.dob
                 ? formatDate(new Date(f.dob), 'yyyy-MM-dd', 'en-US')
                 : '',
-            address: f.address?.trim() ?? '',
+            address: addressStr,
             emergencyContact: {
                 name: f.emergencyName?.trim() ?? '',
                 relation: f.emergencyRelation?.trim() ?? '',

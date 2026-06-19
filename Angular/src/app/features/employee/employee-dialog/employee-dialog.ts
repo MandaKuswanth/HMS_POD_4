@@ -69,8 +69,18 @@ export class EmployeeDialog implements OnInit {
     if (this.data?.mode === 'edit' && this.data.employee) {
       this.form.patchValue({
         ...this.data.employee,
-        role: this.data.employee.roles?.[0]
+        role: this.data.employee.roles?.[0],
+        qualificationText: this.data.employee.qualification?.join(', ') || ''
       });
+      // Joining date is not required or shown in edit mode
+      this.form.get('joiningDate')?.clearValidators();
+      this.form.get('joiningDate')?.updateValueAndValidity();
+
+      if (this.data.employee.availabilitySlots?.length) {
+        this.data.employee.availabilitySlots.forEach((slot: string) => {
+          this.availabilitySlots.push(this.fb.control(slot));
+        });
+      }
     }
   }
 
@@ -97,14 +107,13 @@ export class EmployeeDialog implements OnInit {
     }
 
     const val = this.form.value;
-    const payload = {
+    const payload: any = {
       name: (val.name ?? '') as string,
       email: (val.email ?? '') as string,
       phone: (val.phone ?? '') as string,
       department: (val.department ?? '') as string,
       designation: (val.designation ?? '') as string,
-      joiningDate: utils.getFormattedJoiningDate(val.joiningDate),
-      roles: [val.role ?? ''],
+      ...(this.data.mode === 'add' && { joiningDate: utils.getFormattedJoiningDate(val.joiningDate) }),
       status: val.status ?? true,
       ...(this.showMedicalStaffFields() && {
         medicalRegistrationNo: val.medicalRegistrationNo ?? '',
@@ -114,6 +123,12 @@ export class EmployeeDialog implements OnInit {
         availabilitySlots: utils.getCleanAvailabilitySlots(val.availabilitySlots, true)
       })
     };
+
+    if (this.data.mode === 'add') {
+      payload.roles = [val.role ?? ''];
+    } else {
+      payload.role = val.role ?? '';
+    }
 
     this.loading = true;
     const action$ = this.data.mode === 'add'

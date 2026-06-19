@@ -1,6 +1,6 @@
 import {
   Component, inject, OnInit,
-  ChangeDetectionStrategy, ChangeDetectorRef
+  ChangeDetectionStrategy, ChangeDetectorRef, ViewChild
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,6 +20,8 @@ import { PatientDialog } from '../patient-dialog/patient-dialog';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { PERMISSIONS } from '../../../constants/permission';
 
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+
 @Component({
   selector: 'app-patient-list',
   standalone: true,
@@ -28,13 +30,15 @@ import { PERMISSIONS } from '../../../constants/permission';
     CommonModule, FormsModule, DatePipe,
     MatTableModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatIconModule, MatButtonModule,
+    MatPaginatorModule,
     Navbar, Sidebar,
-    HasPermissionDirective  // add this
+    HasPermissionDirective
   ],
   templateUrl: './patient-list.html',
   styleUrl: './patient-list.css'
 })
 export class PatientList implements OnInit {
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
   private readonly dialog = inject(MatDialog);
   private readonly patientService = inject(PatientService);
   private readonly toastr = inject(ToastrService);
@@ -61,6 +65,9 @@ export class PatientList implements OnInit {
         const patients = response?.data?.patients || response?.data || response || [];
         this.allPatients = patients;
         this.dataSource.data = patients;
+        if (this.paginator) {
+          this.dataSource.paginator = this.paginator;
+        }
         this.expandedPatient = null;
         this.cdr.markForCheck();
       },
@@ -134,9 +141,11 @@ export class PatientList implements OnInit {
     this.dialog.open(PatientDialog, { width: '800px', data: { mode: 'view', patient } });
   }
 
-  deletePatient(patient: PatientRequest): void {
+  deletePatient(patient: PatientRequest, event?: Event): void {
+    if (event) event.stopPropagation();
+    
     if (!patient?.UHID) { this.toastr.error('Patient ID missing'); return; }
-    if (!confirm(`Delete ${patient.name}? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete ${patient.name}? This cannot be undone.`)) return;
 
     this.patientService.deletePatient(patient.UHID).subscribe({
       next: () => { this.toastr.success('Patient deleted successfully'); this.loadPatients(); },

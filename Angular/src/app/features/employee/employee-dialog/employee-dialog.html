@@ -121,31 +121,33 @@
         }
       </mat-form-field>
 
-      <!-- Joining Date -->
-      <mat-form-field appearance="outline">
-        <mat-label>Joining Date</mat-label>
+      <!-- Joining Date (Only for Add Mode) -->
+      @if (data.mode === 'add') {
+        <mat-form-field appearance="outline">
+          <mat-label>Joining Date</mat-label>
 
-        <input
-          matInput
-          [matDatepicker]="picker"
-          formControlName="joiningDate"
-        />
+          <input
+            matInput
+            [matDatepicker]="picker"
+            formControlName="joiningDate"
+          />
 
-        <mat-datepicker-toggle
-          matIconSuffix
-          [for]="picker"
-        ></mat-datepicker-toggle>
+          <mat-datepicker-toggle
+            matIconSuffix
+            [for]="picker"
+          ></mat-datepicker-toggle>
 
-        <mat-datepicker #picker></mat-datepicker>
+          <mat-datepicker #picker></mat-datepicker>
 
-        @if (form.get('joiningDate')?.hasError('required')) {
-          <mat-error>Joining date is required</mat-error>
-        }
+          @if (form.get('joiningDate')?.hasError('required')) {
+            <mat-error>Joining date is required</mat-error>
+          }
 
-        @if (form.get('joiningDate')?.hasError('pastDate')) {
-          <mat-error>Joining date cannot be a previous date</mat-error>
-        }
-      </mat-form-field>
+          @if (form.get('joiningDate')?.hasError('pastDate')) {
+            <mat-error>Joining date cannot be a previous date</mat-error>
+          }
+        </mat-form-field>
+      }
 
       <!-- Role -->
       <mat-form-field appearance="outline">

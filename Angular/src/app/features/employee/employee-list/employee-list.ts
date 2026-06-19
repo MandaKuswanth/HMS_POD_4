@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -25,6 +26,7 @@ import { Sidebar } from '../../../shared/components/sidebar/sidebar';
     CommonModule,
     FormsModule,
     MatTableModule,
+    MatPaginatorModule,
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
@@ -46,6 +48,7 @@ export class EmployeeList implements OnInit {
   readonly PERMISSIONS = PERMISSIONS;
 
   employees: any[] = [];
+  dataSource = new MatTableDataSource<any>([]);
   expandedEmployee: any = null;
   activeView: 'all' | 'active' | 'pending' = 'all';
   searchText = '';
@@ -70,12 +73,18 @@ export class EmployeeList implements OnInit {
     return ['All Departments', ...new Set(all)];
   }
 
+  @ViewChild(MatPaginator) set paginator(paginator: MatPaginator) {
+    if (paginator) {
+      this.dataSource.paginator = paginator;
+    }
+  }
+
   // ── Counts ────────────────────────────────────────────────────────────────
   get activeCount(): number { return this.employees.filter(e => e.status).length; }
   get pendingCount(): number { return this.employees.filter(e => !e.status).length; }
 
-  // ── Filtered list ─────────────────────────────────────────────────────────
-  get filteredEmployees(): any[] {
+  // ── Filter logic ─────────────────────────────────────────────────────────
+  applyFilters(): void {
     let list = [...this.employees];
 
     if (this.activeView === 'active') list = list.filter(e => e.status);
@@ -99,7 +108,10 @@ export class EmployeeList implements OnInit {
       );
     }
 
-    return list;
+    this.dataSource.data = list;
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
   }
 
   ngOnInit(): void {
@@ -110,6 +122,7 @@ export class EmployeeList implements OnInit {
     this.employeeService.getEmployees().subscribe({
       next: (res: any) => {
         this.employees = res?.data?.employees || res?.data || res || [];
+        this.applyFilters();
         this.cdr.markForCheck();
       },
       error: () => this.toastr.error('Failed to load employees', 'Error')
@@ -118,6 +131,7 @@ export class EmployeeList implements OnInit {
 
   setView(view: 'all' | 'active' | 'pending'): void {
     this.activeView = view;
+    this.applyFilters();
     this.cdr.markForCheck();
   }
 

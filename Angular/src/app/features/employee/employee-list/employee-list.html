@@ -11,11 +11,11 @@
 
           <div class="search-container">
             <input class="search-input" type="text" placeholder="Search by code, name, email or phone..."
-              [(ngModel)]="searchText" />
+              [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />
           </div>
 
           <div class="role-filter">
-            <select [(ngModel)]="selectedRole">
+            <select [(ngModel)]="selectedRole" (ngModelChange)="applyFilters()">
               @for (role of roles; track role) {
               <option [value]="role">{{ role }}</option>
               }
@@ -23,7 +23,7 @@
           </div>
 
           <div class="department-filter">
-            <select [(ngModel)]="selectedDepartment">
+            <select [(ngModel)]="selectedDepartment" (ngModelChange)="applyFilters()">
               @for (dept of departments; track dept) {
               <option [value]="dept">{{ dept }}</option>
               }
@@ -50,9 +50,9 @@
         </div>
       </div>
 
-      @if (filteredEmployees.length > 0) {
+      @if (dataSource.data.length > 0) {
       <div class="table-wrapper">
-        <table mat-table [dataSource]="filteredEmployees" class="mat-elevation-z1" multiTemplateDataRows>
+        <table mat-table [dataSource]="dataSource" class="mat-elevation-z1" multiTemplateDataRows>
 
           <ng-container matColumnDef="employeeCode">
             <th mat-header-cell *matHeaderCellDef>Code</th>
@@ -146,6 +146,7 @@
 
         </table>
       </div>
+      <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" aria-label="Select page of employees"></mat-paginator>
 
       } @else {
       <div class="no-data">
