@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
 import {
     AbstractControl,
@@ -30,7 +30,6 @@ export interface PatientDialogData {
     patient?: any;
 }
 
-// 1. Added Interface to fix the "never" TypeScript error
 interface PatientFormValue {
     name: string | null;
     email: string | null;
@@ -69,7 +68,9 @@ export class PatientDialog implements OnInit {
     readonly dialogRef = inject(MatDialogRef<PatientDialog>);
     readonly data = inject<PatientDialogData>(MAT_DIALOG_DATA);
 
-    loading = false;
+    // ✅ Signal replaces plain boolean — no more ExpressionChangedAfterChecked
+    loading = signal(false);
+
     genders = ['male', 'female', 'others'];
 
     form = this.fb.group({
@@ -164,9 +165,7 @@ export class PatientDialog implements OnInit {
     }
 
     private futureDateValidator(control: AbstractControl): ValidationErrors | null {
-        if (!control.value) {
-            return null;
-        }
+        if (!control.value) return null;
 
         const selectedDate = new Date(control.value);
         const today = new Date();
@@ -189,13 +188,13 @@ export class PatientDialog implements OnInit {
             return;
         }
 
-        this.loading = true;
+        // ✅ signal.set() instead of this.loading = true
+        this.loading.set(true);
 
-        // 2. Explicitly cast the raw value to our interface
         const f = this.form.getRawValue() as PatientFormValue;
 
-        const addressStr = typeof f.address === 'string' 
-            ? f.address.trim() 
+        const addressStr = typeof f.address === 'string'
+            ? f.address.trim()
             : (f.address ? Object.values(f.address).filter(Boolean).join(', ') : '');
 
         const payload = {
@@ -203,9 +202,7 @@ export class PatientDialog implements OnInit {
             email: f.email?.trim() ?? '',
             phone: f.phone?.trim() ?? '',
             gender: f.gender ?? '',
-            dob: f.dob
-                ? formatDate(new Date(f.dob), 'yyyy-MM-dd', 'en-US')
-                : '',
+            dob: f.dob ? formatDate(new Date(f.dob), 'yyyy-MM-dd', 'en-US') : '',
             address: addressStr,
             emergencyContact: {
                 name: f.emergencyName?.trim() ?? '',
@@ -214,19 +211,18 @@ export class PatientDialog implements OnInit {
             }
         };
 
-        // 3. Consolidated API Call for both Edit and Add
         const action$ = this.data.mode === 'edit'
             ? this.patientService.updatePatient(this.data.patient.UHID, payload)
             : this.patientService.createPatient(payload);
 
         action$.subscribe({
             next: () => {
-                this.loading = false;
+                this.loading.set(false); // ✅
                 this.toastr.success(`Patient ${this.data.mode === 'edit' ? 'updated' : 'created'} successfully`);
                 this.dialogRef.close(true);
             },
             error: (err) => {
-                this.loading = false;
+                this.loading.set(false); // ✅
                 this.toastr.error(err?.error?.message || `Failed to ${this.data.mode} patient`);
             }
         });

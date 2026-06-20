@@ -1,6 +1,7 @@
 const Role = require("../models/Role");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
+const { getPagination, buildPaginationResponse } = require("../utils/pagination");
 
 exports.createRole = async (req, res) => {
     try {
@@ -52,25 +53,33 @@ exports.createRole = async (req, res) => {
 
 exports.getRoles = async (req, res) => {
     try {
-        const roles = await Role.find()
-            .sort({ createdAt: -1 });
+        // 1. Extract pagination parameters
+        const { page, limit, skip, sort } = getPagination(req.query);
+
+        // 2. Fetch data and count in parallel
+        const [roles, totalRecords] = await Promise.all([
+            Role.find()
+                .sort(sort)
+                .skip(skip)
+                .limit(limit),
+            Role.countDocuments()
+        ]);
+
+        // 3. Build response using the standard contract
+        const pagination = buildPaginationResponse({ page, limit, totalRecords });
 
         return res.status(200).json(
             new ApiResponse(
                 200,
                 roles,
-                "Roles fetched successfully"
+                "Roles fetched successfully",
+                pagination // Include the standard pagination object
             )
         );
-
     } catch (err) {
         console.error(err);
-
         return res.status(500).json(
-            new ApiError(
-                500,
-                err.message || "Internal Server Error"
-            )
+            new ApiError(500, err.message || "Internal Server Error")
         );
     }
 };

@@ -1,6 +1,7 @@
 const MedicalRecord = require('../models/MedicalRecord');
-const { ApiError } = require('../utils/ApiError');
-const { ApiResponse } = require('../utils/ApiResponse');
+const ApiResponse = require("../utils/ApiResponse");
+const ApiError = require("../utils/ApiError");
+const { getPagination, buildPaginationResponse } = require("../utils/pagination");
 
 exports.createMedicalRecord = async (req, res) => {
     try {
@@ -34,13 +35,29 @@ exports.getMedicalRecordsByPatient = async (req, res) => {
         res.status(500).json(new ApiError(500, error.message));
     }
 };
-
 exports.getAllMedicalRecords = async (req, res) => {
     try {
-        const records = await MedicalRecord.find().sort({ createdAt: -1 });
-        res.status(200).json(new ApiResponse(200, records, "Records fetched successfully"));
+        // 1. Get pagination parameters from the query
+        const { page, limit, skip, sort } = getPagination(req.query);
+
+        // 2. Fetch records and total count in parallel for performance
+        const [records, totalRecords] = await Promise.all([
+            MedicalRecord.find()
+                .sort(sort)
+                .skip(skip)
+                .limit(limit),
+            MedicalRecord.countDocuments()
+        ]);
+
+        // 3. Build the standard pagination response
+        const pagination = buildPaginationResponse({ page, limit, totalRecords });
+
+        // 4. Return the standardized response
+        return res.status(200).json(
+            new ApiResponse(200, records, "Records fetched successfully", pagination)
+        );
     } catch (error) {
-        res.status(500).json(new ApiError(500, error.message));
+        return res.status(500).json(new ApiError(500, error.message));
     }
 };
 

@@ -12,7 +12,6 @@
       <mat-form-field appearance="outline">
         <mat-label>Full Name *</mat-label>
         <input matInput formControlName="name" placeholder="John Doe" />
-
         @if (form.get('name')?.hasError('required')) {
         <mat-error>Name is required</mat-error>
         }
@@ -30,7 +29,6 @@
       <mat-form-field appearance="outline">
         <mat-label>Email Address *</mat-label>
         <input matInput type="email" formControlName="email" placeholder="patient@example.com" />
-
         @if (form.get('email')?.hasError('required')) {
         <mat-error>Email is required</mat-error>
         }
@@ -45,7 +43,6 @@
       <mat-form-field appearance="outline">
         <mat-label>Phone Number *</mat-label>
         <input matInput formControlName="phone" maxlength="10" placeholder="9876543210" />
-
         @if (form.get('phone')?.hasError('required')) {
         <mat-error>Phone number is required</mat-error>
         }
@@ -58,12 +55,9 @@
         <mat-label>Gender *</mat-label>
         <mat-select formControlName="gender" placeholder="Select Gender">
           @for (g of genders; track g) {
-          <mat-option [value]="g">
-            {{ g | titlecase }}
-          </mat-option>
+          <mat-option [value]="g">{{ g | titlecase }}</mat-option>
           }
         </mat-select>
-
         @if (form.get('gender')?.hasError('required')) {
         <mat-error>Gender is required</mat-error>
         }
@@ -72,10 +66,8 @@
       <mat-form-field appearance="outline">
         <mat-label>Date of Birth *</mat-label>
         <input matInput [matDatepicker]="picker" formControlName="dob" placeholder="Choose a date" />
-        <mat-datepicker-toggle matIconSuffix [for]="picker">
-        </mat-datepicker-toggle>
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
-
         @if (form.get('dob')?.hasError('required')) {
         <mat-error>Date of birth is required</mat-error>
         }
@@ -87,7 +79,6 @@
       <mat-form-field appearance="outline">
         <mat-label>Residential Address</mat-label>
         <input matInput formControlName="address" placeholder="123 Main St, City" />
-
         @if (form.get('address')?.hasError('maxlength')) {
         <mat-error>Address cannot exceed 200 characters</mat-error>
         }
@@ -106,7 +97,6 @@
         <mat-form-field appearance="outline">
           <mat-label>Contact Name</mat-label>
           <input matInput formControlName="emergencyName" placeholder="Jane Doe" />
-
           @if (form.get('emergencyName')?.hasError('maxlength')) {
           <mat-error>Contact name cannot exceed 50 characters</mat-error>
           }
@@ -118,7 +108,6 @@
         <mat-form-field appearance="outline">
           <mat-label>Relation</mat-label>
           <input matInput formControlName="emergencyRelation" placeholder="Spouse, Sibling, etc." />
-
           @if (form.get('emergencyRelation')?.hasError('maxlength')) {
           <mat-error>Relation cannot exceed 30 characters</mat-error>
           }
@@ -127,7 +116,6 @@
         <mat-form-field appearance="outline">
           <mat-label>Emergency Phone</mat-label>
           <input matInput formControlName="emergencyPhone" maxlength="10" placeholder="9876543210" />
-
           @if (form.get('emergencyPhone')?.hasError('pattern')) {
           <mat-error>Enter a valid 10 digit phone number</mat-error>
           }
@@ -146,9 +134,9 @@
   </button>
 
   @if (!isViewMode) {
-  <button mat-flat-button color="primary" type="button" [disabled]="loading" (click)="onSubmit()">
-
-    @if (loading) {
+  <!-- ✅ loading() called as a function — signal read -->
+  <button mat-flat-button color="primary" type="button" [disabled]="loading()" (click)="onSubmit()">
+    @if (loading()) {
     {{ data.mode === 'add' ? 'Creating...' : 'Updating...' }}
     } @else {
     {{ data.mode === 'add' ? 'Create Patient' : 'Save Changes' }}

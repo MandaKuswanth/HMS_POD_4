@@ -10,8 +10,9 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Patient *</mat-label>
+        <!-- ✅ patientsLoading() called as signal function -->
         <mat-select formControlName="patientId" placeholder="Select a Patient">
-          @if (patientsLoading) {
+          @if (patientsLoading()) {
           <mat-option disabled>Loading patients...</mat-option>
           } @else if (patients.length > 0) {
           @for (patient of patients; track patient.UHID) {
@@ -30,8 +31,9 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Doctor *</mat-label>
+        <!-- ✅ doctorsLoading() called as signal function -->
         <mat-select formControlName="doctorEmployeeId" placeholder="Select a Doctor">
-          @if (doctorsLoading) {
+          @if (doctorsLoading()) {
           <mat-option disabled>Loading doctors...</mat-option>
           } @else if (doctors.length > 0) {
           @for (doctor of doctors; track doctor.employeeCode) {
@@ -82,13 +84,16 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="dialog-actions">
-  <button mat-button type="button" [disabled]="loading" (click)="onCancel()">
+
+  <!-- ✅ loading() as signal function -->
+  <button mat-button type="button" [disabled]="loading()" (click)="onCancel()">
     Cancel
   </button>
 
   <button mat-flat-button color="primary" class="primary-indigo-btn" type="button"
-    [disabled]="loading || patientsLoading || doctorsLoading" (click)="onSubmit()">
-    <mat-icon>{{ loading ? 'hourglass_empty' : 'event_available' }}</mat-icon>
-    {{ loading ? 'Creating...' : 'Confirm Appointment' }}
+    [disabled]="loading() || patientsLoading() || doctorsLoading()" (click)="onSubmit()">
+    <mat-icon>{{ loading() ? 'hourglass_empty' : 'event_available' }}</mat-icon>
+    {{ loading() ? 'Creating...' : 'Confirm Appointment' }}
   </button>
+
 </mat-dialog-actions>

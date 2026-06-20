@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, signal } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -60,9 +60,10 @@ export class AppointmentDialog implements OnInit {
 
   minDate: Date = new Date(new Date().setDate(new Date().getDate() + 1));
 
-  loading = false;
-  patientsLoading = false;
-  doctorsLoading = false;
+  // ✅ Signals — no more ExpressionChangedAfterChecked
+  loading = signal(false);
+  patientsLoading = signal(false);
+  doctorsLoading = signal(false);
 
   form = this.fb.group({
     patientId: [null as string | null, Validators.required],
@@ -81,16 +82,17 @@ export class AppointmentDialog implements OnInit {
   }
 
   loadPatients(): void {
-    this.patientsLoading = true;
+    this.patientsLoading.set(true);
     this.patientService.getPatients().subscribe({
       next: (response: any) => {
-        this.patients = Array.isArray(response?.data?.patients) ? response.data.patients : [];
-        this.patientsLoading = false;
+        // ✅ Fixed: API returns { data: [...] } not { data: { patients: [...] } }
+        this.patients = Array.isArray(response?.data) ? response.data : [];
+        this.patientsLoading.set(false);
         this.cdr.markForCheck();
       },
       error: (err: any) => {
         this.patients = [];
-        this.patientsLoading = false;
+        this.patientsLoading.set(false);
         this.toastr.error(err?.error?.message || 'Failed to load patients');
         this.cdr.markForCheck();
       }
@@ -98,20 +100,22 @@ export class AppointmentDialog implements OnInit {
   }
 
   loadDoctors(): void {
-    this.doctorsLoading = true;
+    this.doctorsLoading.set(true);
     this.employeeService.getEmployees().subscribe({
       next: (response: any) => {
         const employees = Array.isArray(response?.data) ? response.data : [];
         this.doctors = employees.filter((emp: any) => {
-          const isDoc = Array.isArray(emp.roles) ? emp.roles.includes('DOCTOR') : emp.role === 'DOCTOR';
+          const isDoc = Array.isArray(emp.roles)
+            ? emp.roles.includes('DOCTOR')
+            : emp.role === 'DOCTOR';
           return isDoc && emp.status === true;
         });
-        this.doctorsLoading = false;
+        this.doctorsLoading.set(false);
         this.cdr.markForCheck();
       },
       error: (err: any) => {
         this.doctors = [];
-        this.doctorsLoading = false;
+        this.doctorsLoading.set(false);
         this.toastr.error(err?.error?.message || 'Failed to load doctors');
         this.cdr.markForCheck();
       }
@@ -122,7 +126,9 @@ export class AppointmentDialog implements OnInit {
     const slotControl = this.form.get('timeSlot');
     const selectedDoctor = this.doctors.find((d: any) => d.employeeCode === doctorCode);
 
-    this.availableSlots = Array.isArray(selectedDoctor?.availabilitySlots) ? selectedDoctor.availabilitySlots : [];
+    this.availableSlots = Array.isArray(selectedDoctor?.availabilitySlots)
+      ? selectedDoctor.availabilitySlots
+      : [];
     slotControl?.reset();
 
     if (this.availableSlots.length > 0) {
@@ -140,24 +146,26 @@ export class AppointmentDialog implements OnInit {
       return;
     }
 
-    this.loading = true;
+    this.loading.set(true);
     const formValue = this.form.getRawValue() as AppointmentFormValue;
 
     const payload = {
       patientId: formValue.patientId || '',
       doctorEmployeeId: formValue.doctorEmployeeId || '',
-      date: formValue.date ? formatDate(new Date(formValue.date), 'yyyy-MM-dd', 'en-US') : '',
+      date: formValue.date
+        ? formatDate(new Date(formValue.date), 'yyyy-MM-dd', 'en-US')
+        : '',
       timeSlot: formValue.timeSlot || ''
     };
 
     this.appointmentService.createStaffAppointment(payload).subscribe({
       next: () => {
-        this.loading = false;
+        this.loading.set(false);
         this.toastr.success('Appointment created successfully');
         this.dialogRef.close(true);
       },
       error: (err: any) => {
-        this.loading = false;
+        this.loading.set(false);
         this.toastr.error(err?.error?.message || 'Failed to create appointment');
         this.cdr.markForCheck();
       }
