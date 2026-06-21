@@ -1,173 +1,32 @@
-/* Container for the dialog */
 .dialog-form {
-    padding: 8px 0 4px;
-    min-width: 620px;
+  padding-top: 4px;
 }
 
-/* FORM GRID - Adaptive Layout */
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px 16px;
-}
-
-mat-form-field {
-    width: 100%;
-}
-
-/* MEDICAL SECTION - Distinct Visual Grouping */
 .medical-section {
-    margin-top: 22px;
-    padding: 18px;
-    border-radius: 18px;
-    background: #f8fbff;
-    border: 1px solid #dbeafe;
-}
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e8eef4;
 
-.medical-section h3 {
-    margin: 0 0 16px;
-    font-size: 16px;
-    font-weight: 800;
-    color: #0d47a1;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* SLOTS SECTION */
-.slots-section {
-    margin-top: 20px;
-    padding: 16px;
-    border-radius: 16px;
-    background: #ffffff;
-    border: 1px solid #dbeafe;
-}
-
-.slots-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-}
-
-.slots-header h3 {
-    margin: 0;
+  h3 {
+    margin: 0 0 12px;
     font-size: 15px;
-    font-weight: 800;
-    color: #0d47a1;
-}
-
-.required-hint {
-    font-size: 12px;
-    color: #d32f2f;
     font-weight: 600;
+    color: #1976d2;
+  }
 }
 
-/* SLOT GRID */
+.slots-section {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e8eef4;
+}
+
 .slot-checkbox-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 10px;
-    margin-top: 10px;
-}
-
-/* SLOT CARD - Interactive */
-.slot-checkbox {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 46px;
-    padding: 12px 14px;
-    border: 1.5px solid #dbeafe;
-    border-radius: 14px;
-    background: #ffffff;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 700;
-    color: #1f2937;
-    text-align: center;
-    transition: all 0.2s ease;
-}
-
-.slot-checkbox input {
-    display: none;
-}
-
-/* Interactive States */
-.slot-checkbox:hover {
-    background: #e3f2fd;
-    border-color: #64b5f6;
-    color: #0d47a1;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.1);
-}
-
-.slot-checkbox:focus-within {
-    outline: 2px solid #1976d2;
-    outline-offset: 2px;
-}
-
-.slot-checkbox.selected {
-    background: linear-gradient(135deg, #0d47a1, #1976d2);
-    border-color: #0d47a1;
-    color: #ffffff;
-    box-shadow: 0 6px 16px rgba(25, 118, 210, 0.25);
-}
-
-/* ERROR STATE */
-.slot-error {
-    margin: 10px 0 0;
-    font-size: 12px;
-    font-weight: 600;
-    color: #d32f2f;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-/* DIALOG SCROLLBAR */
-mat-dialog-content {
-    max-height: 72vh;
-    overflow-y: auto;
-    padding-top: 8px !important;
-}
-
-mat-dialog-content::-webkit-scrollbar {
-    width: 8px;
-}
-
-mat-dialog-content::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-mat-dialog-content::-webkit-scrollbar-thumb {
-    background: #c0c0c0;
-    border-radius: 4px;
-}
-
-/* DIALOG ACTIONS */
-mat-dialog-actions {
-    padding: 14px 24px 18px !important;
-    border-top: 1px solid #e5e7eb;
-}
-
-mat-dialog-actions button {
-    border-radius: 10px !important;
-    font-weight: 700;
-}
-
-/* RESPONSIVE */
-@media (max-width: 760px) {
-    .dialog-form {
-        min-width: 100%;
-    }
-
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .slot-checkbox-grid {
-        grid-template-columns: 1fr;
-    }
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
 }

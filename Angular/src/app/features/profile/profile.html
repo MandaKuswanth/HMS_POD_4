@@ -1,110 +1,106 @@
-<app-navbar></app-navbar>
-
-<div class="layout">
-    <app-sidebar></app-sidebar>
-
-    <main class="content">
-
-        @if (loading) {
-        <div class="loader">
-            <mat-spinner diameter="50"></mat-spinner>
+<app-page-shell>
+  @if (loading) {
+    <app-loading-state message="Loading your profile..."></app-loading-state>
+  } @else if (employee) {
+    <div class="profile-page">
+      <mat-card class="profile-card">
+        <div class="profile-header">
+          <div class="avatar">
+            <mat-icon>person</mat-icon>
+          </div>
+          <div class="header-info">
+            <h1>{{ employee.name }}</h1>
+            <p class="designation">{{ employee.designation }}</p>
+            <div class="role-chips">
+              @for (role of user?.roles; track role.roleId) {
+                <span class="role-chip">{{ role.name }}</span>
+              }
+            </div>
+          </div>
+          <span class="status-badge" [class.active]="employee.status">
+            {{ employee.status ? 'Active' : 'Inactive' }}
+          </span>
         </div>
-        }
 
-        @if (!loading && employee) {
-        <mat-card class="profile-card">
+        <mat-divider></mat-divider>
 
-            <div class="profile-header">
-                <div class="profile-avatar" aria-hidden="true">
-                    <mat-icon>person</mat-icon>
-                </div>
+        <section class="info-section">
+          <h3><mat-icon>badge</mat-icon> Employee Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Employee Code</span>
+              <span class="value">{{ employee.employeeCode }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Email</span>
+              <span class="value">{{ employee.email }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Phone</span>
+              <span class="value">{{ employee.phone }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Department</span>
+              <span class="value">{{ employee.department }}</span>
+            </div>
+            @if (employee.joiningDate) {
+              <div class="info-item">
+                <span class="label">Joining Date</span>
+                <span class="value">{{ employee.joiningDate | date:'mediumDate' }}</span>
+              </div>
+            }
+            @if (user?.lastLogin) {
+              <div class="info-item">
+                <span class="label">Last Login</span>
+                <span class="value">{{ user!.lastLogin! | date:'medium' }}</span>
+              </div>
+            }
+          </div>
+        </section>
 
-                <div>
-                    <h2>{{ employee.name }}</h2>
-                    <p>{{ employee.role }}</p>
-                </div>
+        @if (isDoctor()) {
+          <mat-divider></mat-divider>
+          <section class="info-section doctor-section">
+            <h3><mat-icon>medical_services</mat-icon> Doctor Information</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">Medical Registration No</span>
+                <span class="value">{{ employee.medicalRegistrationNo || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Specialization</span>
+                <span class="value">{{ employee.specialization || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Consultation Fee</span>
+                <span class="value">₹{{ employee.consultationFee ?? 0 }}</span>
+              </div>
             </div>
 
-            <div class="profile-grid">
-                <div class="profile-item">
-                    <strong>Email</strong>
-                    <span>{{ employee.email || 'N/A' }}</span>
+            @if (employee.qualification?.length) {
+              <div class="chip-group">
+                <span class="chip-label">Qualifications</span>
+                <div class="chips">
+                  @for (q of employee.qualification; track q) {
+                    <span class="chip">{{ q }}</span>
+                  }
                 </div>
-
-                <div class="profile-item">
-                    <strong>Phone</strong>
-                    <span>{{ employee.phone || 'N/A' }}</span>
-                </div>
-
-                <div class="profile-item">
-                    <strong>Department</strong>
-                    <span>{{ employee.department || 'N/A' }}</span>
-                </div>
-
-                <div class="profile-item">
-                    <strong>Designation</strong>
-                    <span>{{ employee.designation || 'N/A' }}</span>
-                </div>
-
-                <div class="profile-item">
-                    <strong>Employee Code</strong>
-                    <span>{{ employee.employeeCode || 'N/A' }}</span>
-                </div>
-
-                <div class="profile-item">
-                    <strong>Status</strong>
-                    <span>{{ employee.status ? 'Active' : 'Inactive' }}</span>
-                </div>
-            </div>
-
-            @if (isDoctor()) {
-            <div class="doctor-section">
-                <h3>Doctor Information</h3>
-
-                <div class="profile-grid">
-                    <div class="profile-item">
-                        <strong>Medical Registration No</strong>
-                        <span>{{ employee.medicalRegistrationNo || 'N/A' }}</span>
-                    </div>
-
-                    <div class="profile-item">
-                        <strong>Specialization</strong>
-                        <span>{{ employee.specialization || 'N/A' }}</span>
-                    </div>
-
-                    <div class="profile-item">
-                        <strong>Consultation Fee</strong>
-                        <span>₹{{ employee.consultationFee || 0 }}</span>
-                    </div>
-                </div>
-
-                <div class="extra-section">
-                    <strong>Qualifications</strong>
-                    <div class="chips">
-                        @for (qualification of employee.qualification; track qualification) {
-                        <span class="chip">{{ qualification }}</span>
-                        } @empty {
-                        <span class="chip">No qualifications listed</span>
-                        }
-                    </div>
-                </div>
-
-                <div class="extra-section">
-                    <strong>Availability Slots</strong>
-                    <div class="chips">
-                        @for (slot of employee.availabilitySlots; track slot) {
-                        <span class="chip">{{ slot }}</span>
-                        } @empty {
-                        <span class="chip">No slots configured</span>
-                        }
-                    </div>
-                </div>
-
-            </div>
+              </div>
             }
 
-        </mat-card>
+            @if (employee.availabilitySlots?.length) {
+              <div class="chip-group">
+                <span class="chip-label">Availability Slots</span>
+                <div class="chips">
+                  @for (slot of employee.availabilitySlots; track slot) {
+                    <span class="chip slot">{{ slot }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </section>
         }
-
-    </main>
-</div>
+      </mat-card>
+    </div>
+  }
+</app-page-shell>

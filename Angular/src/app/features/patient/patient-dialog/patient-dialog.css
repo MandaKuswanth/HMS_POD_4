@@ -1,128 +1,18 @@
-/* Container for the dialog */
 .dialog-form {
-    padding-top: 8px;
-    min-width: 680px;
+  padding-top: 4px;
 }
 
-/* FORM GRID - Adaptive Layout */
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px 18px;
-}
-
-/* Target Angular Material Form Fields natively */
-mat-form-field {
-    width: 100%;
-}
-
-/* Customizing internal Material inputs (Teal Theme) */
-::ng-deep .mdc-text-field--outlined {
-    border-radius: 12px !important;
-    background: #f4fbf9;
-    /* Soft teal tint */
-}
-
-/* Dialog Title */
-.dialog-title {
-    font-size: 26px !important;
-    font-weight: 800 !important;
-    color: #004d40;
-    margin: 0 0 16px 0;
-    padding: 0 0 16px 0;
-    border-bottom: 1px solid rgba(0, 77, 64, 0.1);
-}
-
-/* DIALOG SCROLLBAR & CONTENT */
-.dialog-content {
-    padding-top: 16px !important;
-    max-height: 72vh;
-    overflow-y: auto;
-}
-
-.dialog-content::-webkit-scrollbar {
-    width: 8px;
-}
-
-.dialog-content::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.dialog-content::-webkit-scrollbar-thumb {
-    background: #80cbc4;
-    border-radius: 4px;
-}
-
-.dialog-content::-webkit-scrollbar-thumb:hover {
-    background: #00897b;
-}
-
-
-/* MEDICAL SECTION (Emergency Contact) */
 .medical-section {
-    margin-top: 24px;
-    padding: 24px;
-    border-radius: 18px;
-    background: linear-gradient(135deg, rgba(0, 150, 136, 0.05), rgba(0, 121, 107, 0.02));
-    border: 1px solid rgba(0, 150, 136, 0.15);
-}
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e8eef4;
 
-.medical-section h3 {
-    margin-top: 0;
-    margin-bottom: 16px;
-    color: #00695c;
-    font-size: 18px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-}
-
-
-/* DIALOG ACTIONS */
-.dialog-actions {
-    padding: 16px 24px 20px !important;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-    margin-bottom: 0;
-    gap: 12px;
-}
-
-.dialog-actions button {
-    border-radius: 10px !important;
-    font-weight: 700;
-    padding: 0 20px;
-    height: 42px;
-}
-
-/* Primary Button Theming (Teal Override) */
-.dialog-actions button[color="primary"] {
-    background-color: #00796b !important;
-    color: white !important;
-}
-
-.dialog-actions button[color="primary"]:hover {
-    background-color: #00695c !important;
-}
-
-.dialog-actions button[color="primary"]:disabled {
-    background-color: #b2dfdb !important;
-    color: #004d40 !important;
-    opacity: 0.7;
-}
-
-/* RESPONSIVE DESIGN */
-@media (max-width: 768px) {
-    .dialog-form {
-        min-width: 100%;
-    }
-
-    .form-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-
-    .medical-section {
-        padding: 16px;
-        margin-top: 16px;
-    }
+  h3 {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1976d2;
+  }
 }

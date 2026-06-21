@@ -19,6 +19,7 @@ import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 import { PatientDialog } from '../patient-dialog/patient-dialog';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { PERMISSIONS } from '../../../constants/permission';
+import { HMS_DIALOG_CONFIG_WIDE } from '../../../shared/constants/dialog.config';
 
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 
@@ -128,17 +129,17 @@ export class PatientList implements OnInit {
   }
 
   openAddDialog(): void {
-    this.dialog.open(PatientDialog, { width: '800px', disableClose: true, data: { mode: 'add' } })
+    this.dialog.open(PatientDialog, { ...HMS_DIALOG_CONFIG_WIDE, disableClose: true, data: { mode: 'add' } })
       .afterClosed().subscribe((result: boolean) => { if (result) this.loadPatients(); });
   }
 
   editPatient(patient: PatientRequest): void {
-    this.dialog.open(PatientDialog, { width: '800px', disableClose: true, data: { mode: 'edit', patient } })
+    this.dialog.open(PatientDialog, { ...HMS_DIALOG_CONFIG_WIDE, disableClose: true, data: { mode: 'edit', patient } })
       .afterClosed().subscribe((result: boolean) => { if (result) this.loadPatients(); });
   }
 
   viewPatient(patient: PatientRequest): void {
-    this.dialog.open(PatientDialog, { width: '800px', data: { mode: 'view', patient } });
+    this.dialog.open(PatientDialog, { ...HMS_DIALOG_CONFIG_WIDE, data: { mode: 'view', patient } });
   }
 
   deletePatient(patient: PatientRequest, event?: Event): void {

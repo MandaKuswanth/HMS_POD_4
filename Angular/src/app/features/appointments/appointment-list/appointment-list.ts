@@ -24,6 +24,7 @@ import { AppointmentService } from '../../../core/services/appointment';
 import { AppointmentDialog } from '../appointment-dialog/appointment-dialog';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { PERMISSIONS } from '../../../constants/permission';
+import { HMS_DIALOG_CONFIG_WIDE } from '../../../shared/constants/dialog.config';
 
 @Component({
   selector: 'app-appointment-list',
@@ -155,7 +156,7 @@ export class AppointmentList implements OnInit {
   }
 
   openAddDialog(): void {
-    this.dialog.open(AppointmentDialog, { width: '900px', maxWidth: '95vw', disableClose: true })
+    this.dialog.open(AppointmentDialog, { ...HMS_DIALOG_CONFIG_WIDE, disableClose: true })
       .afterClosed().subscribe(result => { if (result) this.loadAppointments(); });
   }
 

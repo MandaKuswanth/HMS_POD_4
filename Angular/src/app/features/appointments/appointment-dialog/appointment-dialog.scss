@@ -1,0 +1,21 @@
+.dialog-form {
+  padding-top: 4px;
+}
+
+.option-primary {
+  display: block;
+  font-weight: 500;
+  color: #333;
+}
+
+.option-secondary {
+  display: block;
+  font-size: 12px;
+  color: #888;
+}
+
+mat-option {
+  line-height: 1.4 !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}

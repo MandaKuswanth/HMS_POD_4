@@ -1,7 +1,21 @@
 <app-page-shell>
   <mat-card class="table-card">
     <div class="page-header">
-      <h2 class="page-title">Health Records</h2>
+      <div class="header-row">
+        <div>
+          <h2 class="page-title">Health Records</h2>
+          <p class="subtitle">Patient consultation and prescription history</p>
+        </div>
+        <button
+          *appHasPermission="PERMISSIONS.HEALTH_RECORD_CREATE"
+          mat-flat-button
+          color="primary"
+          (click)="openAddDialog()">
+          <mat-icon>add</mat-icon>
+          Add Record
+        </button>
+      </div>
+
       <div class="toolbar-row">
         <input
           class="search-input"
@@ -44,10 +58,24 @@
           </ng-container>
 
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>Details</th>
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let record">
-              <button mat-icon-button (click)="toggleRow(record); $event.stopPropagation()">
-                <mat-icon>{{ expandedRecord === record ? 'expand_less' : 'expand_more' }}</mat-icon>
+              <button mat-icon-button matTooltip="View" (click)="openViewDialog(record); $event.stopPropagation()">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button
+                *appHasPermission="PERMISSIONS.HEALTH_RECORD_UPDATE"
+                mat-icon-button
+                matTooltip="Edit"
+                (click)="openEditDialog(record); $event.stopPropagation()">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                *appHasPermission="PERMISSIONS.HEALTH_RECORD_DELETE"
+                mat-icon-button
+                matTooltip="Delete"
+                (click)="deleteRecord(record); $event.stopPropagation()">
+                <mat-icon>delete</mat-icon>
               </button>
             </td>
           </ng-container>

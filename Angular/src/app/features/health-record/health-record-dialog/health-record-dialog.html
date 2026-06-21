@@ -1,0 +1,103 @@
+<h2 mat-dialog-title>
+  <mat-icon>medical_information</mat-icon>
+  {{ title }}
+</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
+    <div class="dialog-form-grid">
+
+      @if (!isViewMode) {
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Search Patient *</mat-label>
+          <input
+            matInput
+            [formControl]="patientSearch"
+            placeholder="Type name, UHID, email or phone..."
+            [matAutocomplete]="patientAuto" />
+          @if (patientSearch.value) {
+            <button mat-icon-button matSuffix type="button" (click)="clearPatient()">
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+          <mat-autocomplete
+            #patientAuto="matAutocomplete"
+            (optionSelected)="onPatientSelected($event.option.value)">
+            @if (patientsLoading()) {
+              <mat-option disabled>Searching...</mat-option>
+            } @else if (filteredPatients.length === 0 && patientSearch.value) {
+              <mat-option disabled>No patients found</mat-option>
+            } @else {
+              @for (patient of filteredPatients; track patient.UHID) {
+                <mat-option [value]="patient">
+                  {{ patient.name }} ({{ patient.UHID }})
+                </mat-option>
+              }
+            }
+          </mat-autocomplete>
+          @if (form.get('patientId')?.invalid && form.get('patientId')?.touched) {
+            <mat-error>Patient is required</mat-error>
+          }
+        </mat-form-field>
+      } @else {
+        <mat-form-field appearance="outline">
+          <mat-label>Patient UHID</mat-label>
+          <input matInput formControlName="patientId" readonly />
+        </mat-form-field>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>Appointment ID</mat-label>
+        <input matInput formControlName="appointmentId" placeholder="Optional" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Symptoms *</mat-label>
+        <textarea matInput formControlName="symptoms" rows="2"></textarea>
+        @if (form.get('symptoms')?.invalid && form.get('symptoms')?.touched) {
+          <mat-error>Symptoms are required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Diagnosis *</mat-label>
+        <textarea matInput formControlName="diagnosis" rows="2"></textarea>
+        @if (form.get('diagnosis')?.invalid && form.get('diagnosis')?.touched) {
+          <mat-error>Diagnosis is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Medicine Name</mat-label>
+        <input matInput formControlName="prescriptionName" placeholder="Optional" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Dosage</mat-label>
+        <input matInput formControlName="prescriptionDosage" placeholder="e.g. 500mg" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Duration</mat-label>
+        <input matInput formControlName="prescriptionDuration" placeholder="e.g. 7 days" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Notes</mat-label>
+        <textarea matInput formControlName="notes" rows="2" placeholder="Additional notes"></textarea>
+      </mat-form-field>
+
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="onCancel()">
+    {{ isViewMode ? 'Close' : 'Cancel' }}
+  </button>
+  @if (!isViewMode) {
+    <button mat-flat-button color="primary" type="button" [disabled]="loading()" (click)="onSubmit()">
+      {{ loading() ? 'Saving...' : (data.mode === 'edit' ? 'Update Record' : 'Create Record') }}
+    </button>
+  }
+</mat-dialog-actions>

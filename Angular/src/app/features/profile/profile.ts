@@ -1,12 +1,45 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatDividerModule } from '@angular/material/divider';
 
-import { Navbar } from '../../shared/components/navbar/navbar';
-import { Sidebar } from '../../shared/components/sidebar/sidebar';
+import { PageShell } from '../../shared/components/page-shell/page-shell';
+import { LoadingState } from '../../shared/components/loading-state/loading-state';
+import { ToastService } from '../../shared/services/toast.service';
 import { EmployeeService } from '../../core/services/employee';
+
+interface ProfileRole {
+  roleId: string;
+  name: string;
+}
+
+interface ProfileResponse {
+  employee: {
+    name: string;
+    email: string;
+    phone: string;
+    department: string;
+    designation: string;
+    employeeCode: string;
+    status: boolean;
+    joiningDate?: string;
+    medicalRegistrationNo?: string;
+    specialization?: string;
+    qualification?: string[];
+    consultationFee?: number;
+    availabilitySlots?: string[];
+  };
+  user: {
+    email: string;
+    employeeId: string;
+    status: boolean;
+    mustResetPassword?: boolean;
+    lastLogin?: string;
+    roles: ProfileRole[];
+  };
+}
 
 @Component({
   selector: 'app-profile',
@@ -14,50 +47,58 @@ import { EmployeeService } from '../../core/services/employee';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
+    DatePipe,
     MatCardModule,
     MatIconModule,
-    MatProgressSpinnerModule,
-    Navbar,
-    Sidebar
+    MatChipsModule,
+    MatDividerModule,
+    PageShell,
+    LoadingState,
   ],
   templateUrl: './profile.html',
-  styleUrl: './profile.css'
+  styleUrl: './profile.scss',
 })
 export class Profile implements OnInit {
   private readonly employeeService = inject(EmployeeService);
+  private readonly toast = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  employee: any = null;
+  profile: ProfileResponse | null = null;
   loading = true;
+
+  get employee() {
+    return this.profile?.employee;
+  }
+
+  get user() {
+    return this.profile?.user;
+  }
+
+  get roleNames(): string {
+    return this.user?.roles?.map(r => r.name).join(', ') || 'N/A';
+  }
 
   ngOnInit(): void {
     this.loadProfile();
   }
 
   loadProfile(): void {
+    this.loading = true;
     this.employeeService.getProfile().subscribe({
-      next: (response: any) => {
-        // Safe extraction of employee data based on your backend structure
-        this.employee = response?.data?.employee || response?.employee || response?.data || null;
-
-        this.loading = false;
-        this.cdr.markForCheck(); // ✅ tells OnPush to re-render
-      },
-      error: (error) => {
-        console.error('Failed to load profile:', error);
+      next: (response) => {
+        this.profile = (response as { data: ProfileResponse }).data;
         this.loading = false;
         this.cdr.markForCheck();
-      }
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.message || 'Failed to load profile');
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
     });
   }
 
   isDoctor(): boolean {
-    // Array-safe check in case your backend uses `roles: ['DOCTOR']` instead of `role: 'DOCTOR'`
-    if (!this.employee) return false;
-
-    if (Array.isArray(this.employee.roles)) {
-      return this.employee.roles.includes('DOCTOR');
-    }
-    return this.employee.role === 'DOCTOR';
+    return this.user?.roles?.some(r => r.name === 'DOCTOR') ?? false;
   }
 }

@@ -22,6 +22,7 @@ import { LoadingState } from '../../../shared/components/loading-state/loading-s
 import { ToastService } from '../../../shared/services/toast.service';
 import { ConfirmDialogService } from '../../../shared/services/confirm-dialog.service';
 import { PaginationMeta } from '../../../core/models/api-response.model';
+import { HMS_DIALOG_CONFIG } from '../../../shared/constants/dialog.config';
 
 @Component({
   selector: 'app-employee-list',
@@ -139,12 +140,12 @@ export class EmployeeList implements OnInit {
   }
 
   openAddDialog(): void {
-    this.dialog.open(EmployeeDialog, { data: { mode: 'add' }, width: '680px' })
+    this.dialog.open(EmployeeDialog, { ...HMS_DIALOG_CONFIG, data: { mode: 'add' } })
       .afterClosed().subscribe(res => { if (res) this.loadEmployees(); });
   }
 
   openEditDialog(emp: any): void {
-    this.dialog.open(EmployeeDialog, { data: { mode: 'edit', employee: emp }, width: '680px' })
+    this.dialog.open(EmployeeDialog, { ...HMS_DIALOG_CONFIG, data: { mode: 'edit', employee: emp } })
       .afterClosed().subscribe(res => { if (res) this.loadEmployees(); });
   }
 
