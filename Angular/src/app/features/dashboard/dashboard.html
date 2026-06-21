@@ -1,62 +1,39 @@
-<app-navbar></app-navbar>
-
-<div class="layout">
-  <app-sidebar></app-sidebar>
-
-  <main class="content">
-
-    <section class="welcome">
-      @if (isLoadingProfile) {
-      <h1>Welcome...</h1>
-      <p>Loading your profile...</p>
-      } @else {
+<app-page-shell>
+  <section class="welcome">
+    @if (isLoadingProfile) {
+      <app-loading-state message="Loading your profile..." [inline]="true"></app-loading-state>
+    } @else {
       <h1>Welcome, {{ userName }}</h1>
-      <p>You are logged in as <strong>{{ userRoles }}</strong></p>
-      }
-    </section>
+      <p class="subtitle">
+        Logged in as <strong>{{ userRoles }}</strong>
+        @if (isDoctor) {
+          <span class="role-tag">Doctor Dashboard</span>
+        } @else if (isAdminLike) {
+          <span class="role-tag admin">Admin Dashboard</span>
+        }
+      </p>
+    }
+  </section>
 
-    <section class="cards">
-
-      <!-- Employee cards — shown only with EMPLOYEE_VIEW permission -->
-      <ng-container *appHasPermission="PERMISSIONS.EMPLOYEE_VIEW">
-        <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToEmployees('all')"
-          (keydown.enter)="goToEmployees('all')">
-          <mat-icon>groups</mat-icon>
-          <h3>Total Employees</h3>
-          <p class="count">{{ isLoadingEmployees ? '-' : totalEmployees }}</p>
-        </mat-card>
-
-        <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToEmployees('active')"
-          (keydown.enter)="goToEmployees('active')">
-          <mat-icon>check_circle</mat-icon>
-          <h3>Active Employees</h3>
-          <p class="count">{{ isLoadingEmployees ? '-' : activeEmployees }}</p>
-        </mat-card>
-
-        <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToEmployees('pending')"
-          (keydown.enter)="goToEmployees('pending')">
-          <mat-icon>hourglass_empty</mat-icon>
-          <h3>Pending Employees</h3>
-          <p class="count">{{ isLoadingEmployees ? '-' : pendingEmployees }}</p>
-        </mat-card>
-      </ng-container>
-
-      <!-- Appointments card — shown only with APPOINTMENT_VIEW permission -->
-      <mat-card *appHasPermission="PERMISSIONS.APPOINTMENT_VIEW" class="overview-card clickable-card" tabindex="0"
-        (click)="goToAppointments()" (keydown.enter)="goToAppointments()">
-        <mat-icon>event_available</mat-icon>
-        <h3>Appointments</h3>
-        <p class="count">{{ isLoadingAppointments ? '-' : appointmentsCount }}</p>
+  <section class="cards">
+    @for (stat of visibleStats(); track stat.title) {
+      <mat-card
+        class="overview-card"
+        [class.clickable]="!!stat.route"
+        tabindex="0"
+        (click)="navigateTo(stat)"
+        (keydown.enter)="navigateTo(stat)">
+        <mat-icon>{{ stat.icon }}</mat-icon>
+        <h3>{{ stat.title }}</h3>
+        <p class="count">{{ stat.loading ? '-' : stat.value }}</p>
       </mat-card>
+    }
+  </section>
 
-      <!-- Patients card — shown only with PATIENT_VIEW permission -->
-      <mat-card *appHasPermission="PERMISSIONS.PATIENT_VIEW" class="overview-card clickable-card" tabindex="0">
-        <mat-icon>personal_injury</mat-icon>
-        <h3>Total Patients</h3>
-        <p class="count">{{ isLoadingPatients ? '-' : totalPatients }}</p>
-      </mat-card>
-
-    </section>
-
-  </main>
-</div>
+  @if (visibleStats().length === 0 && !isLoadingProfile) {
+    <div class="no-widgets">
+      <mat-icon>dashboard</mat-icon>
+      <p>Your dashboard widgets will appear based on assigned permissions.</p>
+    </div>
+  }
+</app-page-shell>

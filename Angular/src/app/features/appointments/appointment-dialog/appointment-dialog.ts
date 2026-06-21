@@ -12,7 +12,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../../shared/services/toast.service';
 
 import { AppointmentService } from '../../../core/services/appointment';
 import { EmployeeService } from '../../../core/services/employee';
@@ -47,7 +47,7 @@ interface AppointmentFormValue {
 })
 export class AppointmentDialog implements OnInit {
   private readonly fb = inject(FormBuilder);
-  private readonly toastr = inject(ToastrService);
+  private readonly toast = inject(ToastService);
   private readonly dialogRef = inject(MatDialogRef<AppointmentDialog>);
   private readonly appointmentService = inject(AppointmentService);
   private readonly employeeService = inject(EmployeeService);
@@ -93,7 +93,7 @@ export class AppointmentDialog implements OnInit {
       error: (err: any) => {
         this.patients = [];
         this.patientsLoading.set(false);
-        this.toastr.error(err?.error?.message || 'Failed to load patients');
+        this.toast.error(err?.error?.message || 'Failed to load patients');
         this.cdr.markForCheck();
       }
     });
@@ -116,7 +116,7 @@ export class AppointmentDialog implements OnInit {
       error: (err: any) => {
         this.doctors = [];
         this.doctorsLoading.set(false);
-        this.toastr.error(err?.error?.message || 'Failed to load doctors');
+        this.toast.error(err?.error?.message || 'Failed to load doctors');
         this.cdr.markForCheck();
       }
     });
@@ -142,7 +142,7 @@ export class AppointmentDialog implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.toastr.error('Please fill all required fields');
+      this.toast.error('Please fill all required fields');
       return;
     }
 
@@ -161,12 +161,12 @@ export class AppointmentDialog implements OnInit {
     this.appointmentService.createStaffAppointment(payload).subscribe({
       next: () => {
         this.loading.set(false);
-        this.toastr.success('Appointment created successfully');
+        this.toast.success('Appointment created successfully');
         this.dialogRef.close(true);
       },
       error: (err: any) => {
         this.loading.set(false);
-        this.toastr.error(err?.error?.message || 'Failed to create appointment');
+        this.toast.error(err?.error?.message || 'Failed to create appointment');
         this.cdr.markForCheck();
       }
     });

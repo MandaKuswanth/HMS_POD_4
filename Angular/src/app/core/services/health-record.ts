@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
+import { ApiResponse, PaginatedQuery, buildQueryParams } from '../models/api-response.model';
 
 export interface HealthRecord {
   _id?: string;
@@ -10,50 +11,39 @@ export interface HealthRecord {
   employeeId?: string;
   symptoms: string;
   diagnosis: string;
-  prescriptionItems?: any;
+  prescriptionItems?: {
+    name?: string;
+    dosage?: string;
+    duration?: string;
+  };
   notes?: string;
   created_at?: string;
   updatedAt?: string;
 }
 
-export interface HealthRecordResponse {
-  statusCode: number;
-  success: boolean;
-  message: string;
-  data: HealthRecord[];
-}
-
-export interface SingleHealthRecordResponse {
-  statusCode: number;
-  success: boolean;
-  message: string;
-  data: HealthRecord;
-}
-
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class HealthRecordService {
   private readonly http = inject(HttpClient);
   private readonly API_URL = `${environment.API_URL}/api/medical-records`;
 
-  getAllRecords(): Observable<HealthRecordResponse> {
-    return this.http.get<HealthRecordResponse>(this.API_URL);
+  getAllRecords(query: PaginatedQuery = {}): Observable<ApiResponse<HealthRecord[]>> {
+    const params = new HttpParams({ fromObject: buildQueryParams(query) });
+    return this.http.get<ApiResponse<HealthRecord[]>>(this.API_URL, { params });
   }
 
-  getRecordsByPatient(patientId: string): Observable<HealthRecordResponse> {
-    return this.http.get<HealthRecordResponse>(`${this.API_URL}/patient/${patientId}`);
+  getRecordsByPatient(patientId: string): Observable<ApiResponse<HealthRecord[]>> {
+    return this.http.get<ApiResponse<HealthRecord[]>>(`${this.API_URL}/patient/${patientId}`);
   }
 
-  createRecord(record: Partial<HealthRecord>): Observable<SingleHealthRecordResponse> {
-    return this.http.post<SingleHealthRecordResponse>(this.API_URL, record);
+  createRecord(record: Partial<HealthRecord>): Observable<ApiResponse<HealthRecord>> {
+    return this.http.post<ApiResponse<HealthRecord>>(this.API_URL, record);
   }
 
-  updateRecord(id: string, record: Partial<HealthRecord>): Observable<SingleHealthRecordResponse> {
-    return this.http.put<SingleHealthRecordResponse>(`${this.API_URL}/${id}`, record);
+  updateRecord(id: string, record: Partial<HealthRecord>): Observable<ApiResponse<HealthRecord>> {
+    return this.http.put<ApiResponse<HealthRecord>>(`${this.API_URL}/${id}`, record);
   }
 
-  deleteRecord(id: string): Observable<any> {
-    return this.http.delete(`${this.API_URL}/${id}`);
+  deleteRecord(id: string): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(`${this.API_URL}/${id}`);
   }
 }

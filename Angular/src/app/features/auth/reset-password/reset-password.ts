@@ -15,7 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
-import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../../shared/services/toast.service';
 import { AuthService } from '../../../core/services/auth';
 
 @Component({
@@ -38,7 +38,7 @@ export class ResetPassword {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly toastr = inject(ToastrService);
+  private readonly toast = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   hideNewPassword = true;
@@ -68,7 +68,7 @@ export class ResetPassword {
   onSubmit(): void {
     if (this.resetForm.invalid) {
       this.resetForm.markAllAsTouched();
-      this.toastr.error('Please fix password errors');
+      this.toast.error('Please fix password errors');
       return;
     }
 
@@ -86,7 +86,7 @@ export class ResetPassword {
     this.authService.resetPassword(payload).subscribe({
       next: () => {
         this.loading = false;
-        this.toastr.success('Password reset successful');
+        this.toast.success('Password reset successful');
         this.router.navigate(['/dashboard']);
       },
       error: (error) => {
@@ -96,7 +96,7 @@ export class ResetPassword {
           error?.error?.errors?.[0]?.msg ||
           'Password reset failed';
 
-        this.toastr.error(message);
+        this.toast.error(message);
         this.cdr.markForCheck(); // Update UI to hide loading state on error
       }
     });

@@ -1,59 +1,44 @@
-<div class="layout">
-  <app-sidebar></app-sidebar>
+<app-page-shell>
+  <mat-card class="table-card">
+    <div class="page-header">
+      <h2 class="page-title">Employee Management</h2>
 
-  <main class="content">
-    <mat-card class="table-card">
+      <div class="toolbar-row">
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Search by code, name, email or phone..."
+          [(ngModel)]="searchText"
+          (ngModelChange)="onSearchChange()" />
 
-      <div class="page-header">
-        <h2 class="page-title">Employee Management</h2>
+        <select [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()">
+          <option value="ALL">All Status</option>
+          <option value="ACTIVE">Active</option>
+          <option value="false">Inactive</option>
+        </select>
 
-        <div class="toolbar-row">
-
-          <div class="search-container">
-            <input class="search-input" type="text" placeholder="Search by code, name, email or phone..."
-              [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />
-          </div>
-
-          <div class="role-filter">
-            <select [(ngModel)]="selectedRole" (ngModelChange)="applyFilters()">
-              @for (role of roles; track role) {
-              <option [value]="role">{{ role }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="department-filter">
-            <select [(ngModel)]="selectedDepartment" (ngModelChange)="applyFilters()">
-              @for (dept of departments; track dept) {
-              <option [value]="dept">{{ dept }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="header-actions">
-            <button mat-stroked-button (click)="setView('all')">
-              All <span class="badge-count">{{ employees.length }}</span>
-            </button>
-            <button mat-stroked-button (click)="setView('active')">
-              Active <span class="badge-count">{{ activeCount }}</span>
-            </button>
-            <button mat-stroked-button (click)="setView('pending')">
-              Pending <span class="badge-count">{{ pendingCount }}</span>
-            </button>
-
-            <!-- DYNAMIC: only shown if user has EMPLOYEE_CREATE permission -->
-            <button *appHasPermission="PERMISSIONS.EMPLOYEE_CREATE" mat-fab color="primary" (click)="openAddDialog()">
-              <mat-icon>add</mat-icon>
-            </button>
-          </div>
-
-        </div>
+        <button
+          *appHasPermission="PERMISSIONS.EMPLOYEE_CREATE"
+          mat-flat-button
+          color="primary"
+          (click)="openAddDialog()">
+          <mat-icon>add</mat-icon>
+          Add Employee
+        </button>
       </div>
+    </div>
 
-      @if (dataSource.data.length > 0) {
+    @if (isLoading) {
+      <app-loading-state message="Loading employees..."></app-loading-state>
+    } @else if (employees.length === 0) {
+      <app-empty-state
+        icon="groups"
+        title="No employees found"
+        message="Try adjusting your search or filters.">
+      </app-empty-state>
+    } @else {
       <div class="table-wrapper">
-        <table mat-table [dataSource]="dataSource" class="mat-elevation-z1" multiTemplateDataRows>
-
+        <table mat-table [dataSource]="employees" multiTemplateDataRows>
           <ng-container matColumnDef="employeeCode">
             <th mat-header-cell *matHeaderCellDef>Code</th>
             <td mat-cell *matCellDef="let emp">{{ emp.employeeCode || '-' }}</td>
@@ -98,63 +83,57 @@
             </td>
           </ng-container>
 
-          <!-- EXPANDED ACTION PANEL -->
           <ng-container matColumnDef="expandedDetail">
             <td mat-cell *matCellDef="let emp" [attr.colspan]="displayedColumns.length">
               @if (expandedEmployee === emp) {
-              <div class="employee-action-panel">
-                <div class="employee-action-info">
-                  <strong>{{ emp.name || 'Employee' }}</strong>
-                  <span>{{ emp.employeeCode || '-' }}</span>
-                </div>
-
-                <div class="employee-action-buttons">
-
-                  <!-- Toggle status — needs EMPLOYEE_UPDATE -->
-                  <button *appHasPermission="PERMISSIONS.EMPLOYEE_UPDATE" mat-stroked-button class="status-btn"
-                    [class.deactivate]="emp.status" [class.activate]="!emp.status"
+                <div class="action-panel">
+                  <button
+                    *appHasPermission="PERMISSIONS.EMPLOYEE_UPDATE"
+                    mat-stroked-button
                     (click)="toggleEmployeeStatus(emp); $event.stopPropagation()">
-                    {{ emp.status ? 'Deactivate Account' : 'Activate Account' }}
+                    {{ emp.status ? 'Deactivate' : 'Activate' }}
                   </button>
-
-                  <!-- Edit — needs EMPLOYEE_UPDATE -->
-                  <button *appHasPermission="PERMISSIONS.EMPLOYEE_UPDATE" mat-stroked-button class="edit-action"
+                  <button
+                    *appHasPermission="PERMISSIONS.EMPLOYEE_UPDATE"
+                    mat-stroked-button
                     (click)="openEditDialog(emp); $event.stopPropagation()">
                     <mat-icon>edit</mat-icon>
-                    Update Employee
+                    Edit
                   </button>
-
-                  <!-- Delete — needs EMPLOYEE_DELETE -->
-                  <button *appHasPermission="PERMISSIONS.EMPLOYEE_DELETE" mat-stroked-button class="delete-action"
+                  <button
+                    *appHasPermission="PERMISSIONS.EMPLOYEE_DELETE"
+                    mat-stroked-button
+                    color="warn"
                     (click)="deleteEmployee(emp); $event.stopPropagation()">
                     <mat-icon>delete</mat-icon>
-                    Delete Employee
+                    Delete
                   </button>
-
                 </div>
-              </div>
               }
             </td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns" class="employee-row"
-            [class.selected-row]="expandedEmployee === row" (click)="toggleRow(row)" (keydown.enter)="toggleRow(row)"
-            (keydown.space)="toggleRow(row)" tabindex="0">
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            class="data-row"
+            (click)="toggleRow(row)">
           </tr>
           <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
-
         </table>
       </div>
-      <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" aria-label="Select page of employees"></mat-paginator>
 
-      } @else {
-      <div class="no-data">
-        <mat-icon>{{ activeView === 'active' ? 'check_circle' : 'hourglass_empty' }}</mat-icon>
-        <p>No {{ activeView === 'active' ? 'active' : activeView === 'pending' ? 'pending' : '' }} employees found.</p>
-      </div>
-      }
-
-    </mat-card>
-  </main>
-</div>
+      <app-pagination
+        [page]="pagination.page"
+        [limit]="pagination.limit"
+        [totalRecords]="pagination.totalRecords"
+        [totalPages]="pagination.totalPages"
+        [hasNextPage]="pagination.hasNextPage"
+        [hasPreviousPage]="pagination.hasPreviousPage"
+        (previousPage)="onPreviousPage()"
+        (nextPage)="onNextPage()">
+      </app-pagination>
+    }
+  </mat-card>
+</app-page-shell>

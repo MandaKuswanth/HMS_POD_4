@@ -9,7 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
-import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../../shared/services/toast.service';
 import { EmployeeService } from '../../../core/services/employee';
 import * as utils from '../../../shared/utils/employee-form-utils';
 
@@ -23,7 +23,7 @@ import * as utils from '../../../shared/utils/employee-form-utils';
 export class EmployeeDialog implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(EmployeeService);
-  private readonly toastr = inject(ToastrService);
+  private readonly toast = inject(ToastService);
   private readonly dialogRef = inject(MatDialogRef<EmployeeDialog>);
   readonly data = inject(MAT_DIALOG_DATA, { optional: true });
 
@@ -102,7 +102,7 @@ export class EmployeeDialog implements OnInit {
   onSubmit() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.toastr.error('Invalid Form');
+      this.toast.error('Invalid Form');
       return 
     }
 
@@ -136,8 +136,8 @@ export class EmployeeDialog implements OnInit {
       : this.service.updateEmployee(this.data.employee.employeeCode, payload);
 
     action$.subscribe({
-      next: () => { this.toastr.success('Success'); this.dialogRef.close(true); },
-      error: (err) => { this.toastr.error(err.error?.message || 'Action failed'); this.loading = false; }
+      next: () => { this.toast.success('Success'); this.dialogRef.close(true); },
+      error: (err) => { this.toast.error(err.error?.message || 'Action failed'); this.loading = false; }
     });
   }
 

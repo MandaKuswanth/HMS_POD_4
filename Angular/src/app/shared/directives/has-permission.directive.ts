@@ -1,22 +1,47 @@
-import { Directive, Input, TemplateRef, ViewContainerRef, OnInit, inject } from '@angular/core';
-import { AuthService } from '../../core/services/auth';  // FIX: removed extra /app/
+import {
+  Directive,
+  Input,
+  TemplateRef,
+  ViewContainerRef,
+  OnChanges,
+  inject,
+} from '@angular/core';
+import { AuthService } from '../../core/services/auth';
 
 @Directive({
-    selector: '[appHasPermission]',
-    standalone: true
+  selector: '[appHasPermission]',
+  standalone: true,
 })
-export class HasPermissionDirective implements OnInit {
-    private authService = inject(AuthService);
-    private templateRef = inject(TemplateRef<any>);
-    private viewContainer = inject(ViewContainerRef);
+export class HasPermissionDirective implements OnChanges {
+  private readonly authService = inject(AuthService);
+  private readonly templateRef = inject(TemplateRef<unknown>);
+  private readonly viewContainer = inject(ViewContainerRef);
 
-    @Input('appHasPermission') permission!: string;
+  @Input('appHasPermission') permission!: string | string[];
+  @Input() appHasPermissionMode: 'any' | 'all' = 'any';
 
-    ngOnInit() {
-        if (this.authService.hasPermission(this.permission)) {
-            this.viewContainer.createEmbeddedView(this.templateRef);
-        } else {
-            this.viewContainer.clear();
-        }
+  ngOnChanges(): void {
+    this.updateView();
+  }
+
+  private updateView(): void {
+    if (!this.permission) {
+      this.viewContainer.clear();
+      return;
     }
+
+    const permissions = Array.isArray(this.permission)
+      ? this.permission
+      : [this.permission];
+
+    const allowed = this.appHasPermissionMode === 'all'
+      ? this.authService.hasAllPermissions(permissions)
+      : this.authService.hasAnyPermission(permissions);
+
+    this.viewContainer.clear();
+
+    if (allowed) {
+      this.viewContainer.createEmbeddedView(this.templateRef);
+    }
+  }
 }

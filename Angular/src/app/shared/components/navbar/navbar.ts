@@ -6,7 +6,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
-import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../../shared/services/toast.service';
 import { AuthService } from '../../../core/services/auth';
 
 @Component({
@@ -23,7 +23,7 @@ import { AuthService } from '../../../core/services/auth';
 })
 export class Navbar {
   private readonly authService = inject(AuthService);
-  private readonly toastr = inject(ToastrService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   get primaryRole(): string {
@@ -34,7 +34,7 @@ export class Navbar {
 
   logout(): void {
     this.authService.logout();
-    this.toastr.success('Logged out successfully');
+    this.toast.success('Logged out successfully');
   }
 
   goDashboard(): void {

@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment'; // Ensure correct path
+import { environment } from '../../../environments/environment';
+import { ApiResponse, PaginatedQuery, buildQueryParams } from '../models/api-response.model';
 
 export interface PatientRequest {
   UHID?: string;
@@ -9,6 +10,7 @@ export interface PatientRequest {
   email: string;
   phone: string;
   gender: string;
+  bloodGroup?: string;
   dob: string;
   address: string;
   status?: boolean;
@@ -19,39 +21,33 @@ export interface PatientRequest {
   };
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class PatientService {
-
   private readonly http = inject(HttpClient);
-
-  // Uses environment variable for production readiness
   private readonly baseUrl = `${environment.API_URL}/api/patients`;
 
-  createPatient(data: PatientRequest): Observable<any> {
-    return this.http.post(this.baseUrl, data);
+  createPatient(data: PatientRequest): Observable<ApiResponse<unknown>> {
+    return this.http.post<ApiResponse<unknown>>(this.baseUrl, data);
   }
 
-  // Interceptor will automatically attach the Bearer token
-  toggleStatus(uhid: string): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${uhid}/status`, {});
+  toggleStatus(uhid: string): Observable<ApiResponse<unknown>> {
+    return this.http.patch<ApiResponse<unknown>>(`${this.baseUrl}/${uhid}/status`, {});
   }
 
-  updatePatient(uhid: string, data: Partial<PatientRequest>): Observable<any> {
-    return this.http.put(`${this.baseUrl}/${uhid}`, data);
+  updatePatient(uhid: string, data: Partial<PatientRequest>): Observable<ApiResponse<unknown>> {
+    return this.http.put<ApiResponse<unknown>>(`${this.baseUrl}/${uhid}`, data);
   }
 
-  getPatients(): Observable<any> {
-    return this.http.get(this.baseUrl);
+  getPatients(query: PaginatedQuery = {}): Observable<ApiResponse<PatientRequest[]>> {
+    const params = new HttpParams({ fromObject: buildQueryParams(query) });
+    return this.http.get<ApiResponse<PatientRequest[]>>(this.baseUrl, { params });
   }
 
-  // Added missing method to fetch a single patient by UHID
-  getPatientById(uhid: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/${uhid}`);
+  getPatientById(uhid: string): Observable<ApiResponse<PatientRequest>> {
+    return this.http.get<ApiResponse<PatientRequest>>(`${this.baseUrl}/${uhid}`);
   }
 
-  deletePatient(uhid: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/${uhid}`);
+  deletePatient(uhid: string): Observable<ApiResponse<unknown>> {
+    return this.http.delete<ApiResponse<unknown>>(`${this.baseUrl}/${uhid}`);
   }
 }

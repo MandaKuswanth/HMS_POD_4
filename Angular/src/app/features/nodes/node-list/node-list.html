@@ -1,0 +1,59 @@
+<app-page-shell>
+  <mat-card class="table-card">
+    <div class="page-header">
+      <h2 class="page-title">Menu Nodes</h2>
+      <p class="subtitle">Navigation items and permission mappings from the backend</p>
+    </div>
+
+    @if (isLoading) {
+      <app-loading-state message="Loading menu nodes..."></app-loading-state>
+    } @else if (nodes.length === 0) {
+      <app-empty-state icon="account_tree" title="No menu nodes configured"></app-empty-state>
+    } @else {
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="nodes">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let node">{{ node.name }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="path">
+            <th mat-header-cell *matHeaderCellDef>Path</th>
+            <td mat-cell *matCellDef="let node">{{ node.path }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="icon">
+            <th mat-header-cell *matHeaderCellDef>Icon</th>
+            <td mat-cell *matCellDef="let node">{{ node.icon }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="permissions">
+            <th mat-header-cell *matHeaderCellDef>Permissions</th>
+            <td mat-cell *matCellDef="let node">
+              @for (perm of node.permissions; track perm) {
+                <span class="perm-tag">{{ perm }}</span>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="order">
+            <th mat-header-cell *matHeaderCellDef>Order</th>
+            <td mat-cell *matCellDef="let node">{{ node.order }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let node">
+              <span [class]="node.status ? 'badge active' : 'badge inactive'">
+                {{ node.status ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+    }
+  </mat-card>
+</app-page-shell>

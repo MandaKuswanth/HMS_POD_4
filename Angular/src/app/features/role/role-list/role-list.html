@@ -1,0 +1,67 @@
+<app-page-shell>
+  <mat-card class="table-card">
+    <div class="page-header">
+      <h2 class="page-title">Roles & Permissions</h2>
+      <p class="subtitle">Dynamic access control configured by the backend</p>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state message="Loading roles..."></app-loading-state>
+    } @else if (dataSource.length === 0) {
+      <app-empty-state icon="admin_panel_settings" title="No roles found"></app-empty-state>
+    } @else {
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="dataSource">
+          <ng-container matColumnDef="roleId">
+            <th mat-header-cell *matHeaderCellDef>Role ID</th>
+            <td mat-cell *matCellDef="let role">{{ role.roleId }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let role"><span class="badge">{{ role.name }}</span></td>
+          </ng-container>
+
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let role">{{ role.description || '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="permissions">
+            <th mat-header-cell *matHeaderCellDef>Permissions</th>
+            <td mat-cell *matCellDef="let role">
+              <div class="permissions-wrap">
+                @for (p of role.permissions; track p) {
+                  <span class="perm-tag">{{ p }}</span>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let role">
+              <span [class]="role.status ? 'badge active' : 'badge inactive'">
+                {{ role.status ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+
+      <app-pagination
+        [page]="pagination.page"
+        [limit]="pagination.limit"
+        [totalRecords]="pagination.totalRecords"
+        [totalPages]="pagination.totalPages"
+        [hasNextPage]="pagination.hasNextPage"
+        [hasPreviousPage]="pagination.hasPreviousPage"
+        (previousPage)="onPreviousPage()"
+        (nextPage)="onNextPage()">
+      </app-pagination>
+    }
+  </mat-card>
+</app-page-shell>

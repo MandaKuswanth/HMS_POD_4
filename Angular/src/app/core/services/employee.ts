@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
+import { ApiResponse, PaginatedQuery, buildQueryParams } from '../models/api-response.model';
 
 export interface EmployeeRequest {
   name: string;
@@ -22,62 +23,50 @@ export interface EmployeeRequest {
   confirmPassword?: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class EmployeeService {
   private readonly http = inject(HttpClient);
-
-  // 2. FIXED: Changed API_URL to apiUrl to match your environment.ts
   private readonly baseUrl = `${environment.API_URL}/api/employees`;
 
-  // Public employee registration
-  registerEmployee(data: EmployeeRequest): Observable<any> {
-    return this.http.post(`${this.baseUrl}/register`, data);
+  registerEmployee(data: EmployeeRequest): Observable<ApiResponse<unknown>> {
+    return this.http.post<ApiResponse<unknown>>(`${this.baseUrl}/register`, data);
   }
 
-  // Admin adds employee
-  adminAddEmployee(data: EmployeeRequest): Observable<any> {
-    return this.http.post(`${this.baseUrl}/admin/add-employee`, data);
+  adminAddEmployee(data: EmployeeRequest): Observable<ApiResponse<unknown>> {
+    return this.http.post<ApiResponse<unknown>>(`${this.baseUrl}/admin/add-employee`, data);
   }
 
-  // Logged-in employee profile
-  getProfile(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/profile`);
+  getProfile(): Observable<ApiResponse<unknown>> {
+    return this.http.get<ApiResponse<unknown>>(`${this.baseUrl}/profile`);
   }
 
-  // Get all employees
-  getEmployees(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/employees`);
+  getEmployees(query: PaginatedQuery = {}): Observable<ApiResponse<unknown[]>> {
+    const params = new HttpParams({ fromObject: buildQueryParams(query) });
+    return this.http.get<ApiResponse<unknown[]>>(`${this.baseUrl}/employees`, { params });
   }
 
-  // Update employee
-  updateEmployee(employeeCode: string, data: Partial<EmployeeRequest>): Observable<any> {
-    return this.http.put(`${this.baseUrl}/employees/${employeeCode}`, data);
+  updateEmployee(employeeCode: string, data: Partial<EmployeeRequest>): Observable<ApiResponse<unknown>> {
+    return this.http.put<ApiResponse<unknown>>(`${this.baseUrl}/employees/${employeeCode}`, data);
   }
 
-  // Delete employee
-  deleteEmployee(employeeCode: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/employees/${employeeCode}`);
+  deleteEmployee(employeeCode: string): Observable<ApiResponse<unknown>> {
+    return this.http.delete<ApiResponse<unknown>>(`${this.baseUrl}/employees/${employeeCode}`);
   }
 
-  // Pending employee registrations
-  getPendingEmployees(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/pending-employees`);
+  getPendingEmployees(query: PaginatedQuery = {}): Observable<ApiResponse<unknown[]>> {
+    const params = new HttpParams({ fromObject: buildQueryParams(query) });
+    return this.http.get<ApiResponse<unknown[]>>(`${this.baseUrl}/pending-employees`, { params });
   }
 
-  // Approve employee
-  approveEmployee(userId: string): Observable<any> {
-    return this.http.put(`${this.baseUrl}/approve-employee/${userId}`, {});
+  approveEmployee(userId: string): Observable<ApiResponse<unknown>> {
+    return this.http.put<ApiResponse<unknown>>(`${this.baseUrl}/approve-employee/${userId}`, {});
   }
 
-  // Reject employee
-  rejectEmployee(userId: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/reject-employee/${userId}`);
+  rejectEmployee(userId: string): Observable<ApiResponse<unknown>> {
+    return this.http.delete<ApiResponse<unknown>>(`${this.baseUrl}/reject-employee/${userId}`);
   }
 
-  // Toggle employee status
-  toggleEmployeeStatus(employeeCode: string): Observable<any> {
-    return this.http.put(`${this.baseUrl}/employees/${employeeCode}/toggle-status`, {});
+  toggleEmployeeStatus(employeeCode: string): Observable<ApiResponse<unknown>> {
+    return this.http.put<ApiResponse<unknown>>(`${this.baseUrl}/employees/${employeeCode}/toggle-status`, {});
   }
 }

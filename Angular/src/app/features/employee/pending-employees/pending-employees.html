@@ -1,0 +1,89 @@
+<app-page-shell>
+  <mat-card class="table-card">
+    <div class="page-header">
+      <h2 class="page-title">Pending Employee Approvals</h2>
+      <p class="subtitle">Review and approve self-registered employee requests</p>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state message="Loading pending registrations..."></app-loading-state>
+    } @else if (pending().length === 0) {
+      <app-empty-state
+        icon="hourglass_empty"
+        title="No pending registrations"
+        message="All employee registration requests have been processed.">
+      </app-empty-state>
+    } @else {
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="pending()">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let item">{{ item.employee?.name }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef>Email</th>
+            <td mat-cell *matCellDef="let item">{{ item.employee?.email }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="department">
+            <th mat-header-cell *matHeaderCellDef>Department</th>
+            <td mat-cell *matCellDef="let item">{{ item.employee?.department }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="designation">
+            <th mat-header-cell *matHeaderCellDef>Designation</th>
+            <td mat-cell *matCellDef="let item">{{ item.employee?.designation }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="roles">
+            <th mat-header-cell *matHeaderCellDef>Roles</th>
+            <td mat-cell *matCellDef="let item">
+              @for (role of item.user.roles; track role) {
+                <span class="badge">{{ role }}</span>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let item">
+              <div class="actions">
+                <button
+                  *appHasPermission="PERMISSIONS.EMPLOYEE_APPROVE"
+                  mat-flat-button
+                  color="primary"
+                  [disabled]="processing() === item.user._id"
+                  (click)="approve(item.user._id)">
+                  Approve
+                </button>
+                <button
+                  *appHasPermission="PERMISSIONS.EMPLOYEE_REJECT"
+                  mat-stroked-button
+                  color="warn"
+                  [disabled]="processing() === item.user._id"
+                  (click)="reject(item.user._id, item.employee?.name)">
+                  Reject
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+
+      <app-pagination
+        [page]="pagination.page"
+        [limit]="pagination.limit"
+        [totalRecords]="pagination.totalRecords"
+        [totalPages]="pagination.totalPages"
+        [hasNextPage]="pagination.hasNextPage"
+        [hasPreviousPage]="pagination.hasPreviousPage"
+        (previousPage)="onPreviousPage()"
+        (nextPage)="onNextPage()">
+      </app-pagination>
+    }
+  </mat-card>
+</app-page-shell>

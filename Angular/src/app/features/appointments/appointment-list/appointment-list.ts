@@ -15,7 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../../shared/services/toast.service';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 
 import { Navbar } from '../../../shared/components/navbar/navbar';
@@ -50,7 +50,7 @@ export class AppointmentList implements OnInit {
   }
 
   private readonly appointmentService = inject(AppointmentService);
-  private readonly toastr = inject(ToastrService);
+  private readonly toast = inject(ToastService);
   private readonly dialog = inject(MatDialog);
   private readonly cdr = inject(ChangeDetectorRef);
 
@@ -95,7 +95,7 @@ export class AppointmentList implements OnInit {
         this.isLoading = false;
         this.appointments = [];
         this.dataSource.data = [];
-        this.toastr.error(error?.error?.message || 'Failed to load appointments');
+        this.toast.error(error?.error?.message || 'Failed to load appointments');
         this.cdr.markForCheck();
       },
     });
@@ -163,8 +163,8 @@ export class AppointmentList implements OnInit {
     if (!appointment?.appointmentId) return;
     if (!confirm(`Approve appointment ${appointment.appointmentId}?`)) return;
     this.appointmentService.approveAppointment(appointment.appointmentId).subscribe({
-      next: (res: any) => { this.toastr.success(res?.message || 'Approved'); this.loadAppointments(); },
-      error: (err: any) => this.toastr.error(err?.error?.message || 'Failed to approve')
+      next: (res: any) => { this.toast.success(res?.message || 'Approved'); this.loadAppointments(); },
+      error: (err: any) => this.toast.error(err?.error?.message || 'Failed to approve')
     });
   }
 
@@ -172,8 +172,8 @@ export class AppointmentList implements OnInit {
     if (!appointment?.appointmentId) return;
     if (!confirm(`Reject appointment ${appointment.appointmentId}?`)) return;
     this.appointmentService.rejectAppointment(appointment.appointmentId).subscribe({
-      next: (res: any) => { this.toastr.success(res?.message || 'Rejected'); this.loadAppointments(); },
-      error: (err: any) => this.toastr.error(err?.error?.message || 'Failed to reject')
+      next: (res: any) => { this.toast.success(res?.message || 'Rejected'); this.loadAppointments(); },
+      error: (err: any) => this.toast.error(err?.error?.message || 'Failed to reject')
     });
   }
 
@@ -181,8 +181,8 @@ export class AppointmentList implements OnInit {
     if (!appointment?.appointmentId) return;
     if (!confirm(`Delete appointment ${appointment.appointmentId}?`)) return;
     this.appointmentService.deleteAppointment(appointment.appointmentId).subscribe({
-      next: () => { this.toastr.success('Deleted'); this.loadAppointments(); },
-      error: (err) => this.toastr.error(err?.error?.message || 'Delete failed')
+      next: () => { this.toast.success('Deleted'); this.loadAppointments(); },
+      error: (err) => this.toast.error(err?.error?.message || 'Delete failed')
     });
   }
 }

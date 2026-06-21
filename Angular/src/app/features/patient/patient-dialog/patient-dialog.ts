@@ -22,7 +22,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 
-import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../../shared/services/toast.service';
 import { PatientService } from '../../../core/services/patient';
 
 export interface PatientDialogData {
@@ -64,7 +64,7 @@ export class PatientDialog implements OnInit {
 
     readonly fb = inject(FormBuilder);
     readonly patientService = inject(PatientService);
-    readonly toastr = inject(ToastrService);
+    readonly toast = inject(ToastService);
     readonly dialogRef = inject(MatDialogRef<PatientDialog>);
     readonly data = inject<PatientDialogData>(MAT_DIALOG_DATA);
 
@@ -184,7 +184,7 @@ export class PatientDialog implements OnInit {
     onSubmit(): void {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
-            this.toastr.error('Please fill all required fields correctly');
+            this.toast.error('Please fill all required fields correctly');
             return;
         }
 
@@ -218,12 +218,12 @@ export class PatientDialog implements OnInit {
         action$.subscribe({
             next: () => {
                 this.loading.set(false); // ✅
-                this.toastr.success(`Patient ${this.data.mode === 'edit' ? 'updated' : 'created'} successfully`);
+                this.toast.success(`Patient ${this.data.mode === 'edit' ? 'updated' : 'created'} successfully`);
                 this.dialogRef.close(true);
             },
             error: (err) => {
                 this.loading.set(false); // ✅
-                this.toastr.error(err?.error?.message || `Failed to ${this.data.mode} patient`);
+                this.toast.error(err?.error?.message || `Failed to ${this.data.mode} patient`);
             }
         });
     }

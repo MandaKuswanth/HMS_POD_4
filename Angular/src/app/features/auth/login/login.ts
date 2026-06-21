@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
-import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../../shared/services/toast.service';
 import { AuthService } from '../../../core/services/auth';
 
 @Component({
@@ -32,7 +32,7 @@ export class Login {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly toastr = inject(ToastrService);
+  private readonly toast = inject(ToastService);
 
   hidePassword = true;
   loading = false;
@@ -68,10 +68,10 @@ export class Login {
         // FIX: backend sends resetRequired when admin creates an employee
         // with a temp password — must redirect to reset-password first
         if (res.data.resetRequired) {
-          this.toastr.warning('Please reset your temporary password to continue.', 'Action Required');
+          this.toast.warning('Please reset your temporary password to continue.', 'Action Required');
           this.router.navigate(['/reset-password']);
         } else {
-          this.toastr.success('Login successful');
+          this.toast.success('Login successful');
           this.router.navigate(['/dashboard']);
         }
       },
@@ -81,7 +81,7 @@ export class Login {
         if (err.status === 403 || err.error?.message?.toLowerCase().includes('pending')) {
           this.router.navigate(['/account-inactive']);
         } else {
-          this.toastr.error(err.error?.message || 'Invalid credentials');
+          this.toast.error(err.error?.message || 'Invalid credentials');
         }
       }
     });

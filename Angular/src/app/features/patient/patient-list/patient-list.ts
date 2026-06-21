@@ -11,7 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../../shared/services/toast.service';
 
 import { PatientService, PatientRequest } from '../../../core/services/patient';
 import { Navbar } from '../../../shared/components/navbar/navbar';
@@ -41,7 +41,7 @@ export class PatientList implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   private readonly dialog = inject(MatDialog);
   private readonly patientService = inject(PatientService);
-  private readonly toastr = inject(ToastrService);
+  private readonly toast = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   readonly PERMISSIONS = PERMISSIONS; // expose to template
@@ -72,7 +72,7 @@ export class PatientList implements OnInit {
         this.cdr.markForCheck();
       },
       error: () => {
-        this.toastr.error('Failed to load patients');
+        this.toast.error('Failed to load patients');
         this.allPatients = [];
         this.dataSource.data = [];
         this.cdr.markForCheck();
@@ -144,12 +144,12 @@ export class PatientList implements OnInit {
   deletePatient(patient: PatientRequest, event?: Event): void {
     if (event) event.stopPropagation();
     
-    if (!patient?.UHID) { this.toastr.error('Patient ID missing'); return; }
+    if (!patient?.UHID) { this.toast.error('Patient ID missing'); return; }
     if (!window.confirm(`Delete ${patient.name}? This cannot be undone.`)) return;
 
     this.patientService.deletePatient(patient.UHID).subscribe({
-      next: () => { this.toastr.success('Patient deleted successfully'); this.loadPatients(); },
-      error: (err) => this.toastr.error(err?.error?.message || 'Delete failed')
+      next: () => { this.toast.success('Patient deleted successfully'); this.loadPatients(); },
+      error: (err) => this.toast.error(err?.error?.message || 'Delete failed')
     });
   }
 
@@ -162,9 +162,9 @@ export class PatientList implements OnInit {
           p.UHID === patient.UHID ? { ...p, status: !p.status } : p
         );
         this.applyFilters();
-        this.toastr.success('Status updated successfully');
+        this.toast.success('Status updated successfully');
       },
-      error: (err) => this.toastr.error(err?.error?.message || 'Status update failed')
+      error: (err) => this.toast.error(err?.error?.message || 'Status update failed')
     });
   }
 }

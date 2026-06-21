@@ -1,0 +1,25 @@
+<div class="pagination-bar">
+  <span class="records-info">
+    Showing {{ startRecord }}–{{ endRecord }} of {{ totalRecords }} Records
+  </span>
+
+  <div class="pagination-controls">
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="!hasPreviousPage"
+      (click)="previousPage.emit()">
+      Previous
+    </button>
+
+    <span class="page-info">Page {{ page }} of {{ totalPages || 1 }}</span>
+
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="!hasNextPage"
+      (click)="nextPage.emit()">
+      Next
+    </button>
+  </div>
+</div>
