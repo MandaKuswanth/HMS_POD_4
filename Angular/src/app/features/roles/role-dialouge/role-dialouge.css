@@ -1,0 +1,55 @@
+.dialog-content {
+  width: 720px;
+  max-width: 90vw;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 180px;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.section-title {
+  margin: 10px 0 14px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.permission-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.permission-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fafafa;
+}
+
+.permission-card h4 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.permission-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 8px 16px;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .permission-grid {
+    grid-template-columns: 1fr;
+  }
+}

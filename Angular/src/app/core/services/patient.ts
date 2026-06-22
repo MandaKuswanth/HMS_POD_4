@@ -19,64 +19,40 @@ export interface PatientRequest {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PatientService {
+  private readonly http = inject(HttpClient);
 
-  readonly http = inject(HttpClient);
+  private readonly baseUrl = 'http://localhost:3000/api/patients';
 
-  readonly baseUrl =
-    'http://localhost:3000/api/patients';
-
-  createPatient(
-    data: PatientRequest
-        ): Observable<any> {
-
-        return this.http.post(
-        `${this.baseUrl}`,
-        data
-        );
+  createPatient(data: PatientRequest): Observable<any> {
+    return this.http.post(this.baseUrl, data);
   }
-  toggleStatus(uhid: string) {
-    const token = localStorage.getItem('token');
 
-    return this.http.patch(
-      `${this.baseUrl}/${uhid}/status`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
+  getPatients(
+    page = 1,
+    limit = 5
+  ): Observable<any> {
+
+    return this.http.get(
+      `${this.baseUrl}?page=${page}&limit=${limit}`
     );
-  }
 
+  }
 
   updatePatient(
     uhid: string,
-    data: any
+    data: Partial<PatientRequest>
   ): Observable<any> {
-
-    return this.http.put(
-      `${this.baseUrl}/${uhid}`,
-      data
-    );
+    return this.http.put(`${this.baseUrl}/${uhid}`, data);
   }
 
-  getPatients(): Observable<any> {
-
-    return this.http.get(
-      `${this.baseUrl}`
-    );
+  deletePatient(uhid: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/${uhid}`);
   }
 
-  deletePatient(
-    uhid: string
-  ): Observable<any> {
-
-    return this.http.delete(
-      `${this.baseUrl}/${uhid}`
-    );
+  toggleStatus(uhid: string): Observable<any> {
+    return this.http.patch(`${this.baseUrl}/${uhid}/status`, {});
   }
-
 }

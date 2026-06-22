@@ -11,63 +11,69 @@
 
     <section class="cards">
 
-      @if (canViewEmployeeStats) {
+      <ng-container *appHasPermission="PERMISSIONS.EMPLOYEE_READ">
+        <mat-card
+          class="overview-card clickable-card"
+          tabindex="0"
+          (click)="goToEmployees('all')"
+          (keydown.enter)="goToEmployees('all')"
+          (keydown.space)="goToEmployees('all')"
+        >
+          <mat-icon>groups</mat-icon>
+          <h3>Total Employees</h3>
+          <p class="count">{{ totalEmployees }}</p>
+        </mat-card>
 
-      <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToEmployees('all')"
-        (keydown.enter)="goToEmployees('all')" (keydown.space)="goToEmployees('all')">
-        <mat-icon>groups</mat-icon>
-        <h3>Total Employees</h3>
-        <p class="count">{{ totalEmployees }}</p>
-      </mat-card>
+        <mat-card
+          class="overview-card clickable-card"
+          tabindex="0"
+          (click)="goToEmployees('active')"
+          (keydown.enter)="goToEmployees('active')"
+          (keydown.space)="goToEmployees('active')"
+        >
+          <mat-icon>check_circle</mat-icon>
+          <h3>Active Employees</h3>
+          <p class="count">{{ activeEmployees }}</p>
+        </mat-card>
 
-      <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToEmployees('active')"
-        (keydown.enter)="goToEmployees('active')" (keydown.space)="goToEmployees('active')">
-        <mat-icon>check_circle</mat-icon>
-        <h3>Active Employees</h3>
-        <p class="count">{{ activeEmployees }}</p>
-      </mat-card>
+        <mat-card
+          class="overview-card clickable-card"
+          tabindex="0"
+          (click)="goToEmployees('pending')"
+          (keydown.enter)="goToEmployees('pending')"
+          (keydown.space)="goToEmployees('pending')"
+        >
+          <mat-icon>hourglass_empty</mat-icon>
+          <h3>Pending Employees</h3>
+          <p class="count">{{ pendingEmployees }}</p>
+        </mat-card>
+      </ng-container>
 
-      <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToEmployees('pending')"
-        (keydown.enter)="goToEmployees('pending')" (keydown.space)="goToEmployees('pending')">
-        <mat-icon>hourglass_empty</mat-icon>
-        <h3>Pending Employees</h3>
-        <p class="count">{{ pendingEmployees }}</p>
-      </mat-card>
-
-      }
-
-      @if (role === 'DOCTOR') {
-
-      <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToAppointments()"
-        (keydown.enter)="goToAppointments()" (keydown.space)="goToAppointments()">
-        <mat-icon>event</mat-icon>
-        <h3>My Appointments</h3>
-        <p class="count">{{ appointmentsCount }}</p>
-      </mat-card>
-
-      }
-
-      @if (role === 'NURSE' || role === 'RECEPTIONIST') {
-
-      <mat-card class="overview-card clickable-card" tabindex="0" (keydown.enter)="$event.preventDefault()"
-        (keydown.space)="$event.preventDefault()">
-        <mat-icon>groups</mat-icon>
+      <mat-card
+        *appHasPermission="PERMISSIONS.PATIENT_READ"
+        class="overview-card clickable-card"
+        tabindex="0"
+        (click)="goToPatients()"
+        (keydown.enter)="goToPatients()"
+        (keydown.space)="goToPatients()"
+      >
+        <mat-icon>personal_injury</mat-icon>
         <h3>Total Patients</h3>
         <p class="count">{{ totalPatients }}</p>
       </mat-card>
 
-      }
-
-      @if (role === 'RECEPTIONIST') {
-
-      <mat-card class="overview-card clickable-card" tabindex="0" (click)="goToAppointments()"
-        (keydown.enter)="goToAppointments()" (keydown.space)="goToAppointments()">
+      <mat-card
+        *appHasPermission="PERMISSIONS.APPOINTMENT_READ"
+        class="overview-card clickable-card"
+        tabindex="0"
+        (click)="goToAppointments()"
+        (keydown.enter)="goToAppointments()"
+        (keydown.space)="goToAppointments()"
+      >
         <mat-icon>event_available</mat-icon>
         <h3>Appointments</h3>
         <p class="count">{{ appointmentsCount }}</p>
       </mat-card>
-    }
-      
 
     </section>
   </main>

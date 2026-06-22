@@ -67,7 +67,7 @@ exports.adminAddEmployee = async (req, res) => {
             name,
             phone,
             email,
-            roles,
+            role,
             department,
             designation,
             medicalRegistrationNo,
@@ -77,238 +77,23 @@ exports.adminAddEmployee = async (req, res) => {
             availabilitySlots
         } = req.body;
 
+        console.log(
+            "Received data for adminAddEmployee:",
+            req.body
+        );
+
         if (
             !name ||
             !phone ||
             !email ||
-            !roles ||
-            !Array.isArray(roles) ||
-            roles.length === 0 ||
+            !role ||
             !department ||
             !designation
         ) {
             return res.status(400).json(
-                new ApiError(400, "Required fields are missing")
-            );
-        }
-
-        const existingEmp = await Employee.findOne({
-            $or: [{ email }, { phone }]
-        });
-
-        if (existingEmp) {
-            return res.status(409).json(
-                new ApiResponse(
-                    409,
-                    null,
-                    "Employee already exists"
-                )
-            );
-        }
-
-        const existingUser = await User.findOne({ email });
-
-        if (existingUser) {
-            return res.status(409).json(
-                new ApiResponse(
-                    409,
-                    null,
-                    "User already exists"
-                )
-            );
-        }
-
-        const roleDocs = await Role.find({
-            name: {
-                $in: roles.map(role =>
-                    role.trim().toUpperCase()
-                )
-            },
-            status: true
-        });
-
-        if (roleDocs.length !== roles.length) {
-            return res.status(404).json(
-                new ApiError(
-                    404,
-                    "One or more roles not found"
-                )
-            );
-        }
-
-        const tempPassword = crypto
-            .randomBytes(8)
-            .toString("hex");
-
-        console.log(
-            `Temporary Password for ${email}: ${tempPassword}`
-        );
-
-        const hashedPassword = await bcrypt.hash(
-            tempPassword,
-            10
-        );
-
-        const employee = await Employee.create({
-            name,
-            phone,
-            email,
-            department,
-            designation,
-            medicalRegistrationNo,
-            specialization,
-            qualification,
-            consultationFee,
-            availabilitySlots,
-            status: true
-        });
-
-        console.log("Generated Employee Code:", employee.employeeCode);
-
-        const user = await User.create({
-            email,
-            passwordHash: hashedPassword,
-            employeeId: employee.employeeCode,
-            roleIds: roleDocs.map(
-                role => role.roleId
-            ),
-            status: true,
-            mustResetPassword: true
-        });
-
-        await sendEmail({
-            to: email,
-            subject: "HMS Employee Account Created",
-            html: `
-                <h2>Welcome to HMS</h2>
-
-                <p>Your employee account has been created by admin.</p>
-
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Temporary Password:</strong> ${tempPassword}</p>
-
-                <p>Please login and reset your password immediately.</p>
-
-                <p>
-                    <a href="http://localhost:4200/login" target="_blank">
-                        Login to HMS Portal
-                    </a>
-                </p>
-            `
-        });
-
-        return res.status(201).json(
-            new ApiResponse(
-                201,
-                {
-                    employee,
-                    user: {
-                        _id: user._id,
-                        email: user.email,
-                        employeeId: user.employeeId,
-                        roleIds: user.roleIds,
-                        roles: roleDocs.map(role => ({
-                            roleId: role.roleId,
-                            name: role.name
-                        })),
-                        status: user.status,
-                        mustResetPassword:
-                            user.mustResetPassword
-                    }
-                },
-                "Employee created successfully"
-            )
-        );
-
-    } catch (err) {
-        console.error(err);
-
-        return res.status(500).json(
-            new ApiError(
-                500,
-                err.message || "Internal Server Error"
-            )
-        );
-    }
-};
-
-exports.selfRegister = async (req, res) => {
-    try {
-        const {
-            name,
-            phone,
-            email,
-            roles,
-            department,
-            designation,
-            medicalRegistrationNo,
-            specialization,
-            qualification,
-            consultationFee,
-            availabilitySlots,
-            password,
-            confirmPassword
-        } = req.body;
-
-        if (
-            !name ||
-            !phone ||
-            !email ||
-            !roles ||
-            !Array.isArray(roles) ||
-            roles.length === 0 ||
-            !department ||
-            !designation ||
-            !password ||
-            !confirmPassword
-        ) {
-            return res.status(400).json(
-                new ApiError(400, "Required fields are missing")
-            );
-        }
-
-        const roleDocs = await Role.find({
-            name: {
-                $in: roles.map(role =>
-                    role.trim().toUpperCase()
-                )
-            },
-            status: true
-        });
-
-        if (roleDocs.length !== roles.length) {
-            return res.status(404).json(
-                new ApiError(
-                    404,
-                    "One or more roles not found"
-                )
-            );
-        }
-
-        const blockedRoles = [
-            "OWNER",
-            "SUPER_ADMIN",
-            "ADMIN"
-        ];
-
-        const hasBlockedRole = roleDocs.some(role =>
-            blockedRoles.includes(role.name)
-        );
-
-        if (hasBlockedRole) {
-            return res.status(403).json(
-                new ApiError(
-                    403,
-                    "You cannot register as OWNER, SUPER_ADMIN or ADMIN"
-                )
-            );
-        }
-
-        if (password !== confirmPassword) {
-            return res.status(400).json(
                 new ApiError(
                     400,
-                    "Password and confirm password do not match"
+                    "Required fields are missing"
                 )
             );
         }
@@ -341,10 +126,205 @@ exports.selfRegister = async (req, res) => {
             );
         }
 
+        const roleDoc = await Role.findOne({
+            name: role.trim().toUpperCase(),
+            status: true
+        });
+
+        if (!roleDoc) {
+            return res.status(404).json(
+                new ApiError(
+                    404,
+                    "Role not found"
+                )
+            );
+        }
+
+        const tempPassword = crypto
+            .randomBytes(8)
+            .toString("hex");
+
+        console.log(
+            `Temporary Password for ${email}: ${tempPassword}`
+        );
+
         const hashedPassword = await bcrypt.hash(
-            password,
+            tempPassword,
             10
         );
+
+        const employee = await Employee.create({
+            name,
+            phone,
+            email,
+            department,
+            designation,
+            medicalRegistrationNo,
+            specialization,
+            qualification,
+            consultationFee,
+            availabilitySlots,
+            status: true
+        });
+
+        console.log(
+            "Generated Employee Code:",
+            employee.employeeCode
+        );
+
+        const user = await User.create({
+            email,
+            passwordHash: hashedPassword,
+            employeeId: employee.employeeCode,
+            roleIds: [roleDoc.roleId],
+            status: true,
+            mustResetPassword: true
+        });
+
+        await sendEmail({
+            to: email,
+            subject: "HMS Employee Account Created",
+            html: `
+                <h2>Welcome to HMS</h2>
+
+                <p>Your employee account has been created by admin.</p>
+
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Role:</strong> ${roleDoc.name}</p>
+                <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+
+                <p>Please login and reset your password immediately.</p>
+
+                <p>
+                    <a href="http://localhost:4200/login" target="_blank">
+                        Login to HMS Portal
+                    </a>
+                </p>
+            `
+        });
+
+        return res.status(201).json(
+            new ApiResponse(
+                201,
+                {
+                    employee,
+                    user: {
+                        _id: user._id,
+                        email: user.email,
+                        employeeId: user.employeeId,
+                        roleIds: user.roleIds,
+                        role: {
+                            roleId: roleDoc.roleId,
+                            name: roleDoc.name
+                        },
+                        status: user.status,
+                        mustResetPassword:
+                            user.mustResetPassword
+                    }
+                },
+                "Employee created successfully"
+            )
+        );
+
+    } catch (err) {
+        console.error(err);
+
+        return res.status(500).json(
+            new ApiError(
+                500,
+                err.message || "Internal Server Error"
+            )
+        );
+    }
+};
+
+exports.selfRegister = async (req, res) => {
+    try {
+        const {
+            name,
+            phone,
+            email,
+            role,
+            department,
+            designation,
+            medicalRegistrationNo,
+            specialization,
+            qualification,
+            consultationFee,
+            availabilitySlots,
+            password,
+            confirmPassword
+        } = req.body;
+
+        if (
+            !name ||
+            !phone ||
+            !email ||
+            !role ||
+            !department ||
+            !designation ||
+            !password ||
+            !confirmPassword
+        ) {
+            return res.status(400).json(
+                new ApiError(400, "Required fields are missing")
+            );
+        }
+
+        const roleDoc = await Role.findOne({
+            name: role.trim().toUpperCase(),
+            status: true
+        });
+
+        if (!roleDoc) {
+            return res.status(404).json(
+                new ApiError(404, "Role not found")
+            );
+        }
+
+        const blockedRoles = new Set([
+            "OWNER",
+            "SUPER_ADMIN",
+            "ADMIN"
+        ]);
+
+        if (blockedRoles.has(roleDoc.name)) {
+            return res.status(403).json(
+                new ApiError(
+                    403,
+                    "You cannot register as OWNER, SUPER_ADMIN or ADMIN"
+                )
+            );
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "Password and confirm password do not match"
+                )
+            );
+        }
+
+        const existingEmp = await Employee.findOne({
+            $or: [{ email }, { phone }]
+        });
+
+        if (existingEmp) {
+            return res.status(409).json(
+                new ApiResponse(409, null, "Employee already exists")
+            );
+        }
+
+        const existingUser = await User.findOne({ email });
+
+        if (existingUser) {
+            return res.status(409).json(
+                new ApiResponse(409, null, "User already exists")
+            );
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const employee = await Employee.create({
             name,
@@ -364,9 +344,7 @@ exports.selfRegister = async (req, res) => {
             email,
             passwordHash: hashedPassword,
             employeeId: employee.employeeCode,
-            roleIds: roleDocs.map(
-                role => role.roleId
-            ),
+            roleIds: [roleDoc.roleId],
             status: false,
             mustResetPassword: false
         });
@@ -376,13 +354,9 @@ exports.selfRegister = async (req, res) => {
             subject: "HMS Registration Submitted",
             html: `
                 <h2>Registration Submitted</h2>
-
                 <p>Hello ${name},</p>
-
                 <p>Your HMS employee registration has been submitted successfully.</p>
-
                 <p>Your account is currently <strong>pending admin approval</strong>.</p>
-
                 <p>You will be able to login once admin approves your account.</p>
             `
         });
@@ -392,15 +366,12 @@ exports.selfRegister = async (req, res) => {
             subject: "New Employee Registration - Approval Required",
             html: `
                 <h2>New Employee Registration</h2>
-
                 <p>A new employee has registered and is waiting for approval.</p>
-
                 <p><strong>Name:</strong> ${name}</p>
                 <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Roles:</strong> ${roles.join(", ")}</p>
+                <p><strong>Role:</strong> ${roleDoc.name}</p>
                 <p><strong>Department:</strong> ${department}</p>
                 <p><strong>Designation:</strong> ${designation}</p>
-
                 <p>
                     <a href="http://localhost:4200/pending-employees" target="_blank">
                         Review Pending Employees
@@ -419,13 +390,12 @@ exports.selfRegister = async (req, res) => {
                         email: user.email,
                         employeeId: user.employeeId,
                         roleIds: user.roleIds,
-                        roles: roleDocs.map(role => ({
-                            roleId: role.roleId,
-                            name: role.name
-                        })),
+                        role: {
+                            roleId: roleDoc.roleId,
+                            name: roleDoc.name
+                        },
                         status: user.status,
-                        mustResetPassword:
-                            user.mustResetPassword
+                        mustResetPassword: user.mustResetPassword
                     }
                 },
                 "Registration submitted successfully. Please wait for admin approval."
@@ -695,8 +665,24 @@ exports.getProfile = async (req, res) => {
 
 exports.getEmployees = async (req, res) => {
     try {
+        const page = Math.max(
+            Number(req.query.page) || 1,
+            1
+        );
+
+        const limit = Math.max(
+            Number(req.query.limit) || 10,
+            1
+        );
+
+        const skip = (page - 1) * limit;
+
+        const totalRecords = await Employee.countDocuments();
+
         const employees = await Employee.find()
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         const users = await User.find()
             .select("-passwordHash");
@@ -706,7 +692,7 @@ exports.getEmployees = async (req, res) => {
         );
 
         const roleMap = new Map(
-            roles.map(role => [
+            roles.map((role) => [
                 role.roleId,
                 role.name
             ])
@@ -714,7 +700,6 @@ exports.getEmployees = async (req, res) => {
 
         const employeesWithUser = employees.map(
             (employee) => {
-
                 const empObj = employee.toObject();
 
                 const matchingUser = users.find(
@@ -725,12 +710,13 @@ exports.getEmployees = async (req, res) => {
 
                 const roleNames =
                     matchingUser?.roleIds?.map(
-                        roleId =>
+                        (roleId) =>
                             roleMap.get(roleId)
                     ) || [];
 
                 return {
                     ...empObj,
+
                     userId:
                         matchingUser?._id || null,
 
@@ -752,13 +738,22 @@ exports.getEmployees = async (req, res) => {
         return res.status(200).json(
             new ApiResponse(
                 200,
-                employeesWithUser,
+                {
+                    records: employeesWithUser,
+                    pagination: {
+                        totalRecords,
+                        currentPage: page,
+                        totalPages: Math.ceil(
+                            totalRecords / limit
+                        ),
+                        limit
+                    }
+                },
                 "Employees fetched successfully"
             )
         );
 
     } catch (err) {
-
         console.error(err);
 
         return res.status(500).json(
@@ -770,7 +765,6 @@ exports.getEmployees = async (req, res) => {
         );
     }
 };
-
 
 exports.updateEmployee = async (req, res) => {
     try {

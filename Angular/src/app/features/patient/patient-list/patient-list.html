@@ -7,73 +7,53 @@
 
     <div class="patient-page">
 
-      <!-- HEADER -->
       <div class="page-header">
         <div>
           <h2>Patient List</h2>
         </div>
 
-        <button
-          *ngIf="canAddOrUpdatePatient"
-          mat-raised-button
-          color="primary"
+        <button *appHasPermission="PERMISSIONS.PATIENT_CREATE" mat-raised-button color="primary"
           (click)="openAddDialog()">
-
           <mat-icon>add</mat-icon>
           Add Patient
         </button>
       </div>
 
-      <!-- FILTERS -->
       <div class="filter-card">
 
         <mat-form-field appearance="outline" class="search-field">
           <mat-label>Search</mat-label>
-          <input
-            matInput
-            [(ngModel)]="searchText"
-            (input)="applyFilters()" />
+
+          <input matInput [(ngModel)]="searchText" (input)="applyFilters()" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Gender</mat-label>
-          <mat-select
-            [(value)]="selectedGender"
-            (selectionChange)="applyFilters()">
 
+          <mat-select [(value)]="selectedGender" (selectionChange)="applyFilters()">
             <mat-option value="ALL">All</mat-option>
             <mat-option value="male">Male</mat-option>
             <mat-option value="female">Female</mat-option>
-
           </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Status</mat-label>
-          <mat-select
-            [(value)]="selectedStatus"
-            (selectionChange)="applyFilters()">
 
+          <mat-select [(value)]="selectedStatus" (selectionChange)="applyFilters()">
             <mat-option value="ALL">All</mat-option>
             <mat-option value="ACTIVE">Active</mat-option>
             <mat-option value="INACTIVE">Inactive</mat-option>
-
           </mat-select>
         </mat-form-field>
 
-        <button
-          mat-stroked-button
-          color="warn"
-          (click)="clearFilters()">
-
+        <button mat-stroked-button color="warn" (click)="clearFilters()">
           <mat-icon>refresh</mat-icon>
           Clear
-
         </button>
 
       </div>
 
-      <!-- TABLE -->
       <div class="table-card">
 
         <div class="table-header">
@@ -83,10 +63,7 @@
 
         <div class="table-scroll">
 
-          <table
-            mat-table
-            [dataSource]="dataSource"
-            multiTemplateDataRows>
+          <table mat-table [dataSource]="dataSource" multiTemplateDataRows>
 
             <!-- UHID -->
             <ng-container matColumnDef="UHID">
@@ -147,40 +124,26 @@
             <ng-container matColumnDef="status">
               <th mat-header-cell *matHeaderCellDef>Status</th>
               <td mat-cell *matCellDef="let row">
-                <span
-                  class="status-badge"
-                  [ngClass]="row.status ? 'active' : 'inactive'">
-
+                <span class="status-badge" [ngClass]="row.status ? 'active' : 'inactive'">
                   {{ row.status ? 'Active' : 'Inactive' }}
-
                 </span>
               </td>
             </ng-container>
 
-            <!-- HEADER ROW -->
+            <!-- HEADER -->
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
 
-            <!-- MAIN ROW -->
-            <tr
-               mat-row
-               *matRowDef="let row; columns: displayedColumns"
-                class="patient-row"
-                tabindex="0"
-                (click)="onRowClick(row, $event)"
-                (keydown.enter)="onRowClick(row, $event)"
-                (keydown.space)="onRowClick(row, $event)">
+            <!-- DATA ROW -->
+            <tr mat-row *matRowDef="let row; columns: displayedColumns" class="patient-row" tabindex="0"
+              (click)="onRowClick(row, $event)" (keydown.enter)="onRowClick(row, $event)"
+              (keydown.space)="onRowClick(row, $event)">
             </tr>
 
-            <!-- EXPANDED DETAIL -->
+            <!-- EXPANDED PANEL -->
             <ng-container matColumnDef="expandedDetail">
-              <td
-                mat-cell
-                *matCellDef="let row"
-                [attr.colspan]="displayedColumns.length">
+              <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length">
 
-                <div
-                  class="patient-action-panel"
-                  *ngIf="expandedPatient?.UHID === row.UHID">
+                <div class="patient-action-panel" *ngIf="expandedPatient?.UHID === row.UHID">
 
                   <div class="patient-action-info">
                     <strong>{{ row.name }}</strong>
@@ -189,45 +152,26 @@
 
                   <div class="patient-action-buttons">
 
-                    <button
-                      mat-stroked-button
-                      class="status-btn"
-                      *ngIf="canAddOrUpdatePatient"
-                      [ngClass]="row.status ? 'deactivate-btn' : 'activate-btn'"
-                      (click)="toggleStatus(row)">
-
+                    <button *appHasPermission="PERMISSIONS.PATIENT_UPDATE" mat-stroked-button class="status-btn"
+                      [ngClass]="row.status ? 'deactivate-btn' : 'activate-btn'" (click)="toggleStatus(row)">
                       {{ row.status ? 'Deactivate' : 'Activate' }}
-
                     </button>
 
-                    <button
-                      mat-stroked-button
-                      *ngIf="canViewPatient"
-                      (click)="viewPatient(row)">
-
+                    <button *appHasPermission="PERMISSIONS.PATIENT_READ" mat-stroked-button (click)="viewPatient(row)">
                       <mat-icon>visibility</mat-icon>
                       View Patient
-
                     </button>
 
-                    <button
-                      mat-stroked-button
-                      *ngIf="canAddOrUpdatePatient"
+                    <button *appHasPermission="PERMISSIONS.PATIENT_UPDATE" mat-stroked-button
                       (click)="editPatient(row)">
-
                       <mat-icon>edit</mat-icon>
                       Update Patient
-
                     </button>
 
-                    <button
-                      mat-stroked-button
-                      *ngIf="canAddOrUpdatePatient"
+                    <button *appHasPermission="PERMISSIONS.PATIENT_DELETE" mat-stroked-button
                       (click)="deletePatient(row)">
-
                       <mat-icon>delete</mat-icon>
                       Delete Patient
-
                     </button>
 
                   </div>
@@ -238,14 +182,15 @@
             </ng-container>
 
             <!-- DETAIL ROW -->
-            <tr
-              mat-row
-              *matRowDef="let row; columns: ['expandedDetail']"
-              class="detail-row"
+            <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"
               [class.hidden]="expandedPatient?.UHID !== row.UHID">
             </tr>
 
           </table>
+
+          <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
+            [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
+          </mat-paginator>
 
         </div>
 

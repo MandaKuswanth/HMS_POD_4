@@ -12,7 +12,6 @@ const checkPermission = (requiredPermission) => {
             console.log("PERMISSION CHECK USER:", {
                 email: user.email,
                 employeeId: user.employeeId,
-                branchId: user.branchId,
                 roleIds: user.roleIds,
                 requiredPermission
             });

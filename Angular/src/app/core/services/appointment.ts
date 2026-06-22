@@ -36,10 +36,12 @@ export class AppointmentService {
         );
     }
 
-    getAppointments(): Observable<any> {
-
+    getAppointments(
+        page = 1,
+        limit = 10
+    ): Observable<any> {
         return this.http.get(
-            `${this.baseUrl}/appointments`
+            `${this.baseUrl}/appointments?page=${page}&limit=${limit}`
         );
     }
 
@@ -53,17 +55,34 @@ export class AppointmentService {
     }
 
     approveAppointment(appointmentId: string): Observable<any> {
-    return this.http.put(
-      `${this.baseUrl}/appointments/${appointmentId}/approve`,
-      {}
-    );
-  }
+        return this.http.put(
+            `${this.baseUrl}/appointments/${appointmentId}/approve`,
+            {}
+        );
+    }
 
-  rejectAppointment(appointmentId: string): Observable<any> {
-    return this.http.put(
-      `${this.baseUrl}/appointments/${appointmentId}/reject`,
-      {}
-    );
-  }
+    rejectAppointment(appointmentId: string): Observable<any> {
+        return this.http.put(
+            `${this.baseUrl}/appointments/${appointmentId}/reject`,
+            {}
+        );
+    }
 
+    getAppointmentById(
+        appointmentId: string
+    ): Observable<any> {
+        return this.http.get(
+            `${this.baseUrl}/appointments/${appointmentId}`
+        );
+    }
+
+    updateAppointment(
+        appointmentId: string,
+        data: Partial<AppointmentRequest>
+    ): Observable<any> {
+        return this.http.put(
+            `${this.baseUrl}/appointments/${appointmentId}`,
+            data
+        );
+    }
 }

@@ -1,38 +1,26 @@
 <div class="sidebar">
-  <div class="sidebar-brand">
-
-  </div>
+  <div class="sidebar-brand"></div>
 
   <div class="sidebar-divider"></div>
 
   <nav class="sidebar-nav">
-    <a class="nav-item" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-      <mat-icon>dashboard</mat-icon>
-      <span class="nav-label">Dashboard</span>
-    </a>
-
-    @if (isAdminOrTechnician()) {
-    <a class="nav-item" routerLink="/employees" routerLinkActive="active">
-      <mat-icon>groups</mat-icon>
-      <span class="nav-label">Employee List</span>
-    </a>
+    @for (item of menuItems; track item.nodeId) {
+      <a
+        class="nav-item"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        <mat-icon>{{ item.icon }}</mat-icon>
+        <span class="nav-label">{{ item.name }}</span>
+      </a>
     }
 
-    @if (isAdminOrReceptionistOrNurse()) {
-    <a class="nav-item" routerLink="/patients" routerLinkActive="active">
-      <mat-icon>personal_injury</mat-icon>
-      <span class="nav-label">Patients</span>
-    </a>
-    }
-
-    @if (isAdminOrReceptionistOrDoctor()) {
-    <a class="nav-item" routerLink="/appointments" routerLinkActive="active">
-      <mat-icon>event_available</mat-icon>
-      <span class="nav-label">Appointments</span>
-    </a>
-    }
-
-    <a class="nav-item" routerLink="/profile" routerLinkActive="active">
+    <a
+      class="nav-item"
+      routerLink="/profile"
+      routerLinkActive="active"
+    >
       <mat-icon>person</mat-icon>
       <span class="nav-label">Profile</span>
     </a>

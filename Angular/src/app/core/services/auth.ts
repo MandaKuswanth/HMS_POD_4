@@ -13,10 +13,19 @@ export interface ResetPasswordRequest {
   confirmPassword?: string;
 }
 
+export interface UserRole {
+  roleId: string;
+  name: string;
+}
+
 export interface User {
+  id: string;
   employeeId: string;
+  name: string;
   email: string;
-  role: string;
+  roleIds: string[];
+  roles: UserRole[];
+  permissions: string[];
   status: boolean;
   mustResetPassword: boolean;
 }
@@ -33,10 +42,9 @@ export interface LoginResponse {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
-
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
@@ -44,37 +52,28 @@ export class AuthService {
 
   private readonly TOKEN_KEY = 'token';
   private readonly USER_KEY = 'user';
+  private readonly PERMISSIONS_KEY = 'permissions';
 
-  login(
-    data: LoginRequest
-  ): Observable<LoginResponse> {
+  login(data: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(
       `${this.API_URL}/login`,
       data
     );
   }
 
-  resetPassword(
-    data: ResetPasswordRequest
-  ): Observable<any> {
+  resetPassword(data: ResetPasswordRequest): Observable<any> {
     return this.http.post(
       `${this.API_URL}/reset-password`,
       data
     );
   }
 
-  saveLoginData(
-    response: LoginResponse
-  ): void {
-
+  saveLoginData(response: LoginResponse): void {
     const token = response?.data?.token;
     const user = response?.data?.user;
 
     if (token) {
-      localStorage.setItem(
-        this.TOKEN_KEY,
-        token
-      );
+      localStorage.setItem(this.TOKEN_KEY, token);
     }
 
     if (user) {
@@ -82,18 +81,15 @@ export class AuthService {
         this.USER_KEY,
         JSON.stringify(user)
       );
+
+      this.savePermissions(user.permissions || []);
     }
   }
 
   logout(): void {
-
-    localStorage.removeItem(
-      this.TOKEN_KEY
-    );
-
-    localStorage.removeItem(
-      this.USER_KEY
-    );
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem(this.PERMISSIONS_KEY);
 
     this.router.navigate(['/login']);
   }
@@ -103,24 +99,24 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem(
-      this.TOKEN_KEY
-    );
+    return localStorage.getItem(this.TOKEN_KEY);
   }
 
   getUser(): User | null {
-
-    const user = localStorage.getItem(
-      this.USER_KEY
-    );
-
-    return user
-      ? JSON.parse(user)
-      : null;
+    const user = localStorage.getItem(this.USER_KEY);
+    return user ? JSON.parse(user) : null;
   }
 
   getRole(): string | null {
-    return this.getUser()?.role ?? null;
+    return this.getUser()?.roles?.[0]?.name ?? null;
+  }
+
+  getRoles(): string[] {
+    return this.getUser()?.roles?.map((role) => role.name) ?? [];
+  }
+
+  hasRole(role: string): boolean {
+    return this.getRoles().includes(role);
   }
 
   getEmployeeId(): string | null {
@@ -128,23 +124,22 @@ export class AuthService {
   }
 
   mustResetPassword(): boolean {
-    return (
-      this.getUser()
-        ?.mustResetPassword ?? false
+    return this.getUser()?.mustResetPassword ?? false;
+  }
+
+  savePermissions(permissions: string[]): void {
+    localStorage.setItem(
+      this.PERMISSIONS_KEY,
+      JSON.stringify(permissions)
     );
   }
 
-  isAdminOrTechnician(): boolean {
-
-    const role = this.getRole();
-
-    return (
-      role === 'ADMIN' ||
-      role === 'TECHNICIAN'
-    );
+  getPermissions(): string[] {
+    const permissions = localStorage.getItem(this.PERMISSIONS_KEY);
+    return permissions ? JSON.parse(permissions) : [];
   }
 
-  hasRole(role: string): boolean {
-    return this.getRole() === role;
+  hasPermission(permission: string): boolean {
+    return this.getPermissions().includes(permission);
   }
 }

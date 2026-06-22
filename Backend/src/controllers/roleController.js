@@ -52,13 +52,37 @@ exports.createRole = async (req, res) => {
 
 exports.getRoles = async (req, res) => {
     try {
+        const page = Math.max(
+            Number.parseInt(req.query.page, 10) || 1,
+            1
+        );
+
+        const limit = Math.max(
+            Number.parseInt(req.query.limit, 10) || 10,
+            1
+        );
+
+        const skip = (page - 1) * limit;
+
+        const totalRecords = await Role.countDocuments();
+
         const roles = await Role.find()
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         return res.status(200).json(
             new ApiResponse(
                 200,
-                roles,
+                {
+                    records: roles,
+                    pagination: {
+                        totalRecords,
+                        currentPage: page,
+                        totalPages: Math.ceil(totalRecords / limit),
+                        limit
+                    }
+                },
                 "Roles fetched successfully"
             )
         );

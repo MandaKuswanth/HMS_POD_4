@@ -1,8 +1,20 @@
-import { Component, inject } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  inject,
+  ChangeDetectorRef
+} from '@angular/core';
+
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
+
+import {
+  MenuNode,
+  NodeService,
+} from '../../../core/services/node';
+
 import { AuthService } from '../../../core/services/auth';
 
 @Component({
@@ -12,36 +24,39 @@ import { AuthService } from '../../../core/services/auth';
     CommonModule,
     RouterModule,
     MatListModule,
-    MatIconModule
+    MatIconModule,
   ],
   templateUrl: './sidebar.html',
-  styleUrl: './sidebar.css'
+  styleUrl: './sidebar.css',
 })
+export class Sidebar implements OnInit {
+  private readonly nodeService = inject(NodeService);
+  private readonly authService = inject(AuthService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
-export class Sidebar {
+  menuItems: MenuNode[] = [];
 
-  readonly authService = inject(AuthService);
-  readonly router = inject(Router);
-
-  role = this.authService.getRole();
-
-  isAdminOrTechnician(): boolean {
-    return this.authService.isAdminOrTechnician();
+  ngOnInit(): void {
+    this.loadMenu();
   }
 
-  isAdminOrReceptionist(): boolean {
-    return ['ADMIN', 'RECEPTIONIST'].includes(this.role || '');
-  }
+  loadMenu(): void {
+    this.nodeService.getMyMenu().subscribe({
+      next: (res) => {
+        this.menuItems = res?.data?.menu || [];
 
-  isAdminOrReceptionistOrNurse(): boolean {
-    return ['ADMIN', 'RECEPTIONIST','NURSE'].includes(this.role || '');
-  }
+        this.authService.savePermissions(
+          res?.data?.permissions || []
+        );
 
-  isAdminOrReceptionistOrDoctor(): boolean {
-    return ['ADMIN', 'RECEPTIONIST', 'DOCTOR'].includes(this.role || '');
-  }
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Failed to load menu', error);
+        this.menuItems = [];
 
-  goTo(path: string): void {
-    this.router.navigate([path]);
+        this.cdr.detectChanges();
+      },
+    });
   }
 }

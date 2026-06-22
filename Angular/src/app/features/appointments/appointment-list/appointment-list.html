@@ -6,7 +6,6 @@
   <main class="content">
     <mat-card class="table-card">
 
-      <!-- PAGE HEADER -->
       <div class="page-header">
         <div class="header-left">
           <mat-icon>event_available</mat-icon>
@@ -17,14 +16,12 @@
           </div>
         </div>
 
-        @if (role !== 'DOCTOR') {
-        <button mat-fab color="primary" matTooltip="Add Appointment" (click)="openAddDialog()">
+        <button *appHasPermission="PERMISSIONS.APPOINTMENT_CREATE" mat-fab color="primary" matTooltip="Add Appointment"
+          (click)="openAddDialog()">
           <mat-icon>add</mat-icon>
         </button>
-        }
       </div>
 
-      <!-- TOOLBAR -->
       <div class="toolbar">
         <mat-form-field appearance="outline" class="search-field">
           <mat-label>Search appointments</mat-label>
@@ -41,6 +38,7 @@
 
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Status</mat-label>
+
           <mat-select [(ngModel)]="selectedStatus" (selectionChange)="applyFilters()">
             <mat-option *ngFor="let status of statuses" [value]="status">
               {{ status }}
@@ -50,6 +48,7 @@
 
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Doctor</mat-label>
+
           <mat-select [(ngModel)]="selectedDoctor" (selectionChange)="applyFilters()">
             <mat-option *ngFor="let doctor of doctors" [value]="doctor">
               {{ doctor }}
@@ -59,8 +58,11 @@
 
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Date</mat-label>
+
           <input matInput [matDatepicker]="filterPicker" [(ngModel)]="selectedDate" (dateChange)="applyFilters()" />
+
           <mat-datepicker-toggle matIconSuffix [for]="filterPicker"></mat-datepicker-toggle>
+
           <mat-datepicker #filterPicker></mat-datepicker>
         </mat-form-field>
 
@@ -68,16 +70,14 @@
           <mat-icon>filter_alt_off</mat-icon>
           Clear
         </button>
-
-      </div>
-
-      <!-- SUMMARY CARDS -->
-      <div class="summary-card pending">
-        <span>Pending</span>
-        <strong>{{ getStatusCount('PENDING') }}</strong>
       </div>
 
       <div class="summary-cards">
+        <div class="summary-card pending">
+          <span>Pending</span>
+          <strong>{{ getStatusCount('PENDING') }}</strong>
+        </div>
+
         <div class="summary-card booked">
           <span>Booked</span>
           <strong>{{ getStatusCount('BOOKED') }}</strong>
@@ -99,20 +99,16 @@
         </div>
       </div>
 
-      <!-- CONTENT -->
       @if (isLoading) {
-
       <div class="no-data">
         <mat-icon>hourglass_empty</mat-icon>
         <p>Loading appointments...</p>
       </div>
-
       } @else if (filteredAppointments.length > 0) {
 
       <div class="table-wrapper">
-        <table mat-table [dataSource]="filteredAppointments" multiTemplateDataRows>
+        <table mat-table [dataSource]="paginatedAppointments" multiTemplateDataRows>
 
-          <!-- APPOINTMENT ID -->
           <ng-container matColumnDef="appointmentId">
             <th mat-header-cell *matHeaderCellDef>Appointment ID</th>
             <td mat-cell *matCellDef="let a">
@@ -120,7 +116,6 @@
             </td>
           </ng-container>
 
-          <!-- PATIENT -->
           <ng-container matColumnDef="patientId">
             <th mat-header-cell *matHeaderCellDef>Patient</th>
             <td mat-cell *matCellDef="let a">
@@ -130,7 +125,6 @@
             </td>
           </ng-container>
 
-          <!-- DOCTOR -->
           <ng-container matColumnDef="doctorEmployeeId">
             <th mat-header-cell *matHeaderCellDef>Doctor</th>
             <td mat-cell *matCellDef="let a">
@@ -142,7 +136,6 @@
             </td>
           </ng-container>
 
-          <!-- DATE -->
           <ng-container matColumnDef="date">
             <th mat-header-cell *matHeaderCellDef>Date</th>
             <td mat-cell *matCellDef="let a">
@@ -150,7 +143,6 @@
             </td>
           </ng-container>
 
-          <!-- TIME SLOT -->
           <ng-container matColumnDef="timeSlot">
             <th mat-header-cell *matHeaderCellDef>Slot</th>
             <td mat-cell *matCellDef="let a">
@@ -158,7 +150,6 @@
             </td>
           </ng-container>
 
-          <!-- STATUS -->
           <ng-container matColumnDef="status">
             <th mat-header-cell *matHeaderCellDef>Status</th>
             <td mat-cell *matCellDef="let a">
@@ -168,7 +159,6 @@
             </td>
           </ng-container>
 
-          <!-- EXPANDED ACTION PANEL -->
           <ng-container matColumnDef="expandedDetail">
             <td mat-cell *matCellDef="let a" [attr.colspan]="displayedColumns.length">
               <div class="appointment-action-panel" *ngIf="expandedAppointment === a">
@@ -200,58 +190,56 @@
                   </span>
                 </div>
 
-                @if (role !== 'DOCTOR') {
                 <div class="appointment-action-buttons">
+
                   @if (a.status === 'PENDING') {
-                  <button mat-stroked-button class="approve-action" matTooltip="Approve Appointment"
-                    (click)="approveAppointment(a); $event.stopPropagation()">
+                  <button *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE" mat-stroked-button class="approve-action"
+                    matTooltip="Approve Appointment" (click)="approveAppointment(a); $event.stopPropagation()">
                     <mat-icon>check_circle</mat-icon>
                     Approve
                   </button>
 
-                  <button mat-stroked-button class="reject-action" matTooltip="Reject Appointment"
-                    (click)="rejectAppointment(a); $event.stopPropagation()">
+                  <button *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE" mat-stroked-button class="reject-action"
+                    matTooltip="Reject Appointment" (click)="rejectAppointment(a); $event.stopPropagation()">
                     <mat-icon>cancel</mat-icon>
                     Reject
                   </button>
                   }
-                  <button mat-stroked-button class="delete-action" matTooltip="Delete Appointment"
-                    (click)="deleteAppointment(a); $event.stopPropagation()">
+
+                  <button *appHasPermission="PERMISSIONS.APPOINTMENT_DELETE" mat-stroked-button class="delete-action"
+                    matTooltip="Delete Appointment" (click)="deleteAppointment(a); $event.stopPropagation()">
                     <mat-icon>delete</mat-icon>
                     Delete Appointment
                   </button>
+
                 </div>
-                } @else {
-                <span class="no-action">
-                  No actions available
-                </span>
-                }
 
               </div>
             </td>
           </ng-container>
 
-          <!-- HEADER ROW -->
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
 
-          <!-- MAIN APPOINTMENT ROW -->
           <tr mat-row *matRowDef="let row; columns: displayedColumns" class="appointment-row"
             [class.selected-row]="expandedAppointment === row" (click)="toggleRow(row)" (keydown.enter)="toggleRow(row)"
             (keydown.space)="toggleRow(row)" tabindex="0">
           </tr>
-          <!-- EXPANDED DETAIL ROW -->
-          <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
+
+          <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row">
+          </tr>
 
         </table>
+
+        <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
+          [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
+        </mat-paginator>
       </div>
 
       } @else {
-
       <div class="no-data">
         <mat-icon>event_busy</mat-icon>
         <p>No appointments found.</p>
       </div>
-
       }
 
     </mat-card>

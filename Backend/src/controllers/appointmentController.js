@@ -246,6 +246,17 @@ exports.createAppointment = async (req, res) => {
 
 exports.getAppointments = async (req, res) => {
     try {
+        const page = Math.max(
+            Number(req.query.page) || 1,
+            1
+        );
+
+        const limit = Math.max(
+            Number(req.query.limit) || 10,
+            1
+        );
+
+        const skip = (page - 1) * limit;
 
         const user = await User.findById(req.user.id);
 
@@ -260,21 +271,19 @@ exports.getAppointments = async (req, res) => {
             status: true
         });
 
-        const roleNames = roles.map(role => role.name);
+        const roleNames = new Set(
+            roles.map((role) => role.name)
+        );
 
-        let appointments = [];
+        let query = {};
 
         if (
-            roleNames.includes("SUPER_ADMIN") ||
-            roleNames.includes("ADMIN") ||
+            roleNames.has("SUPER_ADMIN") ||
+            roleNames.has("ADMIN") ||
             roleNames.includes("RECEPTIONIST")
         ) {
-
-            appointments = await Appointment.find()
-                .sort({ createdAt: -1 });
-
+            query = {};
         } else if (roleNames.includes("DOCTOR")) {
-
             const doctor = await Employee.findOne({
                 employeeCode: user.employeeId
             });
@@ -288,12 +297,10 @@ exports.getAppointments = async (req, res) => {
                 );
             }
 
-            appointments = await Appointment.find({
+            query = {
                 doctorEmployeeId: doctor.employeeCode
-            }).sort({ createdAt: -1 });
-
+            };
         } else {
-
             return res.status(403).json(
                 new ApiError(
                     403,
@@ -302,69 +309,51 @@ exports.getAppointments = async (req, res) => {
             );
         }
 
+        const totalRecords =
+            await Appointment.countDocuments(query);
+
+        const appointments = await Appointment.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
         const formattedAppointments = await Promise.all(
             appointments.map(async (appointment) => {
-
                 const patient = await Patient.findOne({
                     UHID: appointment.patientId
                 });
 
                 const doctor = await Employee.findOne({
-                    employeeCode:
-                        appointment.doctorEmployeeId
+                    employeeCode: appointment.doctorEmployeeId
                 });
 
                 return {
                     _id: appointment._id,
-                    appointmentId:
-                        appointment.appointmentId,
+                    appointmentId: appointment.appointmentId,
 
-                    patientId:
-                        appointment.patientId,
+                    patientId: appointment.patientId,
+                    patientName: patient?.name || "N/A",
+                    patientPhone: patient?.phone || "N/A",
+                    patientEmail: patient?.email || "N/A",
 
-                    patientName:
-                        patient?.name || "N/A",
-
-                    patientPhone:
-                        patient?.phone || "N/A",
-
-                    patientEmail:
-                        patient?.email || "N/A",
-
-                    doctorEmployeeId:
-                        appointment.doctorEmployeeId,
-
-                    doctorName:
-                        doctor?.name || "N/A",
-
-                    doctorDepartment:
-                        doctor?.department || "N/A",
-
-                    doctorDesignation:
-                        doctor?.designation || "N/A",
+                    doctorEmployeeId: appointment.doctorEmployeeId,
+                    doctorName: doctor?.name || "N/A",
+                    doctorDepartment: doctor?.department || "N/A",
+                    doctorDesignation: doctor?.designation || "N/A",
 
                     date: appointment.date,
+                    timeSlot: appointment.timeSlot,
+                    status: appointment.status,
 
-                    timeSlot:
-                        appointment.timeSlot,
-
-                    status:
-                        appointment.status,
-
-                    reason:
-                        appointment.reason || "",
-
+                    reason: appointment.reason || "",
                     cancellationReason:
                         appointment.cancellationReason || "",
 
                     createdByEmployeeId:
                         appointment.createdByEmployeeId || null,
 
-                    createdAt:
-                        appointment.createdAt,
-
-                    updatedAt:
-                        appointment.updatedAt
+                    createdAt: appointment.createdAt,
+                    updatedAt: appointment.updatedAt
                 };
             })
         );
@@ -372,13 +361,20 @@ exports.getAppointments = async (req, res) => {
         return res.status(200).json(
             new ApiResponse(
                 200,
-                formattedAppointments,
+                {
+                    records: formattedAppointments,
+                    pagination: {
+                        totalRecords,
+                        currentPage: page,
+                        totalPages: Math.ceil(totalRecords / limit),
+                        limit
+                    }
+                },
                 "Appointments fetched successfully"
             )
         );
 
     } catch (err) {
-
         console.error(err);
 
         return res.status(500).json(
@@ -389,7 +385,6 @@ exports.getAppointments = async (req, res) => {
         );
     }
 };
-
 exports.getAppointmentById = async (req, res) => {
     try {
         const { appointmentId } = req.params;

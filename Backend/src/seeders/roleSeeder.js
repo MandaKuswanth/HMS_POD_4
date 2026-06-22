@@ -1,181 +1,196 @@
 require("dotenv").config();
 
 const mongoose = require("mongoose");
-const Node = require("../models/Node");
 
-const nodes = [
+const Role = require("../models/Role");
+
+const roles = [
     {
-        name: "Dashboard",
-        path: "/dashboard",
-        icon: "dashboard",
-        permissions: ["DASHBOARD_READ"],
-        order: 1
+        name: "SUPER_ADMIN",
+        description: "System Super Administrator",
+        permissions: [
+            "DASHBOARD_READ",
+
+            "EMPLOYEE_CREATE",
+            "EMPLOYEE_READ",
+            "EMPLOYEE_UPDATE",
+            "EMPLOYEE_DELETE",
+
+            "PATIENT_CREATE",
+            "PATIENT_READ",
+            "PATIENT_UPDATE",
+            "PATIENT_DELETE",
+
+            "APPOINTMENT_CREATE",
+            "APPOINTMENT_READ",
+            "APPOINTMENT_UPDATE",
+            "APPOINTMENT_DELETE",
+
+            "ROLE_CREATE",
+            "ROLE_READ",
+            "ROLE_UPDATE",
+            "ROLE_DELETE",
+
+            "NODE_CREATE",
+            "NODE_READ",
+            "NODE_UPDATE",
+            "NODE_DELETE",
+
+            "HEALTH_RECORD_CREATE",
+            "HEALTH_RECORD_READ",
+            "HEALTH_RECORD_UPDATE",
+            "HEALTH_RECORD_DELETE"
+        ],
+        status: true,
+        createdBy: "SYSTEM"
     },
+
     {
-        name: "Employees",
-        path: "/employees",
-        icon: "groups",
-        permissions: ["EMPLOYEE_READ"],
-        order: 2
+        name: "ADMIN",
+        description: "Hospital Administrator",
+        permissions: [
+            "DASHBOARD_READ",
+
+            "EMPLOYEE_CREATE",
+            "EMPLOYEE_READ",
+            "EMPLOYEE_UPDATE",
+            "EMPLOYEE_DELETE",
+
+            "PATIENT_CREATE",
+            "PATIENT_READ",
+            "PATIENT_UPDATE",
+            "PATIENT_DELETE",
+
+            "APPOINTMENT_CREATE",
+            "APPOINTMENT_READ",
+            "APPOINTMENT_UPDATE",
+            "APPOINTMENT_DELETE",
+
+            "HEALTH_RECORD_CREATE",
+            "HEALTH_RECORD_READ",
+            "HEALTH_RECORD_UPDATE",
+            "HEALTH_RECORD_DELETE"
+        ],
+        status: true,
+        createdBy: "SYSTEM"
     },
+
     {
-        name: "Patients",
-        path: "/patients",
-        icon: "personal_injury",
-        permissions: ["PATIENT_READ"],
-        order: 3
+        name: "DOCTOR",
+        description: "Doctor",
+        permissions: [
+            "DASHBOARD_READ",
+
+            "PATIENT_READ",
+
+            "APPOINTMENT_READ",
+            "APPOINTMENT_UPDATE",
+
+            "HEALTH_RECORD_CREATE",
+            "HEALTH_RECORD_READ",
+            "HEALTH_RECORD_UPDATE"
+        ],
+        status: true,
+        createdBy: "SYSTEM"
     },
+
     {
-        name: "Appointments",
-        path: "/appointments",
-        icon: "event_available",
-        permissions: ["APPOINTMENT_READ"],
-        order: 4
+        name: "RECEPTIONIST",
+        description: "Reception Desk Staff",
+        permissions: [
+            "DASHBOARD_READ",
+
+            "PATIENT_CREATE",
+            "PATIENT_READ",
+            "PATIENT_UPDATE",
+
+            "APPOINTMENT_CREATE",
+            "APPOINTMENT_READ",
+            "APPOINTMENT_UPDATE"
+        ],
+        status: true,
+        createdBy: "SYSTEM"
     },
+
     {
-        name: "Health Records",
-        path: "/health-records",
-        icon: "medical_information",
-        permissions: ["HEALTH_RECORD_READ"],
-        order: 5
+        name: "NURSE",
+        description: "Nursing Staff",
+        permissions: [
+            "DASHBOARD_READ",
+
+            "PATIENT_READ",
+
+            "APPOINTMENT_READ",
+
+            "HEALTH_RECORD_READ",
+            "HEALTH_RECORD_UPDATE"
+        ],
+        status: true,
+        createdBy: "SYSTEM"
     },
+
     {
-        name: "Roles",
-        path: "/roles",
-        icon: "admin_panel_settings",
-        permissions: ["ROLE_READ"],
-        order: 6
+        name: "TECHNICIAN",
+        description: "Lab Technician",
+        permissions: [
+            "DASHBOARD_READ",
+
+            "PATIENT_READ",
+
+            "HEALTH_RECORD_READ",
+            "HEALTH_RECORD_UPDATE"
+        ],
+        status: true,
+        createdBy: "SYSTEM"
     },
+
     {
-        name: "Menu Nodes",
-        path: "/nodes",
-        icon: "account_tree",
-        permissions: ["NODE_READ"],
-        order: 7
-    },
-    
+        name: "PATIENT",
+        description: "Patient Portal User",
+        permissions: [],
+        status: true,
+        createdBy: "SYSTEM"
+    }
 ];
 
-const seedNodes = async () => {
+const seedRoles = async () => {
     try {
         await mongoose.connect(process.env.MONGO_URI);
 
-        console.log("MongoDB connected");
+        console.log("MongoDB Connected");
 
-        for (const item of nodes) {
-            const existing = await Node.findOne({
-                path: item.path
+        for (const roleData of roles) {
+            const existingRole = await Role.findOne({
+                name: roleData.name
             });
 
-            if (!existing) {
-                const node = await Node.create({
-                    ...item,
-                    status: true,
-                    isDeleted: false
-                });
+            if (!existingRole) {
+                const role = await Role.create(roleData);
 
-                console.log("Created node:", node.name, node.nodeId);
+                console.log(
+                    "Created Role:",
+                    role.name,
+                    role.roleId
+                );
             } else {
-                console.log("Node already exists:", existing.name);
+                console.log(
+                    "Role already exists:",
+                    existingRole.name
+                );
             }
         }
 
-        console.log("Node seed completed");
+        console.log("Role seeding completed");
         process.exit(0);
+
     } catch (error) {
-        console.error("Node seed failed:", error.message);
+        console.error(
+            "Role seeding failed:",
+            error.message
+        );
+
         process.exit(1);
     }
 };
 
-seedNodes(); 
-
-// require("dotenv").config();
-
-// const mongoose = require("mongoose");
-// const bcrypt = require("bcryptjs");
-
-// const Employee = require("../models/Employee");
-// const User = require("../models/User");
-// const Role = require("../models/Role");
-
-// const seedAdmin = async () => {
-//     try {
-//         await mongoose.connect(process.env.MONGO_URI);
-
-//         console.log("MongoDB Connected");
-
-//         const email = "admin3@hms.com";
-
-//         const existingUser = await User.findOne({ email });
-
-//         if (existingUser) {
-//             console.log("Admin already exists");
-//             process.exit(0);
-//         }
-
-//         const superAdminRole = await Role.findOne({
-//             name: "SUPER_ADMIN",
-//             status: true
-//         });
-
-//         if (!superAdminRole) {
-//             console.log("SUPER_ADMIN role not found");
-//             process.exit(1);
-//         }
-
-//         const passwordHash = await bcrypt.hash(
-//             "Admin@123",
-//             10
-//         );
-
-//         // Create Employee first
-//         const employee = await Employee.create({
-//             name: "System Administrator",
-//             email,
-//             phone: "9999999996",
-//             department: "ADMINISTRATION",
-//             designation: "SUPER_ADMIN",
-//             status: true
-//         });
-
-//         console.log(
-//             "Generated Employee Code:",
-//             employee.employeeCode
-//         );
-
-//         // Create User
-//         await User.create({
-//             email,
-//             mobile: "9999999996",
-
-//             passwordHash,
-
-//             isEmployee: true,
-//             status: true,
-
-//             employeeId: employee.employeeCode,
-
-//             roleIds: [superAdminRole.roleId],
-
-//             mustResetPassword: false,
-
-//             createdBy: "SYSTEM"
-//         });
-
-//         console.log("================================");
-//         console.log("SUPER_ADMIN CREATED");
-//         console.log("Employee ID:", employee.employeeCode);
-//         console.log("Email      :", email);
-//         console.log("Password   : Admin@123");
-//         console.log("================================");
-
-//         process.exit(0);
-
-//     } catch (error) {
-//         console.error("Admin seeding failed:", error);
-//         process.exit(1);
-//     }
-// };
-
-// seedAdmin();
+seedRoles();

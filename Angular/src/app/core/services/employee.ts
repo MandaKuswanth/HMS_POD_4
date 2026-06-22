@@ -44,8 +44,10 @@ export class EmployeeService {
   }
 
   // Get all employees
-  getEmployees(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/employees`);
+  getEmployees(page = 1, limit = 5): Observable<any> {
+    return this.http.get(
+      `${this.baseUrl}/employees?page=${page}&limit=${limit}`
+    );
   }
 
   // Update employee

@@ -9,7 +9,7 @@ import {
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute ,Router} from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
@@ -17,7 +17,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
-
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
+import { PERMISSIONS } from '../../../constants/permission';
 import { ToastrService } from 'ngx-toastr';
 
 import { Navbar } from '../../../shared/components/navbar/navbar';
@@ -40,6 +42,8 @@ import { EmployeeDialog } from '../employee-dialog/employee-dialog';
     MatButtonModule,
     MatDialogModule,
     MatTooltipModule,
+    MatPaginatorModule,
+    HasPermissionDirective,
 
     Navbar,
     Sidebar,
@@ -55,6 +59,7 @@ export class EmployeeList implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  readonly PERMISSIONS = PERMISSIONS;
   employees: any[] = [];
   expandedEmployee: any = null;
 
@@ -64,6 +69,10 @@ export class EmployeeList implements OnInit {
 
   activeView: 'all' | 'active' | 'pending' = 'all';
 
+  totalRecords = 0;
+  pageSize = 5;
+  pageIndex = 0;
+  pageSizeOptions = [5, 10, 25];
 
   displayedColumns: string[] = [
     'employeeCode',
@@ -76,9 +85,6 @@ export class EmployeeList implements OnInit {
     'status',
   ];
 
-  get isAdmin(): boolean {
-    return this.authService.getRole()?.toUpperCase() === 'ADMIN';
-  }
 
   get filteredEmployees(): any[] {
     let employees = [...this.employees];
@@ -158,39 +164,40 @@ export class EmployeeList implements OnInit {
 
   setView(view: 'all' | 'active' | 'pending'): void {
     this.activeView = view;
-    this.expandedEmployee = null;
-    this.cdr.markForCheck();
+    this.resetPagination();
   }
 
 
 
   loadEmployees(): void {
-    this.employeeService.getEmployees().subscribe({
-      next: (response: any) => {
-        let employees: any[] = [];
+    this.employeeService
+      .getEmployees(this.pageIndex + 1, this.pageSize)
+      .subscribe({
+        next: (response: any) => {
+          const employees = Array.isArray(response?.data?.records)
+            ? response.data.records
+            : [];
 
-        if (Array.isArray(response?.data)) {
-          employees = response.data;
-        } else if (Array.isArray(response)) {
-          employees = response;
-        }
+          this.employees = employees;
 
-        this.employees = employees;
-        this.expandedEmployee = null;
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error('EMPLOYEE LIST ERROR:', error);
+          this.totalRecords =
+            response?.data?.pagination?.totalRecords || 0;
 
-        this.employees = [];
-        this.expandedEmployee = null;
+          this.expandedEmployee = null;
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          console.error('EMPLOYEE LIST ERROR:', error);
 
-        this.toastr.warning('Failed to load employees');
-        this.cdr.markForCheck();
-      },
-    });
+          this.employees = [];
+          this.totalRecords = 0;
+          this.expandedEmployee = null;
+
+          this.toastr.warning('Failed to load employees');
+          this.cdr.markForCheck();
+        },
+      });
   }
-
   toggleRow(employee: any): void {
     this.expandedEmployee = this.expandedEmployee === employee ? null : employee;
     this.cdr.markForCheck();
@@ -304,5 +311,20 @@ export class EmployeeList implements OnInit {
         );
       },
     });
+  }
+  onPageChange(event: PageEvent): void {
+
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+
+    this.expandedEmployee = null;
+
+    this.loadEmployees();
+  }
+
+  resetPagination(): void {
+    this.pageIndex = 0;
+    this.expandedEmployee = null;
+    this.cdr.markForCheck();
   }
 }

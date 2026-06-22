@@ -23,14 +23,14 @@ router.post(
 router.get(
     "/",
     authMiddleware,
-    allowPermission("PATIENT_VIEW"),
+    allowPermission("PATIENT_READ"),
     getPatients
 );
 
 router.get(
     "/:uhid",
     authMiddleware,
-    allowPermission("PATIENT_VIEW"),
+    allowPermission("PATIENT_READ"),
     getPatientById
 );
 

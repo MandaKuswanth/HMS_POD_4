@@ -33,7 +33,7 @@ router.post("/login", loginPatient);
 router.get(
     "/profile/:uhid",
     verifyJWT,
-    allowPermission("PATIENT_PROFILE_VIEW"),
+    allowPermission("PATIENT_PROFILE_READ"),
     getPatientById
 );
 

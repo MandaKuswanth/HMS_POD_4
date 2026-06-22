@@ -70,8 +70,32 @@ export const routes: Routes = [
         canActivate: [authGuard],
     },
     {
+        path: 'roles',
+        loadComponent: () =>
+            import('./features/roles/role-list/role-list').then(
+                (m) => m.RoleList
+            ),
+        canActivate: [authGuard],
+    },
+    {
+        path: 'nodes',
+        loadComponent: () =>
+            import('./features/nodes/node-list').then(
+                (m) => m.NodeList
+            ),
+        canActivate: [authGuard],
+    },
+    {
+        path: 'health-records',
+        loadComponent: () =>
+            import('./features/health-records/health-record-list/health-record-list')
+                .then((m) => m.HealthRecordList),
+        canActivate: [authGuard],
+    },
+    {
         path: '**',
         redirectTo: 'dashboard',
     },
+
 ];
 

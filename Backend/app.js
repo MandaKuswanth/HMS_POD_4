@@ -13,7 +13,8 @@ const appointmentRoutes = require("./src/routes/appointmentRoutes");
 const patientAuthRoutes = require("./src/routes/patientAuthRoutes");
 const patientAppointmentRoutes=require("./src/routes/patientAppointmentRoutes");
 const roleRoutes = require("./src/routes/roleRoutes");
-
+const nodeRoutes = require("./src/routes/nodeRoutes");
+const healthRecordRoutes = require("./src/routes/healthRecordRoutes");
 const errorMiddleware = require("./src/middleware/errorMiddleware");
 
 const app = express();
@@ -22,7 +23,7 @@ const app = express();
 app.use(helmet());
 
 app.use(cors({
-  origin: "*",
+  origin: "http://localhost:4200",
   credentials: true
 }));
 
@@ -47,6 +48,8 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/patient-auth", patientAuthRoutes);
 app.use("/api/patientAppointment-auth",patientAppointmentRoutes);
 app.use("/api/roles", roleRoutes);
+app.use("/api/nodes", nodeRoutes);
+app.use("/api/health-records", healthRecordRoutes);
 // Global error middleware should always be last
 app.use(errorMiddleware);
 

@@ -68,7 +68,7 @@ router.post(
 router.get(
     "/employees",
     verifyJWT,
-    allowPermission(PERMISSIONS.EMPLOYEE_VIEW),
+    allowPermission(PERMISSIONS.EMPLOYEE_READ),
     employeeController.getEmployees
 );
 
@@ -102,7 +102,7 @@ router.put(
 router.get(
     "/pending-employees",
     verifyJWT,
-    allowPermission(PERMISSIONS.EMPLOYEE_VIEW),
+    allowPermission(PERMISSIONS.EMPLOYEE_READ),
     employeeController.getPendingEmployees
 );
 
