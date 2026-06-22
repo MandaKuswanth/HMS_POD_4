@@ -1,0 +1,73 @@
+<h2 mat-dialog-title>
+  {{ data?.mode === 'edit' ? 'Update Node' : 'Create Node' }}
+</h2>
+
+<mat-dialog-content>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Node Name</mat-label>
+    <input matInput [(ngModel)]="formData.name" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Path</mat-label>
+    <input matInput [(ngModel)]="formData.path" placeholder="/employees" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Icon</mat-label>
+    <input matInput [(ngModel)]="formData.icon" placeholder="groups" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Parent Node</mat-label>
+    <mat-select [(ngModel)]="formData.parentNodeId">
+      <mat-option [value]="null">No Parent</mat-option>
+
+      @for (node of nodes; track node.nodeId) {
+        <mat-option [value]="node.nodeId">
+          {{ node.name }} - {{ node.path }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Order</mat-label>
+    <input matInput type="number" [(ngModel)]="formData.order" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Status</mat-label>
+    <mat-select [(ngModel)]="formData.status">
+      <mat-option [value]="true">Active</mat-option>
+      <mat-option [value]="false">Inactive</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <div class="permission-section">
+    <h3>Permissions</h3>
+
+    <div class="permission-grid">
+      @for (permission of permissionList; track permission) {
+        <mat-checkbox
+          [checked]="isPermissionSelected(permission)"
+          (change)="togglePermission(permission, $event.checked)"
+        >
+          {{ permission }}
+        </mat-checkbox>
+      }
+    </div>
+  </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button mat-dialog-close>
+    Cancel
+  </button>
+
+  <button mat-flat-button color="primary" (click)="save()">
+    {{ data?.mode === 'edit' ? 'Update' : 'Save' }}
+  </button>
+</mat-dialog-actions>

@@ -1,4 +1,4 @@
-import { Component, Inject, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -34,18 +34,11 @@ import { HealthRecordService } from '../../../core/services/health-record';
   styleUrl: './health-record-dialog.css'
 })
 export class HealthRecordDialog implements OnInit {
-
-  private readonly dialogRef =
-    inject(MatDialogRef<HealthRecordDialog>);
-
-  private readonly appointmentService =
-    inject(AppointmentService);
-
-  private readonly healthRecordService =
-    inject(HealthRecordService);
-
-  private readonly toastr =
-    inject(ToastrService);
+  private readonly dialogRef = inject(MatDialogRef<HealthRecordDialog>);
+  private readonly appointmentService = inject(AppointmentService);
+  private readonly healthRecordService = inject(HealthRecordService);
+  private readonly toastr = inject(ToastrService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   appointments: any[] = [];
 
@@ -59,127 +52,94 @@ export class HealthRecordDialog implements OnInit {
     notes: ''
   };
 
-  constructor(
-    @Inject(MAT_DIALOG_DATA)
-    public data: any
-  ) {}
+  constructor(@Inject(MAT_DIALOG_DATA) public data: any) { }
 
   ngOnInit(): void {
-
-    this.loadAppointments();
-
-    if (
-      this.data?.mode === 'edit' &&
-      this.data?.record
-    ) {
+    if (this.data?.mode === 'edit' && this.data?.record) {
       this.formData = {
-        appointmentId: this.data.record.appointmentId,
-        patientId: this.data.record.patientId,
-        doctorEmployeeId:
-          this.data.record.doctorEmployeeId,
-        symptoms: this.data.record.symptoms,
-        diagnosis: this.data.record.diagnosis,
-        prescription:
-          this.data.record.prescription || '',
-        notes:
-          this.data.record.notes || ''
+        appointmentId: this.data.record.appointmentId || '',
+        patientId: this.data.record.patientId || '',
+        doctorEmployeeId: this.data.record.doctorEmployeeId || '',
+        symptoms: this.data.record.symptoms || '',
+        diagnosis: this.data.record.diagnosis || '',
+        prescription: this.data.record.prescription || '',
+        notes: this.data.record.notes || ''
       };
     }
+
+    this.loadAppointments();
   }
 
   loadAppointments(): void {
-
     this.appointmentService
-      .getAppointments()
+      .getAppointments(1, 10)
       .subscribe({
         next: (response: any) => {
+          const appointments = Array.isArray(response?.data?.records)
+            ? response.data.records
+            : [];
 
-          this.appointments =
-            response?.data?.records ||
-            response?.data ||
-            [];
+          this.appointments = appointments.filter((appointment: any) =>
+            appointment.status !== 'PENDING' &&
+            appointment.status !== 'CANCELLED'
+          );
 
+          setTimeout(() => {
+            this.cdr.detectChanges();
+          });
+        },
+        error: () => {
+          this.appointments = [];
+          this.toastr.error('Failed to load appointments');
         }
       });
-
   }
 
   onAppointmentChange(): void {
+    const selected = this.appointments.find(
+      (appointment) =>
+        appointment.appointmentId === this.formData.appointmentId
+    );
 
-    const selected =
-      this.appointments.find(
-        (a) =>
-          a.appointmentId ===
-          this.formData.appointmentId
-      );
-
-    if (selected) {
-
-      this.formData.patientId =
-        selected.patientId;
-
-      this.formData.doctorEmployeeId =
-        selected.doctorEmployeeId;
-
-    }
-
+    this.formData.patientId = selected?.patientId || '';
+    this.formData.doctorEmployeeId = selected?.doctorEmployeeId || '';
   }
 
   save(): void {
-
     if (
       !this.formData.appointmentId ||
+      !this.formData.patientId ||
+      !this.formData.doctorEmployeeId ||
       !this.formData.symptoms ||
       !this.formData.diagnosis
     ) {
-
-      this.toastr.warning(
-        'Please fill all required fields'
-      );
-
+      this.toastr.warning('Please fill all required fields');
       return;
-
     }
 
-    if (this.data?.mode === 'edit') {
-
-      this.healthRecordService
-        .updateHealthRecord(
+    const request$ =
+      this.data?.mode === 'edit'
+        ? this.healthRecordService.updateHealthRecord(
           this.data.record.healthRecordId,
           this.formData
         )
-        .subscribe({
-          next: () => {
+        : this.healthRecordService.createHealthRecord(this.formData);
 
-            this.toastr.success(
-              'Health record updated successfully'
-            );
+    request$.subscribe({
+      next: () => {
+        this.toastr.success(
+          this.data?.mode === 'edit'
+            ? 'Health record updated successfully'
+            : 'Health record created successfully'
+        );
 
-            this.dialogRef.close(true);
-
-          }
-        });
-
-    } else {
-
-      this.healthRecordService
-        .createHealthRecord(
-          this.formData
-        )
-        .subscribe({
-          next: () => {
-
-            this.toastr.success(
-              'Health record created successfully'
-            );
-
-            this.dialogRef.close(true);
-
-          }
-        });
-
-    }
-
+        this.dialogRef.close(true);
+      },
+      error: (err) => {
+        this.toastr.error(
+          err?.error?.message || 'Failed to save health record'
+        );
+      }
+    });
   }
-
 }

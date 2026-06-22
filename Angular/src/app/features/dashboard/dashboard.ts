@@ -100,86 +100,70 @@ export class Dashboard implements OnInit {
   }
 
   private loadEmployeesCount(): void {
-    this.employeeService.getEmployees().subscribe({
+    this.employeeService.getEmployees(1, 1000).subscribe({
       next: (response: any) => {
-        let employees: any[] = [];
+        const employees = Array.isArray(response?.data?.records)
+          ? response.data.records
+          : [];
 
-        if (Array.isArray(response?.data)) {
-          employees = response.data;
-        } else if (Array.isArray(response)) {
-          employees = response;
-        }
-
-        this.totalEmployees = employees.length;
+        this.totalEmployees =
+          response?.data?.pagination?.totalRecords || employees.length;
 
         this.activeEmployees = employees.filter(
-          (emp: any) =>
-            emp.status === true ||
-            emp.isActive === true ||
-            emp.is_active === true
+          (emp: any) => emp.status === true
         ).length;
 
         this.pendingEmployees = employees.filter(
-          (emp: any) =>
-            emp.status === false ||
-            emp.isActive === false ||
-            emp.is_active === false
+          (emp: any) => emp.status === false
         ).length;
 
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('DASHBOARD EMPLOYEE COUNT ERROR:', err);
-
         this.totalEmployees = 0;
         this.activeEmployees = 0;
         this.pendingEmployees = 0;
-
         this.cdr.detectChanges();
       },
     });
   }
 
   private loadPatientsCount(): void {
-    this.patientService.getPatients().subscribe({
+    this.patientService.getPatients(1, 1000).subscribe({
       next: (response: any) => {
+        const patients = Array.isArray(response?.data?.records)
+          ? response.data.records
+          : [];
+
         this.totalPatients =
-          response?.data?.count ||
-          response?.data?.patients?.length ||
-          0;
+          response?.data?.pagination?.totalRecords || patients.length;
 
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('PATIENT COUNT ERROR:', error);
-
         this.totalPatients = 0;
-
         this.cdr.detectChanges();
       },
     });
   }
 
   private loadAppointmentsCount(): void {
-    this.appointmentService.getAppointments().subscribe({
+    this.appointmentService.getAppointments(1, 1000).subscribe({
       next: (response: any) => {
-        let appointments: any[] = [];
+        const appointments = Array.isArray(response?.data?.records)
+          ? response.data.records
+          : [];
 
-        if (Array.isArray(response?.data)) {
-          appointments = response.data;
-        } else if (Array.isArray(response)) {
-          appointments = response;
-        }
-
-        this.appointmentsCount = appointments.length;
+        this.appointmentsCount =
+          response?.data?.pagination?.totalRecords || appointments.length;
 
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('DASHBOARD APPOINTMENT COUNT ERROR:', error);
-
         this.appointmentsCount = 0;
-
         this.cdr.detectChanges();
       },
     });

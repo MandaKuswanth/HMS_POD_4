@@ -72,52 +72,97 @@ export class AppointmentDialog implements OnInit {
     });
   }
 
-  loadPatients(): void {
-    this.patientsLoading = true;
+  // loadPatients(): void {
+  //   this.patientsLoading = true;
 
-    this.patientService.getPatients().subscribe({
-      next: (response: any) => {
-        this.patients = Array.isArray(response?.data?.patients)
-          ? response.data.patients
-          : [];
+  //   this.patientService.getPatients().subscribe({
+  //     next: (response: any) => {
+  //       this.patients = Array.isArray(response?.data?.patients)
+  //         ? response.data.patients
+  //         : [];
 
-        this.patientsLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err: any) => {
-        this.patients = [];
-        this.patientsLoading = false;
-        this.toastr.error(err?.error?.message || 'Failed to load patients');
-        this.cdr.detectChanges();
-      }
-    });
-  }
+  //       this.patientsLoading = false;
+  //       this.cdr.detectChanges();
+  //     },
+  //     error: (err: any) => {
+  //       this.patients = [];
+  //       this.patientsLoading = false;
+  //       this.toastr.error(err?.error?.message || 'Failed to load patients');
+  //       this.cdr.detectChanges();
+  //     }
+  //   });
+  // }
+loadPatients(): void {
+  this.patientsLoading = true;
+
+  this.patientService.getPatients(1, 1000).subscribe({
+    next: (response: any) => {
+      this.patients = Array.isArray(response?.data?.records)
+        ? response.data.records
+        : [];
+
+      this.patientsLoading = false;
+      this.cdr.detectChanges();
+    },
+    error: (err: any) => {
+      this.patients = [];
+      this.patientsLoading = false;
+      this.toastr.error(err?.error?.message || 'Failed to load patients');
+      this.cdr.detectChanges();
+    }
+  });
+}
+  // loadDoctors(): void {
+  //   this.doctorsLoading = true;
+
+  //   this.employeeService.getEmployees().subscribe({
+  //     next: (response: any) => {
+  //       const employees = Array.isArray(response?.data)
+  //         ? response.data
+  //         : [];
+
+  //       this.doctors = employees.filter((emp: any) =>
+  //         emp.role === 'DOCTOR' &&
+  //         emp.status === true
+  //       );
+
+  //       this.doctorsLoading = false;
+  //       this.cdr.detectChanges();
+  //     },
+  //     error: (err: any) => {
+  //       this.doctors = [];
+  //       this.doctorsLoading = false;
+  //       this.toastr.error(err?.error?.message || 'Failed to load doctors');
+  //       this.cdr.detectChanges();
+  //     }
+  //   });
+  // }
 
   loadDoctors(): void {
-    this.doctorsLoading = true;
+  this.doctorsLoading = true;
 
-    this.employeeService.getEmployees().subscribe({
-      next: (response: any) => {
-        const employees = Array.isArray(response?.data)
-          ? response.data
-          : [];
+  this.employeeService.getEmployees(1, 1000).subscribe({
+    next: (response: any) => {
+      const employees = Array.isArray(response?.data?.records)
+        ? response.data.records
+        : [];
 
-        this.doctors = employees.filter((emp: any) =>
-          emp.role === 'DOCTOR' &&
-          emp.status === true
-        );
+      this.doctors = employees.filter((emp: any) =>
+        emp.roles?.includes('DOCTOR') &&
+        emp.status === true
+      );
 
-        this.doctorsLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err: any) => {
-        this.doctors = [];
-        this.doctorsLoading = false;
-        this.toastr.error(err?.error?.message || 'Failed to load doctors');
-        this.cdr.detectChanges();
-      }
-    });
-  }
+      this.doctorsLoading = false;
+      this.cdr.detectChanges();
+    },
+    error: (err: any) => {
+      this.doctors = [];
+      this.doctorsLoading = false;
+      this.toastr.error(err?.error?.message || 'Failed to load doctors');
+      this.cdr.detectChanges();
+    }
+  });
+}
 
   onDoctorChange(doctorCode: string): void {
     const slotControl = this.form.get('timeSlot');

@@ -53,7 +53,8 @@ export interface EmployeeData {
   department: string;
   designation: string;
   joiningDate?: string;
-  role: string;
+  role?: string;
+  roles?: string[];
   status: boolean;
   medicalRegistrationNo?: string | null;
   specialization?: string | null;
@@ -99,23 +100,23 @@ export class EmployeeDialog implements OnInit {
   loading = false;
   readonly roles = EMPLOYEE_ROLES;
   timeSlots: string[] = [
-  '09:00 AM - 09:30 AM',
-  '09:30 AM - 10:00 AM',
-  '10:00 AM - 10:30 AM',
-  '10:30 AM - 11:00 AM',
-  '11:00 AM - 11:30 AM',
-  '11:30 AM - 12:00 PM',
-  '12:00 PM - 12:30 PM',
-  '12:30 PM - 01:00 PM',
-  '01:00 PM - 01:30 PM',
-  '01:30 PM - 02:00 PM',
-  '02:00 PM - 02:30 PM',
-  '02:30 PM - 03:00 PM',
-  '03:00 PM - 03:30 PM',
-  '03:30 PM - 04:00 PM',
-  '04:00 PM - 04:30 PM',
-  '04:30 PM - 05:00 PM'
-];
+    '09:00 AM - 09:30 AM',
+    '09:30 AM - 10:00 AM',
+    '10:00 AM - 10:30 AM',
+    '10:30 AM - 11:00 AM',
+    '11:00 AM - 11:30 AM',
+    '11:30 AM - 12:00 PM',
+    '12:00 PM - 12:30 PM',
+    '12:30 PM - 01:00 PM',
+    '01:00 PM - 01:30 PM',
+    '01:30 PM - 02:00 PM',
+    '02:00 PM - 02:30 PM',
+    '02:30 PM - 03:00 PM',
+    '03:00 PM - 03:30 PM',
+    '03:30 PM - 04:00 PM',
+    '04:00 PM - 04:30 PM',
+    '04:30 PM - 05:00 PM'
+  ];
 
   form = this.fb.group({
     name: [
@@ -211,22 +212,25 @@ export class EmployeeDialog implements OnInit {
   }
 
   private patchEmployeeData(employee: EmployeeData): void {
+    console.log(employee);
     this.form.patchValue({
-      name: employee.name || '',
-      email: employee.email || '',
-      phone: employee.phone || '',
-      department: employee.department || '',
-      designation: employee.designation || '',
-      joiningDate: employee.joiningDate || '',
-      role: employee.role || '',
-      status: employee.status ?? true,
-      medicalRegistrationNo: employee.medicalRegistrationNo || '',
-      specialization: employee.specialization || '',
-      qualificationText: employee.qualification?.join(', ') || '',
-      consultationFee: employee.consultationFee
-        ? String(employee.consultationFee)
-        : ''
-    });
+  name: employee.name || '',
+  email: employee.email || '',
+  phone: employee.phone || '',
+  department: employee.department || '',
+  designation: employee.designation || '',
+  joiningDate: employee.joiningDate
+    ? new Date(employee.joiningDate).toISOString().split('T')[0]
+    : '',
+  role: employee.roles?.[0] || employee.role || '',
+  status: employee.status ?? true,
+  medicalRegistrationNo: employee.medicalRegistrationNo || '',
+  specialization: employee.specialization || '',
+  qualificationText: employee.qualification?.join(', ') || '',
+  consultationFee: employee.consultationFee
+    ? String(employee.consultationFee)
+    : ''
+});
 
     this.availabilitySlots.clear();
 
@@ -239,7 +243,7 @@ export class EmployeeDialog implements OnInit {
     this.onRoleChange();
   }
 
-  
+
 
   onRoleChange(): void {
     const qualificationControl = this.form.get('qualificationText');
@@ -255,7 +259,7 @@ export class EmployeeDialog implements OnInit {
     if (this.showMedicalStaffFields()) {
       qualificationControl?.setValidators(getQualificationValidators());
 
-    
+
     } else {
       this.availabilitySlots.clear();
     }
@@ -285,22 +289,22 @@ export class EmployeeDialog implements OnInit {
 
   toggleSlot(slot: string, event: any): void {
 
-  if (event.target.checked) {
+    if (event.target.checked) {
 
-    this.availabilitySlots.push(
-      this.fb.control(slot)
-    );
+      this.availabilitySlots.push(
+        this.fb.control(slot)
+      );
 
-  } else {
+    } else {
 
-    const index = this.availabilitySlots.value.indexOf(slot);
+      const index = this.availabilitySlots.value.indexOf(slot);
 
-    if (index > -1) {
-      this.availabilitySlots.removeAt(index);
+      if (index > -1) {
+        this.availabilitySlots.removeAt(index);
+      }
+
     }
-
   }
-}
 
 
 

@@ -80,7 +80,7 @@ export const routes: Routes = [
     {
         path: 'nodes',
         loadComponent: () =>
-            import('./features/nodes/node-list').then(
+            import('./features/nodes/node-list/node-list').then(
                 (m) => m.NodeList
             ),
         canActivate: [authGuard],

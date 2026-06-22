@@ -82,7 +82,7 @@ healthRecordSchema.pre("save", async function (next) {
             this.healthRecordId = `HR-${String(counter.seq).padStart(6, "0")}`;
         }
 
-        next();
+      
     } catch (error) {
         next(error);
     }

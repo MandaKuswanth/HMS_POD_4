@@ -36,14 +36,14 @@ export class AppointmentService {
         );
     }
 
-    getAppointments(
-        page = 1,
-        limit = 10
-    ): Observable<any> {
-        return this.http.get(
-            `${this.baseUrl}/appointments?page=${page}&limit=${limit}`
-        );
-    }
+  getAppointments(
+  page = 1,
+  limit = 5
+): Observable<any> {
+  return this.http.get(
+    `${this.baseUrl}/appointments?page=${page}&limit=${limit}`
+  );
+}
 
     deleteAppointment(
         appointmentId: string

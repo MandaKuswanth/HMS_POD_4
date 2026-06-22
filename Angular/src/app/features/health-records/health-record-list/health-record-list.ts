@@ -1,23 +1,21 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { MatTableModule } from '@angular/material/table';
-import {
-  MatPaginatorModule,
-  PageEvent,
-} from '@angular/material/paginator';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
-import { HealthRecordDialog } from '../health-record-dialog/health-record-dialog';
+
 import { ToastrService } from 'ngx-toastr';
 
 import { Navbar } from '../../../shared/components/navbar/navbar';
 import { Sidebar } from '../../../shared/components/sidebar/sidebar';
+import { HealthRecordDialog } from '../health-record-dialog/health-record-dialog';
 
 import {
   HealthRecordRequest,
@@ -51,6 +49,7 @@ export class HealthRecordList implements OnInit {
   private readonly healthRecordService = inject(HealthRecordService);
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly PERMISSIONS = PERMISSIONS;
 
@@ -58,8 +57,8 @@ export class HealthRecordList implements OnInit {
   filteredHealthRecords: HealthRecordRequest[] = [];
 
   expandedRecord: HealthRecordRequest | null = null;
-
   searchText = '';
+  isLoading = false;
 
   pageIndex = 0;
   pageSize = 5;
@@ -80,6 +79,10 @@ export class HealthRecordList implements OnInit {
   }
 
   loadHealthRecords(): void {
+    this.isLoading = true;
+    this.expandedRecord = null;
+    this.cdr.detectChanges();
+
     this.healthRecordService
       .getHealthRecords(this.pageIndex + 1, this.pageSize)
       .subscribe({
@@ -89,12 +92,14 @@ export class HealthRecordList implements OnInit {
             : [];
 
           this.healthRecords = records;
-          this.filteredHealthRecords = records;
+          this.filteredHealthRecords = [...records];
 
           this.totalRecords =
             response?.data?.pagination?.totalRecords || 0;
 
+          this.isLoading = false;
           this.expandedRecord = null;
+          this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('HEALTH RECORD LOAD ERROR:', error);
@@ -102,9 +107,11 @@ export class HealthRecordList implements OnInit {
           this.healthRecords = [];
           this.filteredHealthRecords = [];
           this.totalRecords = 0;
+          this.isLoading = false;
           this.expandedRecord = null;
 
           this.toastr.error('Failed to load health records');
+          this.cdr.detectChanges();
         },
       });
   }
@@ -112,18 +119,16 @@ export class HealthRecordList implements OnInit {
   applyFilter(): void {
     const search = this.searchText.trim().toLowerCase();
 
-    if (search) {
-      this.filteredHealthRecords = this.healthRecords.filter((record) =>
-        (record.healthRecordId ?? '').toLowerCase().includes(search) ||
-        (record.appointmentId ?? '').toLowerCase().includes(search) ||
-        (record.patientId ?? '').toLowerCase().includes(search) ||
-        (record.patientName ?? '').toLowerCase().includes(search) ||
-        (record.doctorName ?? '').toLowerCase().includes(search) ||
-        (record.diagnosis ?? '').toLowerCase().includes(search)
-      );
-    } else {
-      this.filteredHealthRecords = [...this.healthRecords];
-    }
+    this.filteredHealthRecords = search
+      ? this.healthRecords.filter((record) =>
+          (record.healthRecordId ?? '').toLowerCase().includes(search) ||
+          (record.appointmentId ?? '').toLowerCase().includes(search) ||
+          (record.patientId ?? '').toLowerCase().includes(search) ||
+          (record.patientName ?? '').toLowerCase().includes(search) ||
+          (record.doctorName ?? '').toLowerCase().includes(search) ||
+          (record.diagnosis ?? '').toLowerCase().includes(search)
+        )
+      : [...this.healthRecords];
 
     this.expandedRecord = null;
   }
@@ -137,7 +142,6 @@ export class HealthRecordList implements OnInit {
   onPageChange(event: PageEvent): void {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
-
     this.loadHealthRecords();
   }
 
@@ -150,10 +154,9 @@ export class HealthRecordList implements OnInit {
     const ref = this.dialog.open(HealthRecordDialog, {
       width: '850px',
       maxWidth: '95vw',
+      maxHeight: '90vh',
       disableClose: true,
-      data: {
-        mode: 'add',
-      },
+      data: { mode: 'add' },
     });
 
     ref.afterClosed().subscribe((result: boolean) => {
@@ -168,6 +171,7 @@ export class HealthRecordList implements OnInit {
     const ref = this.dialog.open(HealthRecordDialog, {
       width: '850px',
       maxWidth: '95vw',
+      maxHeight: '90vh',
       disableClose: true,
       data: {
         mode: 'edit',
@@ -182,8 +186,6 @@ export class HealthRecordList implements OnInit {
     });
   }
 
- 
-
   deleteHealthRecord(record: HealthRecordRequest): void {
     if (!record?.healthRecordId) {
       this.toastr.error('Health record ID missing');
@@ -194,9 +196,7 @@ export class HealthRecordList implements OnInit {
       `Delete health record ${record.healthRecordId}?`
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     this.healthRecordService
       .deleteHealthRecord(record.healthRecordId)
