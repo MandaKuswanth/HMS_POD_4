@@ -2,6 +2,8 @@ const HealthRecord = require("../models/HealthRecord");
 const Appointment = require("../models/Appointment");
 const Patient = require("../models/Patient");
 const Employee = require("../models/Employee");
+const User = require("../models/User");
+const Role = require("../models/Role");
 
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
@@ -82,7 +84,8 @@ exports.createHealthRecord = async (req, res) => {
         }
 
         if (
-            appointment.doctorEmployeeId !== doctorEmployeeId
+            appointment.doctorEmployeeId !==
+            doctorEmployeeId
         ) {
             return res.status(400).json(
                 new ApiError(
@@ -117,6 +120,42 @@ exports.createHealthRecord = async (req, res) => {
                 )
             );
         }
+
+        // ===== Doctor ownership validation =====
+
+        const loggedInEmployeeId =
+            req.user?.employeeId;
+
+        const loggedInUser =
+            await User.findOne({
+                employeeId: loggedInEmployeeId
+            });
+
+        const doctorRole =
+            await Role.findOne({
+                name: "DOCTOR"
+            });
+
+        const isDoctor =
+            doctorRole &&
+            loggedInUser?.roleIds.includes(
+                doctorRole.roleId
+            );
+
+        if (
+            isDoctor &&
+            appointment.doctorEmployeeId !==
+            loggedInEmployeeId
+        ) {
+            return res.status(403).json(
+                new ApiError(
+                    403,
+                    "Doctors can create health records only for their own appointments"
+                )
+            );
+        }
+
+        // ======================================
 
         const createdBy =
             req.user?.employeeId ||
@@ -156,35 +195,83 @@ exports.createHealthRecord = async (req, res) => {
 
 exports.getHealthRecords = async (req, res) => {
     try {
-        const page = Math.max(Number(req.query.page) || 1, 1);
-        const limit = Math.max(Number(req.query.limit) || 10, 1);
+        const page = Math.max(
+            Number(req.query.page) || 1,
+            1
+        );
+
+        const limit = Math.max(
+            Number(req.query.limit) || 10,
+            1
+        );
+
         const skip = (page - 1) * limit;
 
-        const totalRecords = await HealthRecord.countDocuments();
+        const loggedInEmployeeId =
+            req.user?.employeeId;
 
-        const healthRecords = await HealthRecord.find()
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        const loggedInUser =
+            await User.findOne({
+                employeeId: loggedInEmployeeId
+            });
+
+        const doctorRole =
+            await Role.findOne({
+                name: "DOCTOR"
+            });
+
+        const isDoctor =
+            doctorRole &&
+            loggedInUser?.roleIds.includes(
+                doctorRole.roleId
+            );
+
+        const filter = {};
+
+        if (isDoctor) {
+            filter.doctorEmployeeId =
+                loggedInEmployeeId;
+        }
+
+        const totalRecords =
+            await HealthRecord.countDocuments(
+                filter
+            );
+
+        const healthRecords =
+            await HealthRecord.find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit);
 
         const records = await Promise.all(
             healthRecords.map(async (record) => {
-                const patient = await Patient.findOne({
-                    UHID: record.patientId
-                });
 
-                const doctor = await Employee.findOne({
-                    employeeCode: record.doctorEmployeeId
-                });
+                const patient =
+                    await Patient.findOne({
+                        UHID: record.patientId
+                    });
+
+                const doctor =
+                    await Employee.findOne({
+                        employeeCode:
+                            record.doctorEmployeeId
+                    });
 
                 return {
                     ...record.toObject(),
 
-                    patientName: patient?.name || "",
-                    patientPhone: patient?.phone || "",
+                    patientName:
+                        patient?.name || "",
 
-                    doctorName: doctor?.name || "",
-                    specialization: doctor?.specialization || ""
+                    patientPhone:
+                        patient?.phone || "",
+
+                    doctorName:
+                        doctor?.name || "",
+
+                    specialization:
+                        doctor?.specialization || ""
                 };
             })
         );
@@ -197,7 +284,9 @@ exports.getHealthRecords = async (req, res) => {
                     pagination: {
                         totalRecords,
                         currentPage: page,
-                        totalPages: Math.ceil(totalRecords / limit),
+                        totalPages: Math.ceil(
+                            totalRecords / limit
+                        ),
                         limit
                     }
                 },
@@ -211,7 +300,8 @@ exports.getHealthRecords = async (req, res) => {
         return res.status(500).json(
             new ApiError(
                 500,
-                err.message || "Internal Server Error"
+                err.message ||
+                "Internal Server Error"
             )
         );
     }
@@ -285,6 +375,7 @@ exports.getHealthRecordById = async (req, res) => {
         );
     }
 };
+
 
 exports.updateHealthRecord = async (req, res) => {
     try {
