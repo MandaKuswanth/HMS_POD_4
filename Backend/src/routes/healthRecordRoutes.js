@@ -23,7 +23,11 @@ router.get(
     allowPermission(PERMISSIONS.HEALTH_RECORD_READ),
     healthRecordController.getHealthRecords
 );
-
+router.get(
+    "/myHealthRecords",
+    auth,
+    healthRecordController.getMyHealthRecords
+);
 // GET SINGLE HEALTH RECORD
 router.get(
     "/:healthRecordId",

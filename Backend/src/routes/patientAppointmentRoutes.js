@@ -15,7 +15,7 @@ const {
 router.get(
     "/doctors",
     auth,
-    allowPermission(PERMISSIONS.APPOINTMENT_READ), // 2. Use PERMISSIONS.KEY
+   allowPermission(PERMISSIONS.APPOINTMENT_READ), // 2. Use PERMISSIONS.KEY
     getDoctors
 );
 

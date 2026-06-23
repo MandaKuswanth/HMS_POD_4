@@ -11,7 +11,8 @@ import {
 import {
     createNativeStackNavigator,
 } from "@react-navigation/native-stack";
-
+import HealthRecordsScreen
+from "../screens/patient/HealthRecordsScreen";
 import DashboardScreen from "../screens/patient/DashboardScreen";
 import MyAppointmentsScreen from "../screens/patient/MyAppointmentsScreen";
 import ProfileScreen from "../screens/patient/ProfileScreen";
@@ -109,6 +110,10 @@ export default function MainNavigator() {
                 name="EditAppointment"
                 component={EditAppointmentScreen}
             />
+            <Stack.Screen
+    name="HealthRecords"
+    component={HealthRecordsScreen}
+/>
 
             <Stack.Screen
                 name="EditProfile"

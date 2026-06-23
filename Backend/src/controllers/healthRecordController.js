@@ -173,19 +173,26 @@ exports.getHealthRecords = async (req, res) => {
                     UHID: record.patientId
                 });
 
-                const doctor = await Employee.findOne({
-                    employeeCode: record.doctorEmployeeId
-                });
+               const doctor = await Employee.findOne({
+    employeeCode: record.doctorEmployeeId
+});
 
-                return {
-                    ...record.toObject(),
+const appointment = await Appointment.findOne({
+    appointmentId: record.appointmentId
+});
 
-                    patientName: patient?.name || "",
-                    patientPhone: patient?.phone || "",
+return {
+    ...record.toObject(),
 
-                    doctorName: doctor?.name || "",
-                    specialization: doctor?.specialization || ""
-                };
+    doctorName:
+        doctor?.name || "",
+
+    specialization:
+        doctor?.specialization || "",
+
+    appointmentDate:
+        appointment?.date || null
+};
             })
         );
 
@@ -372,6 +379,68 @@ exports.deleteHealthRecord = async (req, res) => {
                     appointmentId: healthRecord.appointmentId
                 },
                 "Health record deleted successfully"
+            )
+        );
+
+    } catch (err) {
+        console.error(err);
+
+        return res.status(500).json(
+            new ApiError(
+                500,
+                err.message || "Internal Server Error"
+            )
+        );
+    }
+};
+exports.getMyHealthRecords = async (req, res) => {
+    try {
+        const patientId = req.user.UHID;
+
+        const healthRecords = await HealthRecord.find({
+            patientId
+        }).sort({
+            createdAt: -1
+        });
+
+        const records = await Promise.all(
+            healthRecords.map(async (record) => {
+
+                const doctor = await Employee.findOne({
+                    employeeCode: record.doctorEmployeeId
+                });
+
+                const appointment = await Appointment.findOne({
+                    appointmentId: record.appointmentId
+                });
+
+                console.log(
+                    "Appointment Found:",
+                    appointment
+                );
+
+                return {
+                    ...record.toObject(),
+
+                    doctorName:
+                        doctor?.name || "",
+
+                    specialization:
+                        doctor?.specialization || "",
+
+                    appointmentDate:
+                        appointment?.date || null
+                };
+            })
+        );
+
+        console.log("FINAL RECORDS:", records);
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                records,
+                "Health records fetched successfully"
             )
         );
 
