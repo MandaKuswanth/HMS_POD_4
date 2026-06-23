@@ -61,16 +61,71 @@ const verifyDoctorRole = async (doctorEmployeeCode) => {
 
     if (!doctorUser) return { valid: false, reason: "Doctor user account not found" };
 
-    const doctorRole = await Role.findOne({ name: "DOCTOR", status: true });
-    if (!doctorRole) return { valid: false, reason: "Doctor role not configured" };
+    const roles = await Role.find({ roleId: { $in: doctorUser.roleIds }, status: true });
+    const userPermissions = new Set(roles.flatMap((r) => r.permissions || []));
 
-    const isDoctor = doctorUser.roleIds?.includes(doctorRole.roleId);
+    const isDoctor = userPermissions.has("HEALTH_RECORD_CREATE");
     if (!isDoctor) return { valid: false, reason: "Employee is not a doctor" };
 
     if (!doctorUser.status) return { valid: false, reason: "Doctor account is inactive" };
 
     return { valid: true, doctorUser };
 };
+
+const getAllowedActions = (appointment, userPermissions, userEmployeeId) => {
+    const actions = [];
+    const status = appointment.status;
+
+    const hasApprovePerm = userPermissions.has("APPOINTMENT_APPROVE");
+    const hasReadPerm = userPermissions.has("APPOINTMENT_READ");
+    const hasDeletePerm = userPermissions.has("APPOINTMENT_DELETE");
+
+    const isAssignedDoctor = !hasApprovePerm && hasReadPerm && appointment.doctorEmployeeId === userEmployeeId;
+
+    // Approve / Reject
+    if (status === "PENDING" && hasApprovePerm) {
+        actions.push("APPROVE");
+        actions.push("REJECT");
+    }
+
+    // Delete
+    if (!["COMPLETED", "IN-PROCESS"].includes(status) && hasDeletePerm) {
+        actions.push("DELETE");
+    }
+
+    // Update Status
+    if (hasApprovePerm) {
+        if (["PENDING", "BOOKED", "IN-PROCESS"].includes(status)) {
+            actions.push("UPDATE_STATUS");
+        }
+    } else if (isAssignedDoctor) {
+        if (["BOOKED", "IN-PROCESS"].includes(status)) {
+            actions.push("UPDATE_STATUS");
+        }
+    }
+
+    return actions;
+};
+
+const getAllowedStatuses = (appointment, userPermissions, userEmployeeId) => {
+    const status = appointment.status;
+    const hasApprovePerm = userPermissions.has("APPOINTMENT_APPROVE");
+    const hasReadPerm = userPermissions.has("APPOINTMENT_READ");
+    const isAssignedDoctor = !hasApprovePerm && hasReadPerm && appointment.doctorEmployeeId === userEmployeeId;
+
+    if (hasApprovePerm) {
+        return STATUS_TRANSITIONS[status] || [];
+    } else if (isAssignedDoctor) {
+        if (status === "BOOKED") {
+            return ["IN-PROCESS"];
+        }
+        if (status === "IN-PROCESS") {
+            return ["COMPLETED"];
+        }
+    }
+    return [];
+};
+
 
 // ─── Admin: Create Appointment ───────────────────────────────────────────────
 
@@ -207,17 +262,13 @@ exports.getAppointments = async (req, res) => {
         }
 
         const roles = await Role.find({ roleId: { $in: user.roleIds }, status: true });
-        const roleNames = new Set(roles.map((r) => r.name));
+        const userPermissions = new Set(roles.flatMap((r) => r.permissions || []));
 
         let query = { isDeleted: false };
 
-        if (
-            roleNames.has("SUPER_ADMIN") ||
-            roleNames.has("ADMIN") ||
-            roleNames.has("RECEPTIONIST")
-        ) {
+        if (userPermissions.has("APPOINTMENT_APPROVE")) {
             // see all
-        } else if (roleNames.has("DOCTOR")) {
+        } else if (userPermissions.has("APPOINTMENT_READ")) {
             const doctor = await Employee.findOne({
                 employeeCode: user.employeeId,
                 isDeleted: false
@@ -273,7 +324,9 @@ exports.getAppointments = async (req, res) => {
                 completedAt: appointment.completedAt,
                 createdByEmployeeId: appointment.createdByEmployeeId || null,
                 createdAt: appointment.createdAt,
-                updatedAt: appointment.updatedAt
+                updatedAt: appointment.updatedAt,
+                allowedActions: getAllowedActions(appointment, userPermissions, user.employeeId),
+                allowedStatuses: getAllowedStatuses(appointment, userPermissions, user.employeeId)
             };
         });
 
@@ -315,6 +368,14 @@ exports.getAppointmentById = async (req, res) => {
             isDeleted: false
         });
 
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json(new ApiError(404, "User not found"));
+        }
+
+        const roles = await Role.find({ roleId: { $in: user.roleIds }, status: true });
+        const userPermissions = new Set(roles.flatMap((r) => r.permissions || []));
+
         return res.status(200).json(
             new ApiResponse(
                 200,
@@ -337,7 +398,9 @@ exports.getAppointmentById = async (req, res) => {
                     completedAt: appointment.completedAt,
                     createdByEmployeeId: appointment.createdByEmployeeId || null,
                     createdAt: appointment.createdAt,
-                    updatedAt: appointment.updatedAt
+                    updatedAt: appointment.updatedAt,
+                    allowedActions: getAllowedActions(appointment, userPermissions, user.employeeId),
+                    allowedStatuses: getAllowedStatuses(appointment, userPermissions, user.employeeId)
                 },
                 "Appointment retrieved successfully"
             )
@@ -502,9 +565,12 @@ exports.updateAppointmentStatus = async (req, res) => {
         // ADMIN/RECEPTIONIST can do status changes via updateAppointment instead
         const user = await User.findById(req.user.id);
         const roles = await Role.find({ roleId: { $in: user.roleIds }, status: true });
-        const roleNames = new Set(roles.map((r) => r.name));
+        const userPermissions = new Set(roles.flatMap((r) => r.permissions || []));
 
-        if (roleNames.has("DOCTOR")) {
+        const hasApprovePerm = userPermissions.has("APPOINTMENT_APPROVE");
+        const hasReadPerm = userPermissions.has("APPOINTMENT_READ");
+
+        if (!hasApprovePerm && hasReadPerm) {
             // Doctor can only update their own appointments
             if (appointment.doctorEmployeeId !== req.user.employeeId) {
                 return res.status(403).json(
@@ -556,6 +622,18 @@ exports.updateAppointmentStatus = async (req, res) => {
 exports.deleteAppointment = async (req, res) => {
     try {
         const { appointmentId } = req.params;
+
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json(new ApiError(404, "User not found"));
+        }
+
+        const roles = await Role.find({ roleId: { $in: user.roleIds }, status: true });
+        const userPermissions = new Set(roles.flatMap((r) => r.permissions || []));
+
+        if (!userPermissions.has("APPOINTMENT_DELETE")) {
+            return res.status(403).json(new ApiError(403, "You are not authorized to delete appointments"));
+        }
 
         const appointment = await Appointment.findOne({ appointmentId, isDeleted: false });
         if (!appointment) {
@@ -609,6 +687,18 @@ exports.deleteAppointment = async (req, res) => {
 exports.approveAppointment = async (req, res) => {
     try {
         const { appointmentId } = req.params;
+
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json(new ApiError(404, "User not found"));
+        }
+
+        const roles = await Role.find({ roleId: { $in: user.roleIds }, status: true });
+        const userPermissions = new Set(roles.flatMap((r) => r.permissions || []));
+
+        if (!userPermissions.has("APPOINTMENT_APPROVE")) {
+            return res.status(403).json(new ApiError(403, "You are not authorized to approve appointments"));
+        }
 
         const appointment = await Appointment.findOne({ appointmentId, isDeleted: false });
         if (!appointment) {
@@ -697,6 +787,18 @@ exports.approveAppointment = async (req, res) => {
 exports.rejectAppointment = async (req, res) => {
     try {
         const { appointmentId } = req.params;
+
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json(new ApiError(404, "User not found"));
+        }
+
+        const roles = await Role.find({ roleId: { $in: user.roleIds }, status: true });
+        const userPermissions = new Set(roles.flatMap((r) => r.permissions || []));
+
+        if (!userPermissions.has("APPOINTMENT_REJECT")) {
+            return res.status(403).json(new ApiError(403, "You are not authorized to reject appointments"));
+        }
 
         const appointment = await Appointment.findOne({ appointmentId, isDeleted: false });
         if (!appointment) {

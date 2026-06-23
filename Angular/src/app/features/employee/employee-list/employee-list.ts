@@ -96,9 +96,12 @@ export class EmployeeList implements OnInit {
     }
 
     if (this.selectedRole !== 'ALL ROLES') {
-      employees = employees.filter(
-        (emp: any) => emp.role === this.selectedRole
-      );
+      employees = employees.filter((emp: any) => {
+        if (Array.isArray(emp.roles)) {
+          return emp.roles.includes(this.selectedRole);
+        }
+        return emp.role === this.selectedRole;
+      });
     }
 
     if (this.selectedDepartment !== 'ALL DEPARTMENTS') {
@@ -130,11 +133,16 @@ export class EmployeeList implements OnInit {
   }
 
   get roles(): string[] {
-    const roles = this.employees
-      .map((emp: any) => emp.role)
-      .filter(Boolean);
+    const rolesSet = new Set<string>();
+    this.employees.forEach((emp: any) => {
+      if (Array.isArray(emp.roles)) {
+        emp.roles.forEach((r: string) => rolesSet.add(r));
+      } else if (emp.role) {
+        rolesSet.add(emp.role);
+      }
+    });
 
-    return ['ALL ROLES', ...new Set(roles)];
+    return ['ALL ROLES', ...Array.from(rolesSet).filter(Boolean)];
   }
 
   get departments(): string[] {
@@ -285,8 +293,12 @@ export class EmployeeList implements OnInit {
 
     const action = employee.status ? 'deactivate' : 'activate';
 
+    const isDoctor = Array.isArray(employee.roles)
+      ? employee.roles.includes('DOCTOR')
+      : employee.role === 'DOCTOR';
+
     const message =
-      employee.role === 'DOCTOR' && employee.status
+      isDoctor && employee.status
         ? `Deactivate Dr. ${employee.name}? Existing appointments with this doctor may be affected.`
         : `Are you sure you want to ${action} ${employee.name}?`;
 

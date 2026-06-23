@@ -529,3 +529,18 @@ button[mat-icon-button] mat-icon {
 .reject-action mat-icon {
     margin-right: 8px;
 }
+
+.update-action {
+    height: 42px;
+    border-radius: 10px !important;
+    color: #0d47a1 !important;
+    border-color: #90caf9 !important;
+    background: #e3f2fd !important;
+    font-weight: 700;
+    padding: 0 18px !important;
+}
+
+.update-action mat-icon {
+    margin-right: 8px;
+    color: #0d47a1 !important;
+}

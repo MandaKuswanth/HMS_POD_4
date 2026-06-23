@@ -5,7 +5,6 @@
 
   <main class="content">
     <mat-card class="table-card">
-
       <div class="page-header">
         <div class="header-left">
           <mat-icon>event_available</mat-icon>
@@ -16,8 +15,13 @@
           </div>
         </div>
 
-        <button *appHasPermission="PERMISSIONS.APPOINTMENT_CREATE" mat-fab color="primary" matTooltip="Add Appointment"
-          (click)="openAddDialog()">
+        <button
+          *appHasPermission="PERMISSIONS.APPOINTMENT_CREATE"
+          mat-fab
+          color="primary"
+          matTooltip="Add Appointment"
+          (click)="openAddDialog()"
+        >
           <mat-icon>add</mat-icon>
         </button>
       </div>
@@ -26,13 +30,23 @@
         <mat-form-field appearance="outline" class="search-field">
           <mat-label>Search appointments</mat-label>
 
-          <input matInput [(ngModel)]="searchText" (input)="applyFilters()"
-            placeholder="Search by appointment ID, patient, doctor, status" />
+          <input
+            matInput
+            [(ngModel)]="searchText"
+            (input)="applyFilters()"
+            placeholder="Search by appointment ID, patient, doctor, status"
+          />
 
           @if (searchText) {
-          <button mat-icon-button matSuffix type="button" matTooltip="Clear search" (click)="clearSearch()">
-            <mat-icon>close</mat-icon>
-          </button>
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              matTooltip="Clear search"
+              (click)="clearSearch()"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
           }
         </mat-form-field>
 
@@ -59,7 +73,12 @@
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Date</mat-label>
 
-          <input matInput [matDatepicker]="filterPicker" [(ngModel)]="selectedDate" (dateChange)="applyFilters()" />
+          <input
+            matInput
+            [matDatepicker]="filterPicker"
+            [(ngModel)]="selectedDate"
+            (dateChange)="applyFilters()"
+          />
 
           <mat-datepicker-toggle matIconSuffix [for]="filterPicker"></mat-datepicker-toggle>
 
@@ -100,148 +119,182 @@
       </div>
 
       @if (isLoading) {
-      <div class="no-data">
-        <mat-icon>hourglass_empty</mat-icon>
-        <p>Loading appointments...</p>
-      </div>
+        <div class="no-data">
+          <mat-icon>hourglass_empty</mat-icon>
+          <p>Loading appointments...</p>
+        </div>
       } @else if (filteredAppointments.length > 0) {
+        <div class="table-wrapper">
+          <table mat-table [dataSource]="paginatedAppointments" multiTemplateDataRows>
+            <ng-container matColumnDef="appointmentId">
+              <th mat-header-cell *matHeaderCellDef>Appointment ID</th>
+              <td mat-cell *matCellDef="let a">
+                {{ a.appointmentId || '-' }}
+              </td>
+            </ng-container>
 
-      <div class="table-wrapper">
-        <table mat-table [dataSource]="paginatedAppointments" multiTemplateDataRows>
+            <ng-container matColumnDef="patientId">
+              <th mat-header-cell *matHeaderCellDef>Patient</th>
+              <td mat-cell *matCellDef="let a">
+                <strong>{{ a.patientName || 'N/A' }}</strong>
+                <br />
+                <small>{{ a.patientId || '-' }}</small>
+              </td>
+            </ng-container>
 
-          <ng-container matColumnDef="appointmentId">
-            <th mat-header-cell *matHeaderCellDef>Appointment ID</th>
-            <td mat-cell *matCellDef="let a">
-              {{ a.appointmentId || '-' }}
-            </td>
-          </ng-container>
+            <ng-container matColumnDef="doctorEmployeeId">
+              <th mat-header-cell *matHeaderCellDef>Doctor</th>
+              <td mat-cell *matCellDef="let a">
+                <strong>
+                  {{ a.doctorName ? 'Dr. ' + a.doctorName : 'N/A' }}
+                </strong>
+                <br />
+                <small>{{ a.doctorEmployeeId || '-' }}</small>
+              </td>
+            </ng-container>
 
-          <ng-container matColumnDef="patientId">
-            <th mat-header-cell *matHeaderCellDef>Patient</th>
-            <td mat-cell *matCellDef="let a">
-              <strong>{{ a.patientName || 'N/A' }}</strong>
-              <br />
-              <small>{{ a.patientId || '-' }}</small>
-            </td>
-          </ng-container>
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef>Date</th>
+              <td mat-cell *matCellDef="let a">
+                {{ a.date | date: 'mediumDate' }}
+              </td>
+            </ng-container>
 
-          <ng-container matColumnDef="doctorEmployeeId">
-            <th mat-header-cell *matHeaderCellDef>Doctor</th>
-            <td mat-cell *matCellDef="let a">
-              <strong>
-                {{ a.doctorName ? ('Dr. ' + a.doctorName) : 'N/A' }}
-              </strong>
-              <br />
-              <small>{{ a.doctorEmployeeId || '-' }}</small>
-            </td>
-          </ng-container>
+            <ng-container matColumnDef="timeSlot">
+              <th mat-header-cell *matHeaderCellDef>Slot</th>
+              <td mat-cell *matCellDef="let a">
+                {{ a.timeSlot || '-' }}
+              </td>
+            </ng-container>
 
-          <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef>Date</th>
-            <td mat-cell *matCellDef="let a">
-              {{ a.date | date:'mediumDate' }}
-            </td>
-          </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let a">
+                <span class="badge" [ngClass]="a.status?.toLowerCase()">
+                  {{ a.status || '-' }}
+                </span>
+              </td>
+            </ng-container>
 
-          <ng-container matColumnDef="timeSlot">
-            <th mat-header-cell *matHeaderCellDef>Slot</th>
-            <td mat-cell *matCellDef="let a">
-              {{ a.timeSlot || '-' }}
-            </td>
-          </ng-container>
+            <ng-container matColumnDef="expandedDetail">
+              <td mat-cell *matCellDef="let a" [attr.colspan]="displayedColumns.length">
+                <div class="appointment-action-panel" *ngIf="expandedAppointment === a">
+                  <div class="appointment-action-info">
+                    <strong>{{ a.appointmentId || 'Appointment' }}</strong>
 
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Status</th>
-            <td mat-cell *matCellDef="let a">
-              <span class="badge" [ngClass]="a.status?.toLowerCase()">
-                {{ a.status || '-' }}
-              </span>
-            </td>
-          </ng-container>
+                    <span>
+                      Patient:
+                      {{ a.patientName || 'N/A' }}
+                      <small>({{ a.patientId || '-' }})</small>
+                    </span>
 
-          <ng-container matColumnDef="expandedDetail">
-            <td mat-cell *matCellDef="let a" [attr.colspan]="displayedColumns.length">
-              <div class="appointment-action-panel" *ngIf="expandedAppointment === a">
+                    <span>
+                      Doctor:
+                      {{ a.doctorName ? 'Dr. ' + a.doctorName : 'N/A' }}
+                      <small>({{ a.doctorEmployeeId || '-' }})</small>
+                    </span>
 
-                <div class="appointment-action-info">
-                  <strong>{{ a.appointmentId || 'Appointment' }}</strong>
+                    <span>
+                      Date & Slot:
+                      {{ a.date | date: 'mediumDate' }} |
+                      {{ a.timeSlot || '-' }}
+                    </span>
 
-                  <span>
-                    Patient:
-                    {{ a.patientName || 'N/A' }}
-                    <small>({{ a.patientId || '-' }})</small>
-                  </span>
+                    <span>
+                      Status:
+                      {{ a.status || '-' }}
+                    </span>
+                  </div>
 
-                  <span>
-                    Doctor:
-                    {{ a.doctorName ? ('Dr. ' + a.doctorName) : 'N/A' }}
-                    <small>({{ a.doctorEmployeeId || '-' }})</small>
-                  </span>
+                  <div class="appointment-action-buttons">
+                    @if (a.allowedActions?.includes('APPROVE')) {
+                      <button
+                        *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE"
+                        mat-stroked-button
+                        class="approve-action"
+                        matTooltip="Approve Appointment"
+                        (click)="approveAppointment(a); $event.stopPropagation()"
+                      >
+                        <mat-icon>check_circle</mat-icon>
+                        Approve
+                      </button>
+                    }
 
-                  <span>
-                    Date & Slot:
-                    {{ a.date | date:'mediumDate' }} |
-                    {{ a.timeSlot || '-' }}
-                  </span>
+                    @if (a.allowedActions?.includes('REJECT')) {
+                      <button
+                        *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE"
+                        mat-stroked-button
+                        class="reject-action"
+                        matTooltip="Reject Appointment"
+                        (click)="rejectAppointment(a); $event.stopPropagation()"
+                      >
+                        <mat-icon>cancel</mat-icon>
+                        Reject
+                      </button>
+                    }
 
-                  <span>
-                    Status:
-                    {{ a.status || '-' }}
-                  </span>
+                    @if (a.allowedActions?.includes('DELETE')) {
+                      <button
+                        *appHasPermission="PERMISSIONS.APPOINTMENT_DELETE"
+                        mat-stroked-button
+                        class="delete-action"
+                        matTooltip="Delete Appointment"
+                        (click)="deleteAppointment(a); $event.stopPropagation()"
+                      >
+                        <mat-icon>delete</mat-icon>
+                        Delete Appointment
+                      </button>
+                    }
+
+                    @if (a.allowedActions?.includes('UPDATE_STATUS')) {
+                      <button
+                        *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE"
+                        mat-stroked-button
+                        class="update-action"
+                        matTooltip="Update Status"
+                        (click)="openUpdateStatusDialog(a); $event.stopPropagation()"
+                      >
+                        <mat-icon>sync</mat-icon>
+                        Update Status
+                      </button>
+                    }
+                  </div>
                 </div>
+              </td>
+            </ng-container>
 
-                <div class="appointment-action-buttons">
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
 
-                  @if (a.status === 'PENDING') {
-                  <button *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE" mat-stroked-button class="approve-action"
-                    matTooltip="Approve Appointment" (click)="approveAppointment(a); $event.stopPropagation()">
-                    <mat-icon>check_circle</mat-icon>
-                    Approve
-                  </button>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="appointment-row"
+              [class.selected-row]="expandedAppointment === row"
+              (click)="toggleRow(row)"
+              (keydown.enter)="toggleRow(row)"
+              (keydown.space)="toggleRow(row)"
+              tabindex="0"
+            ></tr>
 
-                  <button *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE" mat-stroked-button class="reject-action"
-                    matTooltip="Reject Appointment" (click)="rejectAppointment(a); $event.stopPropagation()">
-                    <mat-icon>cancel</mat-icon>
-                    Reject
-                  </button>
-                  }
+            <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
+          </table>
 
-                  <button *appHasPermission="PERMISSIONS.APPOINTMENT_DELETE" mat-stroked-button class="delete-action"
-                    matTooltip="Delete Appointment" (click)="deleteAppointment(a); $event.stopPropagation()">
-                    <mat-icon>delete</mat-icon>
-                    Delete Appointment
-                  </button>
-
-                </div>
-
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-
-          <tr mat-row *matRowDef="let row; columns: displayedColumns" class="appointment-row"
-            [class.selected-row]="expandedAppointment === row" (click)="toggleRow(row)" (keydown.enter)="toggleRow(row)"
-            (keydown.space)="toggleRow(row)" tabindex="0">
-          </tr>
-
-          <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row">
-          </tr>
-
-        </table>
-
-        <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
-          [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
-        </mat-paginator>
-      </div>
-
+          <mat-paginator
+            [length]="totalRecords"
+            [pageSize]="pageSize"
+            [pageIndex]="pageIndex"
+            [pageSizeOptions]="pageSizeOptions"
+            showFirstLastButtons
+            (page)="onPageChange($event)"
+          >
+          </mat-paginator>
+        </div>
       } @else {
-      <div class="no-data">
-        <mat-icon>event_busy</mat-icon>
-        <p>No appointments found.</p>
-      </div>
+        <div class="no-data">
+          <mat-icon>event_busy</mat-icon>
+          <p>No appointments found.</p>
+        </div>
       }
-
     </mat-card>
   </main>
 </div>

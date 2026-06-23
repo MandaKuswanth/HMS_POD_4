@@ -31,6 +31,7 @@ import { AppointmentDialog } from '../appointment-dialog/appointment-dialog';
 import { AuthService } from '../../../core/services/auth';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { PERMISSIONS } from '../../../constants/permission';
+import { UpdateStatusDialog } from '../appointment-dialog/update-status-dialog';
 
 @Component({
   selector: 'app-appointment-list',
@@ -54,6 +55,7 @@ import { PERMISSIONS } from '../../../constants/permission';
     Navbar,
     Sidebar,
     HasPermissionDirective,
+    UpdateStatusDialog,
   ],
   templateUrl: './appointment-list.html',
   styleUrl: './appointment-list.css',
@@ -362,6 +364,98 @@ export class AppointmentList implements OnInit {
         },
       });
   }
+
+// openUpdateStatusDialog(appointment: any): void {
+//   const allowedTransitions: Record<string, string[]> = {
+//     'BOOKED':     ['IN-PROCESS'],
+//     'IN-PROCESS': ['COMPLETED'],
+//   };
+
+//   const nextStatuses = allowedTransitions[appointment.status];
+
+//   if (!nextStatuses || nextStatuses.length === 0) {
+//     this.toastr.info(`No status transitions available for "${appointment.status}"`);
+//     return;
+//   }
+
+//   const ref = this.dialog.open(UpdateStatusDialog, {
+//     width: '440px',
+//     disableClose: true,
+//     data: {
+//       appointmentId: appointment.appointmentId,
+//       currentStatus: appointment.status,
+//       nextStatuses,
+//     },
+//   });
+
+//   ref.afterClosed().subscribe((chosenStatus: string | null) => {
+//     if (!chosenStatus) return;
+
+//     this.appointmentService
+//       .updateAppointmentStatus(appointment.appointmentId, chosenStatus)
+//       .subscribe({
+//         next: (response: any) => {
+//           this.toastr.success(response?.message || `Appointment marked as ${chosenStatus}`);
+//           this.expandedAppointment = null;
+//           this.loadAppointments();
+//         },
+//         error: (err: any) => {
+//           this.toastr.error(err?.error?.message || 'Failed to update appointment status');
+//         },
+//       });
+//   });
+// }
+
+openUpdateStatusDialog(appointment: any): void {
+  const ref = this.dialog.open(UpdateStatusDialog, {
+    width: '900px',
+    maxWidth: '95vw',
+    disableClose: true,
+    data: {
+      appointmentId: appointment.appointmentId,
+      currentStatus: appointment.status,
+      nextStatuses: appointment.allowedStatuses || []
+    }
+  });
+
+  ref.afterClosed().subscribe((selectedStatus: string) => {
+
+    if (!selectedStatus ||
+        selectedStatus === appointment.status) {
+      return;
+    }
+
+    this.appointmentService
+      .updateAppointmentStatus(
+        appointment.appointmentId,
+        selectedStatus
+      )
+      .subscribe({
+        next: (response: any) => {
+
+          this.toastr.success(
+            response?.message ||
+            'Status updated successfully'
+          );
+
+          this.expandedAppointment = null;
+
+          this.loadAppointments();
+        },
+
+        error: (error: any) => {
+
+          this.toastr.error(
+            error?.error?.message ||
+            'Failed to update appointment status'
+          );
+
+        }
+      });
+
+  });
+
+}
 
   getPatientDisplayName(appointment: any): string {
     return appointment?.patientName || 'N/A';
