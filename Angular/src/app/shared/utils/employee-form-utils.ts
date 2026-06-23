@@ -57,6 +57,7 @@ export function addDoctorPayloadFields(
 
 export const EMPLOYEE_ROLES = [
     'OWNER',
+    'SUPER_ADMIN',
     'ADMIN',
     'DOCTOR',
     'RECEPTIONIST',

@@ -2,22 +2,36 @@
   <div class="register-card">
     <aside class="register-intro">
       <p class="eyebrow">Self Registration</p>
+
       <h1>Employee Self Registration</h1>
+
       <p class="subtitle">
-        Create your employee account. Your request will be reviewed by an admin before activation.
+        Create your employee account. Your request will be reviewed by an admin
+        before activation.
       </p>
     </aside>
 
     <section class="register-form-panel">
-      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate class="register-form">
-
+      <form
+        [formGroup]="registerForm"
+        (ngSubmit)="onSubmit()"
+        novalidate
+        class="register-form"
+      >
         <div class="field-group">
           <label>
             Full name
-            <input formControlName="name" type="text" placeholder="Full Name" />
+            <input
+              formControlName="name"
+              type="text"
+              placeholder="Full Name"
+            />
           </label>
+
           @if (fieldHasError('name')) {
-            <small class="error-text">{{ fieldErrorMessage('name') }}</small>
+            <small class="error-text">
+              {{ fieldErrorMessage('name') }}
+            </small>
           }
         </div>
 
@@ -25,20 +39,34 @@
           <div class="field-group">
             <label>
               Email
-              <input formControlName="email" type="email" placeholder="email" />
+              <input
+                formControlName="email"
+                type="email"
+                placeholder="email"
+              />
             </label>
+
             @if (fieldHasError('email')) {
-              <small class="error-text">{{ fieldErrorMessage('email') }}</small>
+              <small class="error-text">
+                {{ fieldErrorMessage('email') }}
+              </small>
             }
           </div>
 
           <div class="field-group">
             <label>
               Phone
-              <input formControlName="phone" type="tel" placeholder="Mob No." />
+              <input
+                formControlName="phone"
+                type="tel"
+                placeholder="Mob No."
+              />
             </label>
+
             @if (fieldHasError('phone')) {
-              <small class="error-text">{{ fieldErrorMessage('phone') }}</small>
+              <small class="error-text">
+                {{ fieldErrorMessage('phone') }}
+              </small>
             }
           </div>
         </div>
@@ -53,38 +81,66 @@
                 placeholder="Cardiology, Dental, Ortho"
               />
             </label>
+
             @if (fieldHasError('department')) {
-              <small class="error-text">{{ fieldErrorMessage('department') }}</small>
+              <small class="error-text">
+                {{ fieldErrorMessage('department') }}
+              </small>
             }
           </div>
 
           <div class="field-group">
             <label>
               Designation
-              <input formControlName="designation" type="text" placeholder="Designation" />
+              <input
+                formControlName="designation"
+                type="text"
+                placeholder="Designation"
+              />
             </label>
+
             @if (fieldHasError('designation')) {
-              <small class="error-text">{{ fieldErrorMessage('designation') }}</small>
+              <small class="error-text">
+                {{ fieldErrorMessage('designation') }}
+              </small>
             }
           </div>
         </div>
 
-        <div class="field-group">
-          <label>
-            Role
-            <select formControlName="role">
-              <option value="RECEPTIONIST">Receptionist</option>
-              <option value="DOCTOR">Doctor</option>
-              <option value="NURSE">Nurse</option>
-              <option value="LAB_TECH">Lab Technician</option>
-              <option value="PHARMACIST">Pharmacist</option>
-              <option value="CASHIER">Cashier</option>
-              <option value="TECHNICIAN">Technician</option>
-            </select>
-          </label>
-          @if (fieldHasError('role')) {
-            <small class="error-text">{{ fieldErrorMessage('role') }}</small>
-          }
+        <div class="field-grid two-up">
+          <div class="field-group">
+            <label>
+              Joining Date
+              <input
+                formControlName="joiningDate"
+                type="date"
+              />
+            </label>
+
+            @if (fieldHasError('joiningDate')) {
+              <small class="error-text">
+                {{ fieldErrorMessage('joiningDate') }}
+              </small>
+            }
+          </div>
+
+          <div class="field-group">
+            <label>
+              Role
+              <select formControlName="role">
+                <option value="RECEPTIONIST">Receptionist</option>
+                <option value="DOCTOR">Doctor</option>
+                <option value="NURSE">Nurse</option>
+                <option value="TECHNICIAN">Technician</option>
+              </select>
+            </label>
+
+            @if (fieldHasError('role')) {
+              <small class="error-text">
+                {{ fieldErrorMessage('role') }}
+              </small>
+            }
+          </div>
         </div>
 
         <div class="field-grid two-up">
@@ -97,8 +153,11 @@
                 placeholder="Minimum 6 characters"
               />
             </label>
+
             @if (fieldHasError('password')) {
-              <small class="error-text">{{ fieldErrorMessage('password') }}</small>
+              <small class="error-text">
+                {{ fieldErrorMessage('password') }}
+              </small>
             }
           </div>
 
@@ -114,7 +173,7 @@
 
             @if (fieldHasError('confirmPassword') || registerForm.errors?.['passwordMismatch']) {
               <small class="error-text">
-                {{ fieldErrorMessage('confirmPassword') || 'Passwords do not match.' }}
+                Passwords do not match.
               </small>
             }
           </div>
@@ -125,7 +184,6 @@
             <h2>Role-specific details</h2>
 
             <div class="field-grid two-up">
-
               @if (isDoctor) {
                 <div class="field-group">
                   <label>
@@ -163,7 +221,6 @@
                   }
                 </div>
               }
-
             </div>
 
             @if (needsQualification) {
@@ -217,14 +274,15 @@
                         [checked]="isAvailabilitySlotSelected(slot)"
                         (change)="toggleAvailabilitySlot(slot, $event)"
                       />
+
                       {{ slot }}
                     </label>
                   }
                 </div>
 
-                @if (fieldHasError('availabilitySlots')) {
+                @if (availabilitySlotsControl.hasError('required') && availabilitySlotsControl.touched) {
                   <small class="error-text">
-                    {{ fieldErrorMessage('availabilitySlots') }}
+                    Please select at least one availability slot.
                   </small>
                 }
               </div>
@@ -235,20 +293,21 @@
         <button type="submit" [disabled]="isSubmitting">
           {{ isSubmitting ? 'Submitting...' : 'Register' }}
         </button>
-
       </form>
 
-      <p
-        class="status"
-        [class.error]="
-          statusMessage.toLowerCase().includes('failed') ||
-          statusMessage.toLowerCase().includes('correct') ||
-          statusMessage.toLowerCase().includes('already exists') ||
-          statusMessage.toLowerCase().includes('kindly')
-        "
-      >
-        
-      </p>
+      @if (statusMessage) {
+        <p
+          class="status"
+          [class.error]="
+            statusMessage.toLowerCase().includes('failed') ||
+            statusMessage.toLowerCase().includes('correct') ||
+            statusMessage.toLowerCase().includes('already exists') ||
+            statusMessage.toLowerCase().includes('kindly')
+          "
+        >
+          {{ statusMessage }}
+        </p>
+      }
 
       <p class="link-row">
         <a routerLink="/login">Already have an account? Login</a>
