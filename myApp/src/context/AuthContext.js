@@ -21,6 +21,7 @@ import {
 const AuthContext = createContext(null);
 
 const normalizePatient = (p) => {
+    console.log(p);
     if (!p) return null;
 
     return {
@@ -38,6 +39,7 @@ const normalizePatient = (p) => {
 };
 
 const normalizeLogin = (payload) => {
+    console.log(payload);
     const d = payload?.data || payload;
 
     return {

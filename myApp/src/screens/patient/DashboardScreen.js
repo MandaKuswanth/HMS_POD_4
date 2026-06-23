@@ -144,30 +144,62 @@ export default function DashboardScreen({ navigation }) {
                         </View>
                     </View>
                 </AppCard>
+<View style={styles.quickActionsContainer}>
 
-                <View style={styles.quickRow}>
-                    <TouchableOpacity
-                        style={styles.quickCard}
-                        onPress={goToBookAppointment}
-                    >
-                        <AppCard style={styles.quickCardInner}>
-                            <Text style={styles.quickIcon}>＋</Text>
-                            <Text style={styles.quickTitle}>Book</Text>
-                            <Text style={styles.quickSub}>Appointment</Text>
-                        </AppCard>
-                    </TouchableOpacity>
+    <TouchableOpacity
+        onPress={goToMyAppointments}
+        style={styles.actionCard}
+    >
+        <Text style={styles.actionIcon}>📋</Text>
 
-                    <TouchableOpacity
-                        style={styles.quickCard}
-                        onPress={goToMyAppointments}
-                    >
-                        <AppCard style={styles.quickCardInner}>
-                            <Text style={styles.quickIcon}>📋</Text>
-                            <Text style={styles.quickTitle}>My</Text>
-                            <Text style={styles.quickSub}>Appointments</Text>
-                        </AppCard>
-                    </TouchableOpacity>
-                </View>
+        <View style={styles.actionContent}>
+            <Text style={styles.actionTitle}>
+                My Appointments
+            </Text>
+
+            <Text style={styles.actionSubtitle}>
+                View upcoming and completed appointments
+            </Text>
+        </View>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+        onPress={goToBookAppointment}
+        style={styles.actionCard}
+    >
+        <Text style={styles.actionIcon}>➕</Text>
+
+        <View style={styles.actionContent}>
+            <Text style={styles.actionTitle}>
+                Book Appointment
+            </Text>
+
+            <Text style={styles.actionSubtitle}>
+                Schedule a consultation with a doctor
+            </Text>
+        </View>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+        onPress={() =>
+            navigation.navigate("HealthRecords")
+        }
+        style={styles.actionCard}
+    >
+        <Text style={styles.actionIcon}>📑</Text>
+
+        <View style={styles.actionContent}>
+            <Text style={styles.actionTitle}>
+                Health Records
+            </Text>
+
+            <Text style={styles.actionSubtitle}>
+                View diagnosis, prescriptions and reports
+            </Text>
+        </View>
+    </TouchableOpacity>
+
+</View>
 
                 <AppCard style={styles.findCard}>
                     <Text style={styles.sectionTitle}>Find a Doctor</Text>
@@ -365,6 +397,46 @@ const styles = StyleSheet.create({
         fontWeight: "900",
         color: COLORS.text,
     },
+    quickActionsContainer: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+},
+
+actionCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 12,
+
+    flexDirection: "row",
+    alignItems: "center",
+
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+},
+
+actionIcon: {
+    fontSize: 28,
+    marginRight: 16,
+},
+
+actionContent: {
+    flex: 1,
+},
+
+actionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text,
+},
+
+actionSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    color: COLORS.subtitle,
+},
 
     uhidCard: {
         marginHorizontal: 20,
@@ -401,39 +473,40 @@ const styles = StyleSheet.create({
         fontWeight: "800",
         fontSize: 13,
     },
+quickRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginHorizontal: 20,
+    marginBottom: 16,
+    gap: 10,
+},
 
-    quickRow: {
-        flexDirection: "row",
-        marginHorizontal: 20,
-        gap: 12,
-        marginBottom: 14,
-    },
+quickCard: {
+    flex: 1,
+},
 
-    quickCard: {
-        flex: 1,
-    },
+quickCardInner: {
+    height: 130,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 8,
+},
 
-    quickCardInner: {
-        paddingVertical: 18,
-    },
+quickIcon: {
+    fontSize: 28,
+    color: COLORS.primary,
+    marginBottom: 10,
+},
 
-    quickIcon: {
-        fontSize: 24,
-        color: COLORS.primary,
-        fontWeight: "900",
-        marginBottom: 8,
-    },
+quickLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: COLORS.text,
+    textAlign: "center",
+    lineHeight: 20,
+},
 
-    quickTitle: {
-        fontSize: 18,
-        fontWeight: "800",
-        color: COLORS.text,
-    },
 
-    quickSub: {
-        fontSize: 13,
-        color: COLORS.subtitle,
-    },
 
     findCard: {
         marginHorizontal: 20,

@@ -17,12 +17,19 @@ import {
 
 const AppointmentContext = createContext(null);
 
+// const normalizeList = (payload) => {
+//     const data = payload?.data || payload;
+//     return Array.isArray(data) ? data : [];
+// };
 const normalizeList = (payload) => {
-    const data = payload?.data || payload;
-    return Array.isArray(data) ? data : [];
+    console.log(payload);
+    return Array.isArray(payload)
+        ? payload
+        : [];
 };
 
 const normalizeSlots = (payload, fallbackSlots = []) => {
+    console.log(payload);
     const data = payload?.data || payload || {};
 
     return {
@@ -52,6 +59,10 @@ export function AppointmentProvider({ children }) {
         try {
             setDoctorsLoading(true);
             const payload = await getDoctorsApi();
+            console.log(
+    "DOCTORS RESPONSE:",
+    JSON.stringify(payload, null, 2)
+);
             setDoctors(normalizeList(payload));
         } catch (err) {
             console.log("LOAD DOCTORS ERROR:", err?.response?.data || err.message);

@@ -5,11 +5,33 @@ import {
 } from "./authService";
 
 export const getDoctorsApi = async () => {
-    const response = await api.get(
-        "/patientAppointment-auth/doctors"
-    );
+    try {
 
-    return unwrap(response);
+        const response = await api.get(
+            "/patientAppointment-auth/doctors"
+        );
+
+        console.log(
+            "DOCTOR API SUCCESS:",
+            response.data
+        );
+
+        return unwrap(response);
+
+    } catch (err) {
+
+        console.log(
+            "DOCTOR API ERROR:",
+            err
+        );
+
+        console.log(
+            "DOCTOR API RESPONSE:",
+            err?.response?.data
+        );
+
+        throw err;
+    }
 };
 
 export const bookAppointmentApi = async (data) => {
