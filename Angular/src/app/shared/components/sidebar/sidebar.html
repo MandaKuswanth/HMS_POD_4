@@ -1,21 +1,34 @@
 <div class="sidebar">
   <div class="sidebar-brand"></div>
 
+  <a
+    class="nav-item nav-item--dashboard"
+    routerLink="/dashboard"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >
+    <mat-icon>dashboard</mat-icon>
+    <span class="nav-label">Dashboard</span>
+  </a>
+
   <div class="sidebar-divider"></div>
 
   <nav class="sidebar-nav">
-    @for (item of menuItems; track item.nodeId) {
-      <a
-        class="nav-item"
-        [routerLink]="item.path"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
-      >
-        <mat-icon>{{ item.icon }}</mat-icon>
-        <span class="nav-label">{{ item.name }}</span>
-      </a>
+    
+    @for (item of menuItems(); track item.nodeId) {
+      @if (item.path !== '/dashboard') {
+        <a
+          class="nav-item"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span class="nav-label">{{ item.name }}</span>
+        </a>
+      }
     }
-
+    
     <a
       class="nav-item"
       routerLink="/profile"
