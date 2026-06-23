@@ -1,196 +1,114 @@
 require("dotenv").config();
 
 const mongoose = require("mongoose");
+const Node = require("../models/Node");
+const Counter = require("../models/Counter");
 
-const Role = require("../models/Role");
-
-const roles = [
+const nodeData = [
     {
-        name: "SUPER_ADMIN",
-        description: "System Super Administrator",
-        permissions: [
-            "DASHBOARD_READ",
-
-            "EMPLOYEE_CREATE",
-            "EMPLOYEE_READ",
-            "EMPLOYEE_UPDATE",
-            "EMPLOYEE_DELETE",
-
-            "PATIENT_CREATE",
-            "PATIENT_READ",
-            "PATIENT_UPDATE",
-            "PATIENT_DELETE",
-
-            "APPOINTMENT_CREATE",
-            "APPOINTMENT_READ",
-            "APPOINTMENT_UPDATE",
-            "APPOINTMENT_DELETE",
-
-            "ROLE_CREATE",
-            "ROLE_READ",
-            "ROLE_UPDATE",
-            "ROLE_DELETE",
-
-            "NODE_CREATE",
-            "NODE_READ",
-            "NODE_UPDATE",
-            "NODE_DELETE",
-
-            "HEALTH_RECORD_CREATE",
-            "HEALTH_RECORD_READ",
-            "HEALTH_RECORD_UPDATE",
-            "HEALTH_RECORD_DELETE"
-        ],
+        nodeId: "NODE-000001",
+        name: "Dashboard",
+        path: "/dashboard",
+        icon: "dashboard",
+        permissions: ["DASHBOARD_READ"],
+        parentNodeId: null,
+        order: 1,
         status: true,
-        createdBy: "SYSTEM"
+        isDeleted: false
     },
-
     {
-        name: "ADMIN",
-        description: "Hospital Administrator",
-        permissions: [
-            "DASHBOARD_READ",
-
-            "EMPLOYEE_CREATE",
-            "EMPLOYEE_READ",
-            "EMPLOYEE_UPDATE",
-            "EMPLOYEE_DELETE",
-
-            "PATIENT_CREATE",
-            "PATIENT_READ",
-            "PATIENT_UPDATE",
-            "PATIENT_DELETE",
-
-            "APPOINTMENT_CREATE",
-            "APPOINTMENT_READ",
-            "APPOINTMENT_UPDATE",
-            "APPOINTMENT_DELETE",
-
-            "HEALTH_RECORD_CREATE",
-            "HEALTH_RECORD_READ",
-            "HEALTH_RECORD_UPDATE",
-            "HEALTH_RECORD_DELETE"
-        ],
+        nodeId: "NODE-000002",
+        name: "Employees",
+        path: "/employees",
+        icon: "groups",
+        permissions: ["EMPLOYEE_READ"],
+        parentNodeId: null,
+        order: 2,
         status: true,
-        createdBy: "SYSTEM"
+        isDeleted: false
     },
-
     {
-        name: "DOCTOR",
-        description: "Doctor",
-        permissions: [
-            "DASHBOARD_READ",
-
-            "PATIENT_READ",
-
-            "APPOINTMENT_READ",
-            "APPOINTMENT_UPDATE",
-
-            "HEALTH_RECORD_CREATE",
-            "HEALTH_RECORD_READ",
-            "HEALTH_RECORD_UPDATE"
-        ],
+        nodeId: "NODE-000003",
+        name: "Patients",
+        path: "/patients",
+        icon: "personal_injury",
+        permissions: ["PATIENT_READ"],
+        parentNodeId: null,
+        order: 3,
         status: true,
-        createdBy: "SYSTEM"
+        isDeleted: false
     },
-
     {
-        name: "RECEPTIONIST",
-        description: "Reception Desk Staff",
-        permissions: [
-            "DASHBOARD_READ",
-
-            "PATIENT_CREATE",
-            "PATIENT_READ",
-            "PATIENT_UPDATE",
-
-            "APPOINTMENT_CREATE",
-            "APPOINTMENT_READ",
-            "APPOINTMENT_UPDATE"
-        ],
+        nodeId: "NODE-000004",
+        name: "Appointments",
+        path: "/appointments",
+        icon: "event_available",
+        permissions: ["APPOINTMENT_READ"],
+        parentNodeId: null,
+        order: 4,
         status: true,
-        createdBy: "SYSTEM"
+        isDeleted: false
     },
-
     {
-        name: "NURSE",
-        description: "Nursing Staff",
-        permissions: [
-            "DASHBOARD_READ",
-
-            "PATIENT_READ",
-
-            "APPOINTMENT_READ",
-
-            "HEALTH_RECORD_READ",
-            "HEALTH_RECORD_UPDATE"
-        ],
+        nodeId: "NODE-000005",
+        name: "Health Records",
+        path: "/health-records",
+        icon: "medical_information",
+        permissions: ["HEALTH_RECORD_READ"],
+        parentNodeId: null,
+        order: 5,
         status: true,
-        createdBy: "SYSTEM"
+        isDeleted: false
     },
-
     {
-        name: "TECHNICIAN",
-        description: "Lab Technician",
-        permissions: [
-            "DASHBOARD_READ",
-
-            "PATIENT_READ",
-
-            "HEALTH_RECORD_READ",
-            "HEALTH_RECORD_UPDATE"
-        ],
+        nodeId: "NODE-000006",
+        name: "Roles",
+        path: "/roles",
+        icon: "admin_panel_settings",
+        permissions: ["ROLE_READ"],
+        parentNodeId: null,
+        order: 6,
         status: true,
-        createdBy: "SYSTEM"
+        isDeleted: false
     },
-
     {
-        name: "PATIENT",
-        description: "Patient Portal User",
-        permissions: [],
+        nodeId: "NODE-000007",
+        name: "Nodes",
+        path: "/nodes",
+        icon: "category",
+        permissions: ["NODE_READ"],
+        parentNodeId: null,
+        order: 7,
         status: true,
-        createdBy: "SYSTEM"
+        isDeleted: false
     }
 ];
 
-const seedRoles = async () => {
+const seedNodes = async () => {
     try {
         await mongoose.connect(process.env.MONGO_URI);
 
         console.log("MongoDB Connected");
 
-        for (const roleData of roles) {
-            const existingRole = await Role.findOne({
-                name: roleData.name
-            });
+        await Node.deleteMany({});
+        await Counter.deleteOne({ name: "node" });
 
-            if (!existingRole) {
-                const role = await Role.create(roleData);
+        await Node.insertMany(nodeData);
 
-                console.log(
-                    "Created Role:",
-                    role.name,
-                    role.roleId
-                );
-            } else {
-                console.log(
-                    "Role already exists:",
-                    existingRole.name
-                );
-            }
-        }
-
-        console.log("Role seeding completed");
-        process.exit(0);
-
-    } catch (error) {
-        console.error(
-            "Role seeding failed:",
-            error.message
+        await Counter.findOneAndUpdate(
+            { name: "node" },
+            { seq: nodeData.length },
+            { upsert: true, new: true }
         );
 
+        console.log("Nodes seeded successfully");
+
+        process.exit(0);
+    } catch (err) {
+        console.error("Node seed error:", err);
         process.exit(1);
     }
 };
 
-seedRoles();
+seedNodes();
+ 

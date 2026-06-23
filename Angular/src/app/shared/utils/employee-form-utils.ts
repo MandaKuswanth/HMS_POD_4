@@ -56,16 +56,10 @@ export function addDoctorPayloadFields(
 }
 
 export const EMPLOYEE_ROLES = [
-    'OWNER',
     'SUPER_ADMIN',
     'ADMIN',
     'DOCTOR',
-    'RECEPTIONIST',
-    'CASHIER',
-    'NURSE',
-    'LAB_TECH',
-    'PHARMACIST',
-    'TECHNICIAN'
+    'RECEPTIONIST'
 ];
 
 export const REGISTER_ROLES = [
@@ -96,6 +90,10 @@ export function isMedicalStaffRole(role: string): boolean {
 
 export function trimInputValue(value: unknown): string {
     return typeof value === 'string' ? value.trim() : '';
+}
+
+export function getRolePayloadValue(role: unknown): string {
+    return typeof role === 'string' ? role.trim().replace(/_/g, ' ') : '';
 }
 
 export function noFutureDateValidator(control: any) {

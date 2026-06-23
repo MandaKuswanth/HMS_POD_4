@@ -1,5 +1,5 @@
 
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import {
@@ -40,7 +40,8 @@ import {
   getQualifications,
   getFormattedJoiningDate,
   getCleanAvailabilitySlots,
-  addDoctorPayloadFields
+  addDoctorPayloadFields,
+  getRolePayloadValue
 } from '../../../shared/utils/employee-form-utils';
 
 
@@ -94,6 +95,7 @@ export class EmployeeDialog implements OnInit {
   private readonly employeeService = inject(EmployeeService);
   private readonly toastr = inject(ToastrService);
   private readonly dialogRef = inject(MatDialogRef<EmployeeDialog>);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly data = inject<EmployeeDialogData>(MAT_DIALOG_DATA);
 
@@ -197,12 +199,15 @@ export class EmployeeDialog implements OnInit {
     return this.form.get('role')?.value || '';
   }
 
+  isDoctor = false;
+  isMedicalStaff = false;
+
   showDoctorFields(): boolean {
-    return isDoctorRole(this.selectedRole);
+    return this.isDoctor;
   }
 
   showMedicalStaffFields(): boolean {
-    return isMedicalStaffRole(this.selectedRole);
+    return this.isMedicalStaff;
   }
 
   ngOnInit(): void {
@@ -246,10 +251,14 @@ export class EmployeeDialog implements OnInit {
 
 
   onRoleChange(): void {
-    const qualificationControl = this.form.get('qualificationText');
-    const consultationFeeControl = this.form.get('consultationFee');
-    const medicalRegistrationControl = this.form.get('medicalRegistrationNo');
-    const specializationControl = this.form.get('specialization');
+      this.isDoctor = isDoctorRole(this.selectedRole);
+  this.isMedicalStaff = isMedicalStaffRole(this.selectedRole);
+    
+  const qualificationControl = this.form.get('qualificationText');
+  const consultationFeeControl = this.form.get('consultationFee');
+  const medicalRegistrationControl = this.form.get('medicalRegistrationNo');
+  const specializationControl = this.form.get('specialization');
+
 
     qualificationControl?.clearValidators();
     consultationFeeControl?.clearValidators();
@@ -317,7 +326,7 @@ export class EmployeeDialog implements OnInit {
 
     const employeePayload = this.buildEmployeePayload();
 
-    this.loading = true;
+    this.setLoading(true);
 
     if (this.data.mode === 'add') {
       this.createEmployee(employeePayload);
@@ -337,7 +346,7 @@ export class EmployeeDialog implements OnInit {
       department: trimInputValue(formValue.department),
       designation: trimInputValue(formValue.designation),
       joiningDate: getFormattedJoiningDate(formValue.joiningDate),
-      role: formValue.role,
+      role: getRolePayloadValue(formValue.role),
       status: formValue.status,
       qualification: isMedicalStaff
         ? getQualifications(formValue.qualificationText)
@@ -363,8 +372,6 @@ export class EmployeeDialog implements OnInit {
   private createEmployee(employeePayload: any): void {
     this.employeeService.adminAddEmployee(employeePayload).subscribe({
       next: (response: any) => {
-        this.loading = false;
-
         const tempPassword = response?.data?.tempPassword;
 
         this.toastr.success(
@@ -377,7 +384,7 @@ export class EmployeeDialog implements OnInit {
       },
 
       error: (errorResponse: any) => {
-        this.loading = false;
+        this.setLoading(false);
 
         this.toastr.error(
           errorResponse?.error?.message || 'Failed to create employee'
@@ -390,26 +397,30 @@ export class EmployeeDialog implements OnInit {
     const employeeCode = this.data.employee?.employeeCode;
 
     if (!employeeCode) {
-      this.loading = false;
+      this.setLoading(false);
       this.toastr.error('Employee code missing');
       return;
     }
 
     this.employeeService.updateEmployee(employeeCode, employeePayload).subscribe({
       next: () => {
-        this.loading = false;
         this.toastr.success('Employee updated successfully');
         this.dialogRef.close(true);
       },
 
       error: (errorResponse: any) => {
-        this.loading = false;
+        this.setLoading(false);
 
         this.toastr.error(
           errorResponse?.error?.message || 'Failed to update employee'
         );
       }
     });
+  }
+
+  private setLoading(value: boolean): void {
+    this.loading = value;
+    this.cdr.detectChanges();
   }
 
   onCancel(): void {

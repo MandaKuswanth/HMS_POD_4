@@ -193,7 +193,7 @@ loadPatients(): void {
       return;
     }
 
-    this.loading = true;
+    this.setLoading(true);
 
     const formValue = this.form.getRawValue();
 
@@ -210,16 +210,19 @@ loadPatients(): void {
 
     this.appointmentService.createAppointment(payload).subscribe({
       next: () => {
-        this.loading = false;
         this.toastr.success('Appointment created successfully');
         this.dialogRef.close(true);
       },
       error: (err: any) => {
-        this.loading = false;
+        this.setLoading(false);
         this.toastr.error(err?.error?.message || 'Failed to create appointment');
-        this.cdr.detectChanges();
       }
     });
+  }
+
+  private setLoading(value: boolean): void {
+    this.loading = value;
+    this.cdr.detectChanges();
   }
 
   onCancel(): void {

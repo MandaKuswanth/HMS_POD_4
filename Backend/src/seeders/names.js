@@ -14,7 +14,7 @@ const seedSuperAdmin = async () => {
         console.log("MongoDB Connected");
 
         const email = "superadmin@hms.com";
-        const mobile = "9999999999";
+        const mobile = "9999899999";
         const plainPassword = "Password123";
 
         const superAdminRole = await Role.findOne({

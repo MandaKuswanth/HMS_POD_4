@@ -182,7 +182,7 @@
     </div>
 
     <!-- Medical Section -->
-    @if (showMedicalStaffFields()) {
+    @if (isMedicalStaff) {
       <div class="medical-section">
 
         <h3>Medical Details</h3>
@@ -190,7 +190,7 @@
         <div class="form-grid">
 
           <!-- Medical Registration No -->
-          @if (showDoctorFields()) {
+          @if (isDoctor) {
             <mat-form-field appearance="outline">
               <mat-label>Medical Registration No</mat-label>
 
