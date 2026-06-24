@@ -28,6 +28,12 @@ const getTomorrowDate = () => {
     return tomorrow;
 };
 
+const getTodayDate = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+};
+
 const isBeforeDoctorJoiningDate = (appointmentDate, doctor) => {
     if (!doctor.joiningDate) {
         return false;
@@ -81,4 +87,5 @@ module.exports = {
     getTomorrowDate,
     isBeforeDoctorJoiningDate,
     findSlotConflict,
+    getTodayDate
 };
