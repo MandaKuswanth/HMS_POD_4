@@ -365,46 +365,7 @@ export class AppointmentList implements OnInit {
       });
   }
 
-// openUpdateStatusDialog(appointment: any): void {
-//   const allowedTransitions: Record<string, string[]> = {
-//     'BOOKED':     ['IN-PROCESS'],
-//     'IN-PROCESS': ['COMPLETED'],
-//   };
 
-//   const nextStatuses = allowedTransitions[appointment.status];
-
-//   if (!nextStatuses || nextStatuses.length === 0) {
-//     this.toastr.info(`No status transitions available for "${appointment.status}"`);
-//     return;
-//   }
-
-//   const ref = this.dialog.open(UpdateStatusDialog, {
-//     width: '440px',
-//     disableClose: true,
-//     data: {
-//       appointmentId: appointment.appointmentId,
-//       currentStatus: appointment.status,
-//       nextStatuses,
-//     },
-//   });
-
-//   ref.afterClosed().subscribe((chosenStatus: string | null) => {
-//     if (!chosenStatus) return;
-
-//     this.appointmentService
-//       .updateAppointmentStatus(appointment.appointmentId, chosenStatus)
-//       .subscribe({
-//         next: (response: any) => {
-//           this.toastr.success(response?.message || `Appointment marked as ${chosenStatus}`);
-//           this.expandedAppointment = null;
-//           this.loadAppointments();
-//         },
-//         error: (err: any) => {
-//           this.toastr.error(err?.error?.message || 'Failed to update appointment status');
-//         },
-//       });
-//   });
-// }
 
 openUpdateStatusDialog(appointment: any): void {
   const ref = this.dialog.open(UpdateStatusDialog, {

@@ -16,7 +16,7 @@ const checkPermission = (requiredPermission) => {
                 requiredPermission
             });
 
-            if (!user || !user.email) {
+            if (!user?.email) {
                 return res.status(401).json({
                     success: false,
                     message: "Unauthorized"
@@ -34,12 +34,6 @@ const checkPermission = (requiredPermission) => {
                 });
             }
 
-            /*
-                IMPORTANT:
-                Your Role.status is Boolean.
-                So only use status: true.
-                Do NOT use "ACTIVE" or "active" here.
-            */
             const roles = await Role.find({
                 roleId: { $in: roleIds },
                 status: true
@@ -63,16 +57,16 @@ const checkPermission = (requiredPermission) => {
                 });
             }
 
-            const permissions = roles.flatMap((role) => {
-                return Array.isArray(role.permissions)
-                    ? role.permissions
-                    : [];
-            });
+            const permissions = new Set(
+                roles.flatMap(role =>
+                    Array.isArray(role.permissions) ? role.permissions : []
+                )
+            );
 
             console.log("REQUIRED PERMISSION:", requiredPermission);
-            console.log("HAS PERMISSION:", permissions.includes(requiredPermission));
+            console.log("HAS PERMISSION:", permissions.has(requiredPermission));
 
-            if (!permissions.includes(requiredPermission)) {
+            if (!permissions.has(requiredPermission)) {
                 return res.status(403).json({
                     success: false,
                     message: "Access denied. Permission missing.",

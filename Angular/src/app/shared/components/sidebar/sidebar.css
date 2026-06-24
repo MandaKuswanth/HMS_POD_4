@@ -76,14 +76,7 @@
     flex-shrink: 0;
 }
 
-/* DASHBOARD ITEM — pinned above divider, visibly larger than other items */
-.nav-item--dashboard {
-    min-height: 64px;
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: 0.3px;
-    margin-bottom: 2px;
-}
+
 
 /* NAV — the only scrollable region */
 .sidebar-nav {
@@ -97,12 +90,9 @@
 
     /* keep a little bottom breathing room */
     padding-bottom: 16px;
+    scrollbar-width: none;
 }
 
-/* hide scrollbar visually but keep it functional */
-.sidebar-nav {
-    scrollbar-width: none;       /* Firefox */
-}
 .sidebar-nav::-webkit-scrollbar {
     display: none;               /* Chrome / Safari */
 }

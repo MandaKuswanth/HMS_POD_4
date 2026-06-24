@@ -77,7 +77,7 @@ exports.getDoctorSlots = async (req, res) => {
 
         const appointmentDate = normalizeAppointmentDate(date);
 
-        if (isNaN(appointmentDate.getTime())) {
+        if (Number.isNaN(appointmentDate.getTime())) {
             return res.status(400).json(new ApiError(400, "Invalid date format"));
         }
 
@@ -174,7 +174,7 @@ exports.bookAppointment = async (req, res) => {
         // Validate date
         const appointmentDate = normalizeAppointmentDate(date);
 
-        if (isNaN(appointmentDate.getTime())) {
+        if (Number.isNaN(appointmentDate.getTime())) {
             return res.status(400).json(new ApiError(400, "Invalid date format"));
         }
 
@@ -324,7 +324,7 @@ exports.updateMyAppointment = async (req, res) => {
 
         const appointmentDate = normalizeAppointmentDate(date);
 
-        if (isNaN(appointmentDate.getTime())) {
+        if (Number.isNaN(appointmentDate.getTime())) {
             return res.status(400).json(new ApiError(400, "Invalid date format"));
         }
 

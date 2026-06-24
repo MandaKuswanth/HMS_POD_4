@@ -6,7 +6,7 @@ const Role = require("../models/Role");
 
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
-const {sendEmail} = require("../utils/sendEmail");
+const { sendEmail } = require("../utils/sendEmail");
 
 const {
     normalizeAppointmentDate,
@@ -105,60 +105,35 @@ const verifyDoctorByPermissions = async (doctorEmployeeCode) => {
 
 // ─── Shared Helper: Compute allowed UI actions ────────────────────────────────
 
+// ─── Shared Helper: Compute allowed next statuses ─────────────────────────────
+
 const getAllowedActions = (appointment, userPermissions, userEmployeeId) => {
     const actions = [];
-    const status = appointment.status;
+    const { status, doctorEmployeeId } = appointment;
 
-    const hasApprovePerm = userPermissions.has("APPOINTMENT_APPROVE");
-    const hasReadPerm = userPermissions.has("APPOINTMENT_READ");
-    const hasDeletePerm = userPermissions.has("APPOINTMENT_DELETE");
+    const hasApprove = userPermissions.has("APPOINTMENT_APPROVE");
+    const hasRead = userPermissions.has("APPOINTMENT_READ");
+    const hasDelete = userPermissions.has("APPOINTMENT_DELETE");
 
-    const isAssignedDoctor =
-        !hasApprovePerm && hasReadPerm && appointment.doctorEmployeeId === userEmployeeId;
+    const isDoctor = !hasApprove && hasRead && doctorEmployeeId === userEmployeeId;
 
-    if (status === "PENDING" && hasApprovePerm) {
-        actions.push("APPROVE");
-        actions.push("REJECT");
+    const canUpdateByAdmin = hasApprove && ["PENDING", "BOOKED", "IN-PROCESS"].includes(status);
+    const canUpdateByDoctor = isDoctor && ["BOOKED", "IN-PROCESS"].includes(status);
+
+    if (status === "PENDING" && hasApprove) {
+        actions.push("APPROVE", "REJECT");
     }
 
-    if (!["COMPLETED", "IN-PROCESS"].includes(status) && hasDeletePerm) {
+    if (!["COMPLETED", "IN-PROCESS"].includes(status) && hasDelete) {
         actions.push("DELETE");
     }
 
-    if (hasApprovePerm) {
-        if (["PENDING", "BOOKED", "IN-PROCESS"].includes(status)) {
-            actions.push("UPDATE_STATUS");
-        }
-    } else if (isAssignedDoctor) {
-        if (["BOOKED", "IN-PROCESS"].includes(status)) {
-            actions.push("UPDATE_STATUS");
-        }
+    if (canUpdateByAdmin || canUpdateByDoctor) {
+        actions.push("UPDATE_STATUS");
     }
 
     return actions;
 };
-
-// ─── Shared Helper: Compute allowed next statuses ─────────────────────────────
-
-const getAllowedStatuses = (appointment, userPermissions, userEmployeeId) => {
-    const status = appointment.status;
-    const hasApprovePerm = userPermissions.has("APPOINTMENT_APPROVE");
-    const hasReadPerm = userPermissions.has("APPOINTMENT_READ");
-    const isAssignedDoctor =
-        !hasApprovePerm && hasReadPerm && appointment.doctorEmployeeId === userEmployeeId;
-
-    if (hasApprovePerm) {
-        return STATUS_TRANSITIONS[status] || [];
-    }
-
-    if (isAssignedDoctor) {
-        if (status === "BOOKED") return ["IN-PROCESS"];
-        if (status === "IN-PROCESS") return ["COMPLETED"];
-    }
-
-    return [];
-};
-
 // ─── Shared Helper: Format appointment for API response ──────────────────────
 //
 // WHY A FORMATTER?
@@ -190,6 +165,274 @@ const formatAppointment = (appointment, patient, doctor, userPermissions, userEm
     allowedStatuses: getAllowedStatuses(appointment, userPermissions, userEmployeeId)
 });
 
+
+const validateStatusUpdate = (appointment, status) => {
+    if (!ALLOWED_STATUSES.has(status)) {
+        throw new ApiError(400, "Invalid appointment status");
+    }
+
+    const allowed = STATUS_TRANSITIONS[appointment.status];
+    if (!allowed.includes(status)) {
+        throw new ApiError(
+            400,
+            `Cannot transition appointment from ${appointment.status} to ${status}`
+        );
+    }
+
+    appointment.status = status;
+    if (status === "COMPLETED") appointment.completedAt = new Date();
+};
+
+
+const validateReschedule = async ({ appointment, doctor, date, timeSlot }) => {
+    if (appointment.date < getTomorrowDate()) {
+        throw new ApiError(
+            400,
+            "Cannot reschedule an appointment that is scheduled for today or has already passed"
+        );
+    }
+
+    if (date) {
+        const normalized = normalizeAppointmentDate(date);
+
+        if (Number.isNaN(normalized.getTime())) {
+            throw new ApiError(400, "Invalid date format");
+        }
+
+        if (normalized < getTomorrowDate()) {
+            throw new ApiError(400, "Appointments can only be rescheduled to tomorrow or later");
+        }
+
+        if (isBeforeDoctorJoiningDate(normalized, doctor)) {
+            throw new ApiError(400, "Before doctor's joining date");
+        }
+
+        appointment.date = normalized;
+    }
+
+    if (timeSlot) appointment.timeSlot = timeSlot;
+
+    const doctorConflict = await findSlotConflict({
+        doctorEmployeeId: appointment.doctorEmployeeId,
+        date: appointment.date,
+        timeSlot: appointment.timeSlot,
+        excludeAppointmentId: appointment._id
+    });
+
+    if (doctorConflict && SLOT_BLOCKING_STATUSES.has(appointment.status)) {
+        throw new ApiError(409, "Slot already booked for doctor");
+    }
+
+    const patientConflict = await findSlotConflict({
+        patientId: appointment.patientId,
+        date: appointment.date,
+        timeSlot: appointment.timeSlot,
+        excludeAppointmentId: appointment._id
+    });
+
+    if (patientConflict) {
+        throw new ApiError(409, "Patient already has an appointment");
+    }
+};
+
+
+const validateCreateInput = ({ patientId, doctorEmployeeId, date, timeSlot }) => {
+    if (!patientId || !doctorEmployeeId || !date || !timeSlot) {
+        throw new ApiError(
+            400,
+            "Missing required fields: patientId, doctorEmployeeId, date, timeSlot"
+        );
+    }
+};
+
+
+const validatePatientAndDoctor = async (patientId, doctorEmployeeId) => {
+    const patient = await Patient.findOne(
+        { UHID: patientId, isDeleted: false },
+        { name: 1, email: 1, status: 1 }
+    ).lean();
+
+    if (!patient) throw new ApiError(404, "Patient not found");
+    if (!patient.status) throw new ApiError(400, "Patient account is inactive");
+
+    const doctor = await Employee.findOne(
+        { employeeCode: doctorEmployeeId, isDeleted: false },
+        { name: 1, status: 1, joiningDate: 1 }
+    ).lean();
+
+    if (!doctor) {
+        throw new ApiError(404, "Doctor not found with provided employee code");
+    }
+
+    if (!doctor.status) {
+        throw new ApiError(400, "Doctor account is inactive");
+    }
+
+    const { valid, reason } = await verifyDoctorByPermissions(doctorEmployeeId);
+    if (!valid) throw new ApiError(400, reason);
+
+    return { patient, doctor };
+};
+
+const validateAppointmentDate = (date, doctor) => {
+    const appointmentDate = normalizeAppointmentDate(date);
+
+    if (Number.isNaN(appointmentDate.getTime())) {
+        throw new ApiError(400, "Invalid date format");
+    }
+
+    if (appointmentDate < getTomorrowDate()) {
+        throw new ApiError(
+            400,
+            "Appointments can be booked only from tomorrow onwards"
+        );
+    }
+
+    if (isBeforeDoctorJoiningDate(appointmentDate, doctor)) {
+        throw new ApiError(
+            400,
+            "Appointment cannot be booked before doctor's joining date"
+        );
+    }
+
+    return appointmentDate;
+};
+
+const validateSlotConflicts = async ({ patientId, doctorEmployeeId, date, timeSlot }) => {
+    const doctorConflict = await findSlotConflict({
+        doctorEmployeeId,
+        date,
+        timeSlot
+    });
+
+    if (doctorConflict) {
+        throw new ApiError(
+            409,
+            "Doctor is already booked for this slot on the selected date"
+        );
+    }
+
+    const patientConflict = await findSlotConflict({
+        patientId,
+        date,
+        timeSlot
+    });
+
+    if (patientConflict) {
+        throw new ApiError(
+            409,
+            "Patient already has an appointment at this date and time slot"
+        );
+    }
+};
+
+
+const sendAppointmentEmail = (patient, doctor, appointment, appointmentDate, timeSlot) => {
+    if (!patient.email) return;
+
+    sendEmail({
+        to: patient.email,
+        subject: "Appointment Confirmation - HMS",
+        html: `
+            <h2>Appointment Confirmed</h2>
+            <p>Your appointment has been successfully booked.</p>
+            <p><strong>Appointment ID:</strong> ${appointment.appointmentId}</p>
+            <p><strong>Doctor:</strong> Dr. ${doctor.name}</p>
+            <p><strong>Date:</strong> ${appointmentDate.toDateString()}</p>
+            <p><strong>Time:</strong> ${timeSlot}</p>
+            <p>Please arrive at least 10 minutes before your scheduled time.</p>
+            <p>Thank you,<br/>HMS Team</p>
+        `
+    }).catch((error_) => console.error("Email send failed:", error_));
+};
+
+
+const validateStatusInput = (status) => {
+    if (!status) {
+        throw new ApiError(400, "Status is required");
+    }
+
+    if (!ALLOWED_STATUSES.has(status)) {
+        throw new ApiError(400, "Invalid status value");
+    }
+};
+
+
+const validateAppointmentExists = (appointment) => {
+    if (!appointment) {
+        throw new ApiError(404, "Appointment not found");
+    }
+};
+
+
+const validateFutureRule = (appointment, status) => {
+    if (
+        ["IN-PROCESS", "COMPLETED"].includes(status) &&
+        appointment.date > getTodayDate()
+    ) {
+        throw new ApiError(
+            400,
+            "Cannot mark a future appointment as IN-PROCESS or COMPLETED."
+        );
+    }
+};
+
+const validateStatusTransition = (appointment, status) => {
+    const allowed = STATUS_TRANSITIONS[appointment.status];
+
+    if (!allowed.includes(status)) {
+        throw new ApiError(
+            400,
+            `Cannot transition from ${appointment.status} to ${status}. Allowed: ${allowed.join(", ") || "none"}`
+        );
+    }
+};
+
+const validateStatusPermissions = (appointment, status, user, permissions) => {
+    const hasApprove = permissions.has("APPOINTMENT_APPROVE");
+    const hasRead = permissions.has("APPOINTMENT_READ");
+
+    if (hasApprove) return;
+
+    if (hasRead) {
+        if (appointment.doctorEmployeeId !== user.employeeId) {
+            throw new ApiError(
+                403,
+                "You can only update status of your own appointments"
+            );
+        }
+
+        if (!["IN-PROCESS", "COMPLETED"].includes(status)) {
+            throw new ApiError(
+                403,
+                "Doctors can only mark appointments as IN-PROCESS or COMPLETED"
+            );
+        }
+
+        return;
+    }
+
+    throw new ApiError(
+        403,
+        "You are not authorized to update appointment status"
+    );
+};
+
+const validateStatusOrder = (appointment, status) => {
+    if (status === "IN-PROCESS" && appointment.status !== "BOOKED") {
+        throw new ApiError(
+            400,
+            "Only BOOKED appointments can be marked as IN-PROCESS"
+        );
+    }
+
+    if (status === "COMPLETED" && appointment.status !== "IN-PROCESS") {
+        throw new ApiError(
+            400,
+            "Only IN-PROCESS appointments can be marked as COMPLETED"
+        );
+    }
+};
 // ─── Admin/Reception: Create Appointment ─────────────────────────────────────
 
 exports.createAppointment = async (req, res) => {
@@ -197,78 +440,26 @@ exports.createAppointment = async (req, res) => {
         const { patientId, doctorEmployeeId, date, timeSlot } = req.body;
         const createdByEmployeeId = req.user.employeeId || req.user.id;
 
-        if (!patientId || !doctorEmployeeId || !date || !timeSlot) {
-            return res.status(400).json(
-                new ApiError(400, "Missing required fields: patientId, doctorEmployeeId, date, timeSlot")
-            );
-        }
+        //  Step 1: Input validation
+        validateCreateInput({ patientId, doctorEmployeeId, date, timeSlot });
+        //  Step 2: Patient + Doctor validation
+        const { patient, doctor } = await validatePatientAndDoctor(
+            patientId,
+            doctorEmployeeId
+        );
 
-        // Validate patient
-        const patient = await Patient.findOne(
-            { UHID: patientId, isDeleted: false },
-            { name: 1, email: 1, status: 1 }
-        ).lean();
+        //  Step 3: Date validation
+        const appointmentDate = validateAppointmentDate(date, doctor);
 
-        if (!patient) return res.status(404).json(new ApiError(404, "Patient not found"));
-        if (!patient.status) return res.status(400).json(new ApiError(400, "Patient account is inactive"));
-
-        // Validate doctor employee record
-        const doctor = await Employee.findOne(
-            { employeeCode: doctorEmployeeId, isDeleted: false },
-            { name: 1, status: 1, joiningDate: 1 }
-        ).lean();
-
-        if (!doctor) {
-            return res.status(404).json(new ApiError(404, "Doctor not found with provided employee code"));
-        }
-        if (!doctor.status) return res.status(400).json(new ApiError(400, "Doctor account is inactive"));
-
-        // Validate the employee is actually a doctor (has HEALTH_RECORD_CREATE permission)
-        const { valid, reason } = await verifyDoctorByPermissions(doctorEmployeeId);
-        if (!valid) return res.status(400).json(new ApiError(400, reason));
-
-        // Validate date
-        const appointmentDate = normalizeAppointmentDate(date);
-        if (isNaN(appointmentDate.getTime())) {
-            return res.status(400).json(new ApiError(400, "Invalid date format"));
-        }
-
-        if (appointmentDate < getTomorrowDate()) {
-            return res.status(400).json(
-                new ApiError(400, "Appointments can be booked only from tomorrow onwards")
-            );
-        }
-
-        if (isBeforeDoctorJoiningDate(appointmentDate, doctor)) {
-            return res.status(400).json(
-                new ApiError(400, "Appointment cannot be booked before doctor's joining date")
-            );
-        }
-
-        // Check doctor slot conflict
-        const doctorConflict = await findSlotConflict({
+        //  Step 4: Slot conflicts
+        await validateSlotConflicts({
+            patientId,
             doctorEmployeeId,
             date: appointmentDate,
             timeSlot
         });
-        if (doctorConflict) {
-            return res.status(409).json(
-                new ApiError(409, "Doctor is already booked for this slot on the selected date")
-            );
-        }
 
-        // Check patient slot conflict
-        const patientConflict = await findSlotConflict({
-            patientId,
-            date: appointmentDate,
-            timeSlot
-        });
-        if (patientConflict) {
-            return res.status(409).json(
-                new ApiError(409, "Patient already has an appointment at this date and time slot")
-            );
-        }
-
+        // Step 5: Create appointment
         let appointment;
         try {
             appointment = await Appointment.create({
@@ -280,41 +471,40 @@ exports.createAppointment = async (req, res) => {
                 status: "BOOKED"
             });
         } catch (err) {
-            // MongoDB duplicate key — two requests slipped through the pre-checks
-            // at the same millisecond (race condition). The unique index on
-            // { doctorEmployeeId, date, timeSlot } catches this at DB level.
             if (err.code === 11000) {
                 return res.status(409).json(
-                    new ApiError(409, "This slot was just taken. Please choose a different slot.")
+                    new ApiError(
+                        409,
+                        "This slot was just taken. Please choose a different slot."
+                    )
                 );
             }
-            throw err; // rethrow anything else to the outer catch
+            throw err;
         }
 
-        // Send confirmation email (fire-and-forget — don't let email failure break the API)
-        if (patient.email) {
-            sendEmail({
-                to: patient.email,
-                subject: "Appointment Confirmation - HMS",
-                html: `
-                    <h2>Appointment Confirmed</h2>
-                    <p>Your appointment has been successfully booked.</p>
-                    <p><strong>Appointment ID:</strong> ${appointment.appointmentId}</p>
-                    <p><strong>Doctor:</strong> Dr. ${doctor.name}</p>
-                    <p><strong>Date:</strong> ${appointmentDate.toDateString()}</p>
-                    <p><strong>Time:</strong> ${timeSlot}</p>
-                    <p>Please arrive at least 10 minutes before your scheduled time.</p>
-                    <p>Thank you,<br/>HMS Team</p>
-                `
-            }).catch((emailErr) => console.error("Email send failed:", emailErr));
-        }
+        // Step 6: Email (non-blocking)
+        sendAppointmentEmail(
+            patient,
+            doctor,
+            appointment,
+            appointmentDate,
+            timeSlot
+        );
 
         return res.status(201).json(
             new ApiResponse(201, appointment, "Appointment created successfully")
         );
+
     } catch (err) {
         console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+
+        if (err instanceof ApiError) {
+            return res.status(err.statusCode || 400).json(err);
+        }
+
+        return res.status(500).json(
+            new ApiError(500, err.message || "Internal Server Error")
+        );
     }
 };
 
@@ -492,13 +682,14 @@ exports.getAppointmentById = async (req, res) => {
 //         rescheduling is blocked. You cannot reschedule a past appointment.
 //         (Example: appointment was for yesterday → you can't change its slot)
 
+
 exports.updateAppointment = async (req, res) => {
     try {
         const { appointmentId } = req.params;
         const { date, timeSlot, status } = req.body;
 
-        // Permission check — only admin/receptionist (APPOINTMENT_APPROVE) can update
         const { user, userPermissions } = await getUserPermissions(req.user.id);
+
         if (!user) {
             return res.status(404).json(new ApiError(404, "User not found"));
         }
@@ -509,119 +700,50 @@ exports.updateAppointment = async (req, res) => {
             );
         }
 
-        // We need a full Mongoose document here because we call .save() below
-        const appointment = await Appointment.findOne({ appointmentId, isDeleted: false });
+        const appointment = await Appointment.findOne({
+            appointmentId,
+            isDeleted: false
+        });
+
         if (!appointment) {
             return res.status(404).json(new ApiError(404, "Appointment not found"));
         }
 
-        // Cannot modify a terminal appointment
         if (["COMPLETED", "CANCELLED"].includes(appointment.status)) {
             return res.status(400).json(
-                new ApiError(400, `Cannot modify a ${appointment.status.toLowerCase()} appointment`)
+                new ApiError(
+                    400,
+                    `Cannot modify a ${appointment.status.toLowerCase()} appointment`
+                )
             );
         }
 
         const doctor = await Employee.findOne(
-            { employeeCode: appointment.doctorEmployeeId, isDeleted: false },
+            {
+                employeeCode: appointment.doctorEmployeeId,
+                isDeleted: false
+            },
             { joiningDate: 1, status: 1 }
         ).lean();
 
         if (!doctor) {
-            return res.status(404).json(new ApiError(404, "Assigned doctor not found"));
+            return res.status(404).json(
+                new ApiError(404, "Assigned doctor not found")
+            );
         }
 
-        // ── Status update ────────────────────────────────────────────────────
+        // ✅ Apply helpers (reduces complexity drastically)
         if (status) {
-            if (!ALLOWED_STATUSES.has(status)) {
-                return res.status(400).json(new ApiError(400, "Invalid appointment status"));
-            }
-
-            const allowed = STATUS_TRANSITIONS[appointment.status];
-            if (!allowed.includes(status)) {
-                return res.status(400).json(
-                    new ApiError(
-                        400,
-                        `Cannot transition appointment from ${appointment.status} to ${status}`
-                    )
-                );
-            }
-
-            appointment.status = status;
-            if (status === "COMPLETED") appointment.completedAt = new Date();
+            validateStatusUpdate(appointment, status);
         }
 
-        // ── Reschedule (date / timeSlot) ─────────────────────────────────────
         if (date || timeSlot) {
-            // Block reschedule if the appointment is for today or in the past
-            //
-            // WHY: If the appointment date is today (or earlier), the time window
-            //      for that visit has passed or is passing right now. A reschedule
-            //      at that point should go through a proper cancellation + new
-            //      booking flow, not a silent date change.
-            //
-            // getTomorrowDate() returns midnight of tomorrow, so any appointment
-            // date < that value means it is today or earlier.
-            if (appointment.date < getTomorrowDate()) {
-                return res.status(400).json(
-                    new ApiError(
-                        400,
-                        "Cannot reschedule an appointment that is scheduled for today or has already passed"
-                    )
-                );
-            }
-
-            if (date) {
-                const appointmentDate = normalizeAppointmentDate(date);
-
-                if (isNaN(appointmentDate.getTime())) {
-                    return res.status(400).json(new ApiError(400, "Invalid date format"));
-                }
-
-                if (appointmentDate < getTomorrowDate()) {
-                    return res.status(400).json(
-                        new ApiError(400, "Appointments can only be rescheduled to tomorrow or later")
-                    );
-                }
-
-                if (isBeforeDoctorJoiningDate(appointmentDate, doctor)) {
-                    return res.status(400).json(
-                        new ApiError(400, "Appointment cannot be scheduled before doctor's joining date")
-                    );
-                }
-
-                appointment.date = appointmentDate;
-            }
-
-            if (timeSlot) appointment.timeSlot = timeSlot;
-
-            // Check doctor slot conflict (excluding this appointment itself)
-            const doctorConflict = await findSlotConflict({
-                doctorEmployeeId: appointment.doctorEmployeeId,
-                date: appointment.date,
-                timeSlot: appointment.timeSlot,
-                excludeAppointmentId: appointment._id
+            await validateReschedule({
+                appointment,
+                doctor,
+                date,
+                timeSlot
             });
-
-            if (doctorConflict && SLOT_BLOCKING_STATUSES.includes(appointment.status)) {
-                return res.status(409).json(
-                    new ApiError(409, "Slot already booked for this doctor")
-                );
-            }
-
-            // Check patient slot conflict
-            const patientConflict = await findSlotConflict({
-                patientId: appointment.patientId,
-                date: appointment.date,
-                timeSlot: appointment.timeSlot,
-                excludeAppointmentId: appointment._id
-            });
-
-            if (patientConflict) {
-                return res.status(409).json(
-                    new ApiError(409, "Patient already has an appointment at this date and time slot")
-                );
-            }
         }
 
         await appointment.save();
@@ -629,11 +751,22 @@ exports.updateAppointment = async (req, res) => {
         return res.status(200).json(
             new ApiResponse(200, appointment, "Appointment updated successfully")
         );
+
     } catch (err) {
         console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+
+        // ✅ Centralized error handling for helper-thrown errors
+        if (err instanceof ApiError) {
+            return res.status(err.statusCode || 400).json(err);
+        }
+
+        return res.status(500).json(
+            new ApiError(500, err.message || "Internal Server Error")
+        );
     }
 };
+
+
 
 // ─── Update Appointment Status (Doctor marks IN-PROCESS / COMPLETED) ─────────
 //
@@ -646,88 +779,55 @@ exports.updateAppointmentStatus = async (req, res) => {
         const { appointmentId } = req.params;
         const { status } = req.body;
 
-        if (!status) {
-            return res.status(400).json(new ApiError(400, "Status is required"));
-        }
+        //  Step 1: Validate input
+        validateStatusInput(status);
 
-        if (!ALLOWED_STATUSES.has(status)) {
-            return res.status(400).json(new ApiError(400, "Invalid status value"));
-        }
-
-        // FIX: use getUserPermissions — null check is already inside the helper
         const { user, userPermissions } = await getUserPermissions(req.user.id);
+
         if (!user) {
             return res.status(404).json(new ApiError(404, "User not found"));
         }
 
-        const appointment = await Appointment.findOne({ appointmentId, isDeleted: false });
-        if (!appointment) {
-            return res.status(404).json(new ApiError(404, "Appointment not found"));
-        }
-        // Only block future-date check for operational statuses
-        if (["IN-PROCESS", "COMPLETED"].includes(status) && appointment.date > getTodayDate()) {
-            return res.status(400).json(
-                new ApiError(400, "Cannot mark a future appointment as IN-PROCESS or COMPLETED.")
-            );
-        }
+        const appointment = await Appointment.findOne({
+            appointmentId,
+            isDeleted: false
+        });
 
-        // Validate transition
-        const allowed = STATUS_TRANSITIONS[appointment.status];
-        if (!allowed.includes(status)) {
-            return res.status(400).json(
-                new ApiError(
-                    400,
-                    `Cannot transition from ${appointment.status} to ${status}. Allowed: ${allowed.join(", ") || "none"}`
-                )
-            );
-        }
+        validateAppointmentExists(appointment);
 
-        const hasApprovePerm = userPermissions.has("APPOINTMENT_APPROVE");
-        const hasReadPerm = userPermissions.has("APPOINTMENT_READ");
+        //  Step 2: Business validations
+        validateFutureRule(appointment, status);
+        validateStatusTransition(appointment, status);
+        validateStatusPermissions(appointment, status, user, userPermissions);
+        validateStatusOrder(appointment, status);
 
-        if (!hasApprovePerm && hasReadPerm) {
-            // Doctor path — can only update their own appointments
-            if (appointment.doctorEmployeeId !== user.employeeId) {
-                return res.status(403).json(
-                    new ApiError(403, "You can only update status of your own appointments")
-                );
-            }
-
-            if (!["IN-PROCESS", "COMPLETED"].includes(status)) {
-                return res.status(403).json(
-                    new ApiError(403, "Doctors can only mark appointments as IN-PROCESS or COMPLETED")
-                );
-            }
-        } else if (!hasApprovePerm && !hasReadPerm) {
-            return res.status(403).json(
-                new ApiError(403, "You are not authorized to update appointment status")
-            );
-        }
-
-        // Guard correct order
-        if (status === "IN-PROCESS" && appointment.status !== "BOOKED") {
-            return res.status(400).json(
-                new ApiError(400, "Only BOOKED appointments can be marked as IN-PROCESS")
-            );
-        }
-
-        if (status === "COMPLETED" && appointment.status !== "IN-PROCESS") {
-            return res.status(400).json(
-                new ApiError(400, "Only IN-PROCESS appointments can be marked as COMPLETED")
-            );
-        }
-
+        // Step 3: Apply update
         appointment.status = status;
-        if (status === "COMPLETED") appointment.completedAt = new Date();
+
+        if (status === "COMPLETED") {
+            appointment.completedAt = new Date();
+        }
 
         await appointment.save();
 
         return res.status(200).json(
-            new ApiResponse(200, appointment, `Appointment marked as ${status} successfully`)
+            new ApiResponse(
+                200,
+                appointment,
+                `Appointment marked as ${status} successfully`
+            )
         );
+
     } catch (err) {
         console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+
+        if (err instanceof ApiError) {
+            return res.status(err.statusCode || 400).json(err);
+        }
+
+        return res.status(500).json(
+            new ApiError(500, err.message || "Internal Server Error")
+        );
     }
 };
 
@@ -874,7 +974,7 @@ exports.approveAppointment = async (req, res) => {
                     <p>Please arrive at least 10 minutes before your scheduled time.</p>
                     <p>Thank you,<br/>HMS Team</p>
                 `
-            }).catch((emailErr) => console.error("Email send failed:", emailErr));
+            }).catch((error_) => console.error("Email send failed:", error_));
         }
 
         return res.status(200).json(
@@ -947,7 +1047,7 @@ exports.rejectAppointment = async (req, res) => {
                     <p>Please contact hospital reception or book another available slot.</p>
                     <p>Thank you,<br/>HMS Team</p>
                 `
-            }).catch((emailErr) => console.error("Email send failed:", emailErr));
+            }).catch((error_) => console.error("Email send failed:", error_));
         }
 
         return res.status(200).json(

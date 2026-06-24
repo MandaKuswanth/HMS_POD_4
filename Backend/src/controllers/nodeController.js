@@ -83,6 +83,68 @@ const getUserPermissions = async (roleIds) => {
     return [...new Set(permissions)];
 };
 
+
+
+const handlePathUpdate = async (node, path, nodeId) => {
+    if (!path || path === node.path) return;
+
+    const existingNode = await Node.findOne({
+        path,
+        nodeId: { $ne: nodeId },
+        isDeleted: false
+    });
+
+    if (existingNode) {
+        throw new ApiError(409, "Node path already exists");
+    }
+
+    node.path = path;
+};
+
+
+const handleParentUpdate = async (node, parentNodeId, nodeId) => {
+    if (parentNodeId === undefined) return;
+
+    if (parentNodeId === null) {
+        node.parentNodeId = null;
+        return;
+    }
+
+    if (parentNodeId === nodeId) {
+        throw new ApiError(400, "Node cannot be parent of itself");
+    }
+
+    const parentNode = await Node.findOne({
+        nodeId: parentNodeId,
+        isDeleted: false
+    });
+
+    if (!parentNode) {
+        throw new ApiError(404, "Parent node not found");
+    }
+
+    node.parentNodeId = parentNodeId;
+};
+
+
+const handlePermissionsUpdate = (node, permissions) => {
+    if (permissions === undefined) return;
+
+    if (!Array.isArray(permissions) || permissions.length === 0) {
+        throw new ApiError(400, "At least one permission is required");
+    }
+
+    node.permissions = permissions;
+};
+
+const applySimpleUpdates = (node, { name, icon, order, status }) => {
+    if (name !== undefined) node.name = name;
+    if (icon !== undefined) node.icon = icon;
+    if (order !== undefined) node.order = order;
+    if (status !== undefined) node.status = status;
+};
+
+
 exports.createNode = asyncHandler(async (req, res) => {
     const {
         name,
@@ -144,7 +206,7 @@ exports.createNode = asyncHandler(async (req, res) => {
         permissions,
         parentNodeId: parentNodeId || null,
         order: order || 0,
-        status: status !== undefined ? status : true
+        status: status ?? true
     });
 
     return res.status(201).json(
@@ -241,10 +303,7 @@ exports.updateNode = asyncHandler(async (req, res) => {
     });
 
     if (!node) {
-        throw new ApiError(
-            404,
-            "Node not found"
-        );
+        throw new ApiError(404, "Node not found");
     }
 
     const {
@@ -257,82 +316,11 @@ exports.updateNode = asyncHandler(async (req, res) => {
         status
     } = req.body;
 
-    if (path && path !== node.path) {
-        const existingNode = await Node.findOne({
-            path,
-            nodeId: { $ne: nodeId },
-            isDeleted: false
-        });
-
-        if (existingNode) {
-            throw new ApiError(
-                409,
-                "Node path already exists"
-            );
-        }
-
-        node.path = path;
-    }
-
-    if (
-        parentNodeId !== undefined &&
-        parentNodeId !== null
-    ) {
-        if (parentNodeId === nodeId) {
-            throw new ApiError(
-                400,
-                "Node cannot be parent of itself"
-            );
-        }
-
-        const parentNode = await Node.findOne({
-            nodeId: parentNodeId,
-            isDeleted: false
-        });
-
-        if (!parentNode) {
-            throw new ApiError(
-                404,
-                "Parent node not found"
-            );
-        }
-
-        node.parentNodeId = parentNodeId;
-    }
-
-    if (parentNodeId === null) {
-        node.parentNodeId = null;
-    }
-
-    if (name !== undefined) {
-        node.name = name;
-    }
-
-    if (icon !== undefined) {
-        node.icon = icon;
-    }
-
-    if (permissions !== undefined) {
-        if (
-            !Array.isArray(permissions) ||
-            permissions.length === 0
-        ) {
-            throw new ApiError(
-                400,
-                "At least one permission is required"
-            );
-        }
-
-        node.permissions = permissions;
-    }
-
-    if (order !== undefined) {
-        node.order = order;
-    }
-
-    if (status !== undefined) {
-        node.status = status;
-    }
+    //  Split logic into helpers (reduces complexity)
+    await handlePathUpdate(node, path, nodeId);
+    await handleParentUpdate(node, parentNodeId, nodeId);
+    handlePermissionsUpdate(node, permissions);
+    applySimpleUpdates(node, { name, icon, order, status });
 
     await node.save();
 
@@ -344,6 +332,7 @@ exports.updateNode = asyncHandler(async (req, res) => {
         )
     );
 });
+
 
 exports.deleteNode = asyncHandler(async (req, res) => {
     const { nodeId } = req.params;

@@ -78,7 +78,7 @@ export const MEDICAL_STAFF_ROLES = ['DOCTOR', 'NURSE', 'LAB_TECH'];
 export const NAME_PATTERN = /^[A-Za-z ]+$/;
 export const PHONE_PATTERN = /^[6-9]\d{9}$/;
 export const MEDICAL_REGISTRATION_PATTERN = /^[A-Za-z\d/-]+$/;
-export const CONSULTATION_FEE_PATTERN = /^\d+$/;    
+export const CONSULTATION_FEE_PATTERN = /^\d+$/;
 
 export function isDoctorRole(role: string): boolean {
     return role === 'DOCTOR';
@@ -93,24 +93,26 @@ export function trimInputValue(value: unknown): string {
 }
 
 export function getRolePayloadValue(role: unknown): string {
-    return typeof role === 'string' ? role.trim().replace(/_/g, ' ') : '';
+    return typeof role === 'string'
+        ? role.trim().replaceAll('_', ' ')
+        : '';
 }
 
 export function noFutureDateValidator(control: any) {
 
-  if (!control.value) {
-    return null;
-  }
+    if (!control.value) {
+        return null;
+    }
 
-  const selectedDate = new Date(control.value);
-  selectedDate.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(control.value);
+    selectedDate.setHours(0, 0, 0, 0);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  return selectedDate < today
-    ? { pastDate: true }
-    : null;
+    return selectedDate < today
+        ? { pastDate: true }
+        : null;
 }
 
 export function passwordStrengthValidator(): ValidatorFn {
