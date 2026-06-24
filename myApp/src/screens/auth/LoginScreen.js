@@ -146,6 +146,17 @@ export default function LoginScreen({ navigation }) {
                         disabled={loading}
                     />
 
+                    {/* ✅ NEW: Forgot Password Link */}
+                    <TouchableOpacity
+                        onPress={() =>
+                            navigation.navigate("ForgotPassword")
+                        }
+                    >
+                        <Text style={styles.forgotPasswordLink}>
+                            Forgot Password?
+                        </Text>
+                    </TouchableOpacity>
+
                     <TouchableOpacity
                         onPress={() =>
                             navigation.navigate("Register")
@@ -193,5 +204,14 @@ const styles = StyleSheet.create({
         textAlign: "center",
         color: COLORS.primary,
         fontWeight: "800",
+    },
+
+    // ✅ NEW: Forgot Password Link Style
+    forgotPasswordLink: {
+        marginTop: 15,
+        textAlign: "center",
+        color: COLORS.primary,
+        fontWeight: "600",
+        fontSize: 14,
     },
 });

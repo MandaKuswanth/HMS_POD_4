@@ -9,7 +9,7 @@ const jwt = require("jsonwebtoken");
 
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
-const sendEmail = require("../utils/sendEmail");
+const {sendEmail} = require("../utils/sendEmail");
 
 // ─── Internal: Cancel doctor appointments on deactivation / deletion ──────────
 

@@ -6,7 +6,7 @@ const Role = require("../models/Role");
 
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
-const sendEmail = require("../utils/sendEmail");
+const {sendEmail} = require("../utils/sendEmail");
 
 const {
     normalizeAppointmentDate,

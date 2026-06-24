@@ -6,7 +6,7 @@ const Role = require("../models/Role");
 const crypto = require("node:crypto");
 const bcrypt = require("bcryptjs");
 const { cancelPatientAppointments } = require("../controllers/appointmentController");
-const sendEmail = require("../utils/sendEmail");
+const {sendEmail} = require("../utils/sendEmail");
 
 // ─── Create Patient ──────────────────────────────────────────────────────────
 
