@@ -77,4 +77,10 @@ export class HealthRecordService {
       `${this.baseUrl}/${healthRecordId}`
     );
   }
+
+  getEligibleAppointments(): Observable<any> {
+  return this.http.get(
+    `${this.baseUrl}/eligible-appointments`
+  );
+}
 }

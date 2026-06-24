@@ -28,6 +28,12 @@ router.get(
     auth,
     healthRecordController.getMyHealthRecords
 );
+router.get(
+    "/eligible-appointments",
+    auth,
+    allowPermission(PERMISSIONS.HEALTH_RECORD_CREATE),
+    healthRecordController.getEligibleAppointments
+);
 // GET SINGLE HEALTH RECORD
 router.get(
     "/:healthRecordId",

@@ -389,3 +389,81 @@ exports.getMyHealthRecords = async (req, res) => {
         return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
     }
 };
+exports.getEligibleAppointments = async (req, res) => {
+    try {
+        const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
+
+        const existingRecords = await HealthRecord.find({
+            isDeleted: false
+        }).select("appointmentId");
+
+        const usedAppointmentIds = existingRecords.map(
+            (record) => record.appointmentId
+        );
+
+        const filter = {
+            status: "COMPLETED",
+            isDeleted: false,
+            appointmentId: {
+                $nin: usedAppointmentIds
+            }
+        };
+
+        if (isDoctor) {
+            filter.doctorEmployeeId = loggedInEmployeeId;
+        }
+
+        const appointments = await Appointment.find(filter)
+            .sort({ date: -1 });
+
+        const patientIds = appointments.map((a) => a.patientId);
+        const doctorIds = appointments.map((a) => a.doctorEmployeeId);
+
+        const patients = await Patient.find({
+            UHID: { $in: patientIds },
+            isDeleted: false
+        });
+
+        const doctors = await Employee.find({
+            employeeCode: { $in: doctorIds },
+            isDeleted: false
+        });
+
+        const patientMap = new Map(
+            patients.map((p) => [p.UHID, p])
+        );
+
+        const doctorMap = new Map(
+            doctors.map((d) => [d.employeeCode, d])
+        );
+
+        const records = appointments.map((appointment) => {
+            const patient = patientMap.get(appointment.patientId);
+            const doctor = doctorMap.get(appointment.doctorEmployeeId);
+
+            return {
+                appointmentId: appointment.appointmentId,
+                patientId: appointment.patientId,
+                patientName: patient?.name || "",
+                doctorEmployeeId: appointment.doctorEmployeeId,
+                doctorName: doctor?.name || "",
+                date: appointment.date,
+                timeSlot: appointment.timeSlot,
+                status: appointment.status
+            };
+        });
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                records,
+                "Eligible completed appointments fetched successfully"
+            )
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(
+            new ApiError(500, err.message || "Internal Server Error")
+        );
+    }
+};

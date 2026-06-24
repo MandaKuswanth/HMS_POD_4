@@ -71,29 +71,24 @@ export class HealthRecordDialog implements OnInit {
   }
 
   loadAppointments(): void {
-    this.appointmentService
-      .getAppointments(1, 10)
-      .subscribe({
-        next: (response: any) => {
-          const appointments = Array.isArray(response?.data?.records)
-            ? response.data.records
-            : [];
+  this.healthRecordService
+    .getEligibleAppointments()
+    .subscribe({
+      next: (response: any) => {
+        this.appointments = Array.isArray(response?.data)
+          ? response.data
+          : [];
 
-          this.appointments = appointments.filter((appointment: any) =>
-            appointment.status !== 'PENDING' &&
-            appointment.status !== 'CANCELLED'
-          );
-
-          setTimeout(() => {
-            this.cdr.detectChanges();
-          });
-        },
-        error: () => {
-          this.appointments = [];
-          this.toastr.error('Failed to load appointments');
-        }
-      });
-  }
+        setTimeout(() => {
+          this.cdr.detectChanges();
+        });
+      },
+      error: () => {
+        this.appointments = [];
+        this.toastr.error('Failed to load eligible appointments');
+      }
+    });
+}
 
   onAppointmentChange(): void {
     const selected = this.appointments.find(
