@@ -6,7 +6,7 @@
 
   <mat-form-field appearance="outline" class="full-width">
     <mat-label>Node Name</mat-label>
-    <input matInput [(ngModel)]="formData.name" />
+    <input matInput [ngModel]="formData.name" (ngModelChange)="onNameChange($event)" />
   </mat-form-field>
 
   <mat-form-field appearance="outline" class="full-width">
@@ -25,9 +25,9 @@
       <mat-option [value]="null">No Parent</mat-option>
 
       @for (node of nodes; track node.nodeId) {
-        <mat-option [value]="node.nodeId">
-          {{ node.name }} - {{ node.path }}
-        </mat-option>
+      <mat-option [value]="node.nodeId">
+        {{ node.name }} - {{ node.path }}
+      </mat-option>
       }
     </mat-select>
   </mat-form-field>
@@ -48,14 +48,13 @@
   <div class="permission-section">
     <h3>Permissions</h3>
 
-    <div class="permission-grid">
-      @for (permission of permissionList; track permission) {
-        <mat-checkbox
-          [checked]="isPermissionSelected(permission)"
-          (change)="togglePermission(permission, $event.checked)"
-        >
-          {{ permission }}
-        </mat-checkbox>
+    <div class="permission-section">
+      <h3>Auto-generated Permission</h3>
+
+      @if (formData.permissions.length > 0) {
+      <p>{{ formData.permissions[0] }}</p>
+      } @else {
+      <p>Enter node name to generate permission</p>
       }
     </div>
   </div>

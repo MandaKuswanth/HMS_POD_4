@@ -12,12 +12,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+
 
 import { ToastrService } from 'ngx-toastr';
 
 import { NodeService } from '../../../core/services/node';
-import { PERMISSIONS } from '../../../constants/permission';
+
 
 @Component({
   selector: 'app-node-dialog',
@@ -30,7 +30,6 @@ import { PERMISSIONS } from '../../../constants/permission';
     MatInputModule,
     MatButtonModule,
     MatSelectModule,
-    MatCheckboxModule,
   ],
   templateUrl: './node-dialog.html',
   styleUrl: './node-dialog.css',
@@ -40,7 +39,6 @@ export class NodeDialog implements OnInit {
   private readonly nodeService = inject(NodeService);
   private readonly toastr = inject(ToastrService);
 
-  readonly permissionList = Object.values(PERMISSIONS);
 
   nodes: any[] = [];
 
@@ -57,7 +55,7 @@ export class NodeDialog implements OnInit {
   constructor(
     @Inject(MAT_DIALOG_DATA)
     public data: any
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadParentNodes();
@@ -92,26 +90,21 @@ export class NodeDialog implements OnInit {
       },
     });
   }
+  onNameChange(value: string): void {
+    this.formData.name = value;
 
-  togglePermission(permission: string, checked: boolean): void {
-    if (checked) {
-      if (!this.formData.permissions.includes(permission)) {
-        this.formData.permissions = [
-          ...this.formData.permissions,
-          permission,
-        ];
-      }
+    if (value.trim()) {
+      const generated =
+        value
+          .trim()
+          .toUpperCase()
+          .replace(/\s+/g, '_')
+          .replace(/[^A-Z0-9_]/g, '') + '_READ';
 
-      return;
+      this.formData.permissions = [generated];
+    } else {
+      this.formData.permissions = [];
     }
-
-    this.formData.permissions = this.formData.permissions.filter(
-      (item) => item !== permission
-    );
-  }
-
-  isPermissionSelected(permission: string): boolean {
-    return this.formData.permissions.includes(permission);
   }
 
   save(): void {
@@ -139,9 +132,9 @@ export class NodeDialog implements OnInit {
     const request$ =
       this.data?.mode === 'edit'
         ? this.nodeService.updateNode(
-            this.data.node.nodeId,
-            payload
-          )
+          this.data.node.nodeId,
+          payload
+        )
         : this.nodeService.createNode(payload);
 
     request$.subscribe({
