@@ -143,7 +143,7 @@ export class RoleDialog {
     return permission
       .replaceAll('_', ' ')
       .toLowerCase()
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+      .replaceAll(/\b\w/g, (char) => char.toUpperCase());
   }
 
   onCancel(): void {
