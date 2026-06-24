@@ -100,10 +100,8 @@ export class AppointmentList implements OnInit {
   }
 
   get paginatedAppointments(): any[] {
-    const start = this.pageIndex * this.pageSize;
-    const end = start + this.pageSize;
-
-    return this.filteredAppointments.slice(start, end);
+   
+   return this.filteredAppointments;
   }
 
   get statuses(): string[] {
