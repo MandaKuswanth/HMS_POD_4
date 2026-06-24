@@ -55,7 +55,6 @@ import { UpdateStatusDialog } from '../appointment-dialog/update-status-dialog';
     Navbar,
     Sidebar,
     HasPermissionDirective,
-    UpdateStatusDialog,
   ],
   templateUrl: './appointment-list.html',
   styleUrl: './appointment-list.css',
