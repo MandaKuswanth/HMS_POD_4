@@ -35,11 +35,14 @@ app-sidebar {
 .patient-page {
   height: 100%;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* TABLE CARD */
 .table-card {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   padding: 0 !important;
@@ -47,9 +50,6 @@ app-sidebar {
   border-radius: 0 !important;
   background: #ffffff !important;
   border: 1px solid #dbeafe;
-  box-shadow:
-    0 10px 28px rgba(13, 71, 161, 0.08),
-    0 4px 10px rgba(0, 0, 0, 0.04) !important;
 }
 
 /* PAGE HEADER */
