@@ -141,6 +141,31 @@ const getAllowedActions = (appointment, userPermissions, userEmployeeId) => {
 //   shape manually. Any field change (e.g. adding `notes`) had to be done in
 //   two places. One formatter = one place.
 
+const getAllowedStatuses = (appointment, userPermissions, userEmployeeId) => {
+    const { status, doctorEmployeeId } = appointment;
+
+    const hasApprove = userPermissions.has("APPOINTMENT_APPROVE");
+    const hasRead = userPermissions.has("APPOINTMENT_READ");
+
+    const isDoctor =
+        !hasApprove &&
+        hasRead &&
+        doctorEmployeeId === userEmployeeId;
+
+    // ✅ Admin / Receptionist → full transitions
+    if (hasApprove) {
+        return STATUS_TRANSITIONS[status] || [];
+    }
+
+    // ✅ Doctor → limited flow
+    if (isDoctor) {
+        if (status === "BOOKED") return ["IN-PROCESS"];
+        if (status === "IN-PROCESS") return ["COMPLETED"];
+    }
+
+    return [];
+};
+
 const formatAppointment = (appointment, patient, doctor, userPermissions, userEmployeeId) => ({
     _id: appointment._id,
     appointmentId: appointment.appointmentId,
