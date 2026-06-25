@@ -44,11 +44,19 @@ export class EmployeeService {
   }
 
   // Get all employees
-  getEmployees(page = 1, limit = 5): Observable<any> {
+  getEmployees(page = 1, limit = 5, search = '', department = 'ALL DEPARTMENTS', role = 'ALL ROLES', status = 'all'): Observable<any> {
     return this.http.get(
-      `${this.baseUrl}/employees?page=${page}&limit=${limit}`
+      `${this.baseUrl}/employees?page=${page}&limit=${limit}&search=${search}&department=${department}&role=${role}&status=${status}`
     );
   }
+
+  search = (query: string): Observable<any> => {
+    return this.http.get<any>(`${this.baseUrl}/search?q=${query}&limit=10`);
+  };
+
+  searchDoctors = (query: string): Observable<any> => {
+    return this.http.get<any>(`http://localhost:3000/api/doctors/search?q=${query}&limit=10`);
+  };
 
   // Update employee
   updateEmployee(employeeCode: string, data: Partial<EmployeeRequest>): Observable<any> {

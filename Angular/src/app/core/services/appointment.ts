@@ -37,13 +37,21 @@ export class AppointmentService {
     }
 
   getAppointments(
-  page = 1,
-  limit = 5
-): Observable<any> {
-  return this.http.get(
-    `${this.baseUrl}/appointments?page=${page}&limit=${limit}`
-  );
-}
+    page = 1,
+    limit = 5,
+    search = '',
+    status = 'ALL STATUS',
+    doctorEmployeeId = 'ALL DOCTORS',
+    date = ''
+  ): Observable<any> {
+    return this.http.get(
+      `${this.baseUrl}/appointments?page=${page}&limit=${limit}&search=${search}&status=${status}&doctorEmployeeId=${doctorEmployeeId}&date=${date}`
+    );
+  }
+
+  search = (query: string): Observable<any> => {
+    return this.http.get<any>(`${this.baseUrl}/appointments/search?q=${query}&limit=10`);
+  };
 
     deleteAppointment(
         appointmentId: string

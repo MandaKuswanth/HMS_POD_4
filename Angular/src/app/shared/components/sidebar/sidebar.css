@@ -3,196 +3,168 @@
     width: 260px;
     height: calc(100vh - 72px);
     flex-shrink: 0;
-    /* FIX: host must not clip the scrollable nav */
     overflow: hidden;
 }
 
-/* SIDEBAR */
+/* SIDEBAR LIGHT THEME */
 .sidebar {
     width: 260px;
     height: 100%;
-    padding: 10px 12px 22px;
-    background: linear-gradient(180deg, #0d47a1 0%, #1565c0 45%, #1976d2 100%);
-    border-right: 1px solid #90caf9;
-    box-shadow: 4px 0 18px rgba(25, 118, 210, 0.25);
-
+    padding: 15px 12px 25px;
+    background-color: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
-    /* FIX: sidebar itself should not scroll — only the nav inside does */
     overflow: hidden;
-}
-.nav-item--dashboard {
-    min-height: 68px !important;
-    font-size: 19px !important;
-    font-weight: 800 !important;
-    letter-spacing: 0.4px !important;
-    margin-bottom: 2px;
+    box-sizing: border-box;
 }
 
-.nav-item--dashboard mat-icon {
-    font-size: 26px !important;
-    width: 26px !important;
-    height: 26px !important;
-    min-width: 26px !important;
-}
-
-/* BRAND — hidden but kept for collapsed mode future use */
+/* BRAND HEADER */
 .sidebar-brand {
-    display: none;
-    
-}
-
-.brand-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: #e3f2fd;
-
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    gap: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
 }
 
-.brand-icon mat-icon {
-    font-size: 22px;
-    width: 22px;
-    height: 22px;
+.brand-logo {
+    font-size: 26px;
+    width: 26px;
+    height: 26px;
     color: #0d47a1;
 }
 
 .brand-label {
     font-size: 18px;
     font-weight: 800;
-    color: #ffffff;
-    white-space: nowrap;
+    color: #0b2f6b;
+    letter-spacing: 0.5px;
 }
 
 /* DIVIDER */
 .sidebar-divider {
     height: 1px;
-    background: rgba(187, 222, 251, 0.9);
-    margin: 12px 6px 16px;
+    background-color: #e2e8f0;
+    margin: 8px 6px 12px;
     flex-shrink: 0;
 }
 
-
-
-/* NAV — the only scrollable region */
+/* NAV REGION */
 .sidebar-nav {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-
-    /* FIX: was overflow: hidden — items beyond viewport were invisible */
+    gap: 8px;
     overflow-y: auto;
-
-    /* keep a little bottom breathing room */
     padding-bottom: 16px;
     scrollbar-width: none;
 }
 
 .sidebar-nav::-webkit-scrollbar {
-    display: none;               /* Chrome / Safari */
+    display: none;
 }
 
-/* NAV ITEM */
-.nav-item {
-    width: calc(100% - 12px);
-    min-height: 56px;
-    margin: 0 6px;
-    /* prevent items from shrinking when the list is taller than the viewport */
-    flex-shrink: 0;
-
+/* NAV ITEM & GROUP HEADER */
+.nav-item, .menu-group-header {
+    width: 100%;
+    min-height: 48px;
     display: flex;
     align-items: center;
-    gap: 14px;
-
-    padding: 0 18px;
-    border-radius: 14px;
-
-    color: #ffffff;
+    gap: 12px;
+    padding: 0 16px;
+    border-radius: 10px;
+    color: #475569;
     text-decoration: none;
     cursor: pointer;
-
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
     white-space: nowrap;
-
     box-sizing: border-box;
-
-    transition:
-        background-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+    transition: all 0.2s ease;
 }
 
-/* ICON */
-.nav-item mat-icon {
-    font-size: 22px;
-    width: 22px;
-    height: 22px;
-    min-width: 22px;
+.nav-item:hover, .menu-group-header:hover {
+    background-color: #f1f5f9;
+    color: #0d47a1;
+}
 
+.nav-item mat-icon, .group-title mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    color: #64748b;
+    transition: color 0.2s ease;
+}
+
+.nav-item:hover mat-icon, .menu-group-header:hover mat-icon {
+    color: #0d47a1;
+}
+
+/* ACTIVE NAV ITEM */
+.nav-item.active {
+    background-color: #eff6ff;
+    color: #0d47a1;
+    font-weight: 700;
+}
+
+.nav-item.active mat-icon {
+    color: #0d47a1;
+}
+
+/* COLLAPSIBLE GROUP CUSTOM */
+.menu-group-header {
+    justify-content: space-between;
+    user-select: none;
+}
+
+.group-title {
     display: flex;
     align-items: center;
-    justify-content: center;
-
-    color: inherit;
+    gap: 12px;
 }
 
-/* LABEL */
+.expand-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #94a3b8;
+    transition: transform 0.2s ease;
+}
+
+.expand-icon.expanded {
+    transform: rotate(180deg);
+    color: #0d47a1;
+}
+
+.menu-group-items {
+    max-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: max-height 0.25s cubic-bezier(0, 1, 0, 1);
+}
+
+.menu-group-items.open {
+    max-height: 500px;
+    transition: max-height 0.25s cubic-bezier(1, 0, 1, 0);
+}
+
+/* INDENT SUB ITEMS */
+.sub-item {
+    padding-left: 36px;
+    min-height: 42px;
+    font-size: 13px;
+    border-radius: 8px;
+}
+
 .nav-label {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-/* HOVER */
-.nav-item:hover {
-    background-color: #1e5aa8;
-    color: #ffffff;
-    transform: translateX(2px);
-}
-
-/* ACTIVE */
-.nav-item.active {
-    background: #ffffff;
-    color: #0d47a1;
-    font-weight: 800;
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-    transform: none;
-}
-
-/* ACTIVE HOVER */
-.nav-item.active:hover {
-    background: #ffffff;
-    color: #0d47a1;
-    transform: none;
-}
-
-/* COLLAPSED OPTIONAL */
-.sidebar.collapsed {
-    width: 78px;
-}
-
-.sidebar.collapsed .brand-label,
-.sidebar.collapsed .nav-label {
-    display: none;
-}
-
-.sidebar.collapsed .sidebar-brand {
-    justify-content: center;
-    padding: 0;
-}
-
-.sidebar.collapsed .nav-item {
-    width: 54px;
-    margin: 0 auto;
-    justify-content: center;
-    padding: 0;
 }
 
 /* RESPONSIVE */
@@ -204,9 +176,8 @@
         z-index: 999;
         height: calc(100vh - 72px);
     }
-
     .sidebar {
         height: 100%;
-        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
     }
 }

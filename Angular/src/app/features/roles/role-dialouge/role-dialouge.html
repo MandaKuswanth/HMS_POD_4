@@ -16,17 +16,21 @@
       />
     </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Status</mat-label>
-      <mat-select [(ngModel)]="form.status">
-        <mat-option [value]="true">Active</mat-option>
-        <mat-option [value]="false">Inactive</mat-option>
-      </mat-select>
-    </mat-form-field>
+    <div class="form-field-wrapper">
+      <label class="field-label">Status</label>
+      <app-search-dropdown
+        [searchFn]="searchStatus"
+        [displayField]="'name'"
+        [valueField]="'_id'"
+        [initialDisplay]="form.status ? 'Active' : 'Inactive'"
+        [(ngModel)]="form.status"
+        placeholder="Select status..."
+      ></app-search-dropdown>
+    </div>
 
   </div>
 
-  <mat-form-field appearance="outline" class="full-width">
+  <mat-form-field appearance="outline" class="full-width" style="margin-top: 15px;">
     <mat-label>Description</mat-label>
     <textarea
       matInput

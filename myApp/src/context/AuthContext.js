@@ -8,6 +8,7 @@ import React, {
 } from "react";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { setLogoutCallback } from "../utils/api";
 
 import {
     loginPatient,
@@ -76,6 +77,13 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         restoreSession();
     }, [restoreSession]);
+
+    useEffect(() => {
+        setLogoutCallback(logout);
+        return () => {
+            setLogoutCallback(null);
+        };
+    }, [logout]);
 
     const login = useCallback(async ({ email, password }) => {
         const data = normalizeLogin(

@@ -1,22 +1,21 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-
 import { ToastrService } from 'ngx-toastr';
+import { Observable, of } from 'rxjs';
 
 import { AppointmentService } from '../../../core/services/appointment';
-import { EmployeeService} from '../../../core/services/employee';
+import { EmployeeService } from '../../../core/services/employee';
 import { PatientService } from '../../../core/services/patient';
+import { SearchDropdownComponent } from '../../../shared/components/search-dropdown/search-dropdown';
 
 @Component({
   selector: 'app-appointment-dialog',
@@ -28,11 +27,11 @@ import { PatientService } from '../../../core/services/patient';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,
+    SearchDropdownComponent
   ],
   templateUrl: './appointment-dialog.html',
   styleUrl: './appointment-dialog.css'
@@ -42,19 +41,15 @@ export class AppointmentDialog implements OnInit {
   private readonly toastr = inject(ToastrService);
   private readonly dialogRef = inject(MatDialogRef<AppointmentDialog>);
   private readonly appointmentService = inject(AppointmentService);
-  private readonly employeeService = inject(EmployeeService);
-  private readonly patientService = inject(PatientService);
+  readonly employeeService = inject(EmployeeService);
+  readonly patientService = inject(PatientService);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  doctors: any[] = [];
-  patients: any[] = [];
+  readonly data = inject<any>(MAT_DIALOG_DATA, { optional: true });
+
   availableSlots: string[] = [];
-
   minDate: Date = new Date(new Date().setDate(new Date().getDate() + 1));
-
   loading = false;
-  patientsLoading = false;
-  doctorsLoading = false;
 
   form = this.fb.group({
     patientId: ['', Validators.required],
@@ -64,84 +59,52 @@ export class AppointmentDialog implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadPatients();
-    this.loadDoctors();
+    if (this.data?.mode === 'edit' && this.data?.appointment) {
+      const appt = this.data.appointment;
+      this.form.patchValue({
+        patientId: appt.patientId || '',
+        doctorEmployeeId: appt.doctorEmployeeId || '',
+        date: appt.date ? new Date(appt.date) as any : '',
+      });
 
-    this.form.get('doctorEmployeeId')?.valueChanges.subscribe((doctorCode) => {
-      this.onDoctorChange(doctorCode || '');
-    });
+      if (appt.doctorEmployeeId) {
+        this.employeeService.searchDoctors(appt.doctorEmployeeId).subscribe({
+          next: (res) => {
+            const doctors = res?.data || [];
+            const doc = doctors.find((d: any) => d.employeeCode === appt.doctorEmployeeId);
+            if (doc) {
+              this.availableSlots = doc.availabilitySlots || [];
+              this.form.get('timeSlot')?.enable();
+              this.form.get('timeSlot')?.setValue(appt.timeSlot || '');
+              this.cdr.detectChanges();
+            }
+          }
+        });
+      }
+    }
   }
 
-
-loadPatients(): void {
-  this.patientsLoading = true;
-
-  this.patientService.getPatients(1, 1000).subscribe({
-    next: (response: any) => {
-      this.patients = Array.isArray(response?.data?.records)
-        ? response.data.records
-        : [];
-
-      this.patientsLoading = false;
-      this.cdr.detectChanges();
-    },
-    error: (err: any) => {
-      this.patients = [];
-      this.patientsLoading = false;
-      this.toastr.error(err?.error?.message || 'Failed to load patients');
-      this.cdr.detectChanges();
-    }
-  });
-}
- 
-
-  loadDoctors(): void {
-  this.doctorsLoading = true;
-
-  this.employeeService.getEmployees(1, 1000).subscribe({
-    next: (response: any) => {
-      const employees = Array.isArray(response?.data?.records)
-        ? response.data.records
-        : [];
-
-      this.doctors = employees.filter((emp: any) =>
-        emp.roles?.includes('DOCTOR') &&
-        emp.status === true
-      );
-
-      this.doctorsLoading = false;
-      this.cdr.detectChanges();
-    },
-    error: (err: any) => {
-      this.doctors = [];
-      this.doctorsLoading = false;
-      this.toastr.error(err?.error?.message || 'Failed to load doctors');
-      this.cdr.detectChanges();
-    }
-  });
-}
-
-  onDoctorChange(doctorCode: string): void {
-    const slotControl = this.form.get('timeSlot');
-
-    const selectedDoctor = this.doctors.find((doctor: any) =>
-      doctor.employeeCode === doctorCode
-    );
-
-    this.availableSlots = Array.isArray(selectedDoctor?.availabilitySlots)
-      ? selectedDoctor.availabilitySlots
-      : [];
-
-    slotControl?.reset();
-
-    if (this.availableSlots.length > 0) {
-      slotControl?.enable();
-    } else {
-      slotControl?.disable();
-    }
-
+  onPatientSelected(patient: any): void {
     this.cdr.detectChanges();
   }
+
+  onDoctorSelected(doctor: any): void {
+    this.availableSlots = doctor?.availabilitySlots || [];
+    this.form.get('timeSlot')?.reset();
+    if (this.availableSlots.length > 0) {
+      this.form.get('timeSlot')?.enable();
+    } else {
+      this.form.get('timeSlot')?.disable();
+    }
+    this.cdr.detectChanges();
+  }
+
+  searchSlots = (query: string): Observable<any> => {
+    const list = this.availableSlots
+      .filter(slot => slot.toLowerCase().includes(query.toLowerCase()))
+      .map(slot => ({ _id: slot, name: slot }));
+    return of(list);
+  };
 
   onSubmit(): void {
     if (this.form.invalid) {
@@ -151,7 +114,6 @@ loadPatients(): void {
     }
 
     this.setLoading(true);
-
     const formValue = this.form.getRawValue();
 
     const payload = {
@@ -165,14 +127,22 @@ loadPatients(): void {
       timeSlot: formValue.timeSlot || ''
     };
 
-    this.appointmentService.createAppointment(payload).subscribe({
+    const request$ = this.data?.mode === 'edit'
+      ? this.appointmentService.updateAppointment(this.data.appointment.appointmentId, payload)
+      : this.appointmentService.createAppointment(payload);
+
+    request$.subscribe({
       next: () => {
-        this.toastr.success('Appointment created successfully');
+        this.toastr.success(
+          this.data?.mode === 'edit'
+            ? 'Appointment rescheduled successfully'
+            : 'Appointment created successfully'
+        );
         this.dialogRef.close(true);
       },
       error: (err: any) => {
         this.setLoading(false);
-        this.toastr.error(err?.error?.message || 'Failed to create appointment');
+        this.toastr.error(err?.error?.message || 'Failed to save appointment');
       }
     });
   }

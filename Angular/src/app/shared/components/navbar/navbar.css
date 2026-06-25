@@ -100,6 +100,103 @@
     color: #ffffff !important;
 }
 
+/* PROFILE TOGGLE BUTTON */
+.profile-container {
+    position: relative;
+}
+
+.profile-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.profile-toggle-btn:hover {
+    background-color: rgba(13, 71, 161, 0.05);
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #0d47a1;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #0b2f6b;
+    font-size: 15px;
+}
+
+/* DROPDOWN MENU */
+.profile-dropdown {
+    position: absolute;
+    top: 110%;
+    right: 0;
+    width: 180px;
+    background: #ffffff;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(13, 71, 161, 0.15);
+    padding: 6px 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 1001;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    color: #0b2f6b;
+    text-align: left;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f3f8ff;
+}
+
+.dropdown-item mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #0d47a1;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background-color: #bfdbfe;
+    margin: 4px 0;
+}
+
+.dropdown-item.logout-btn {
+    color: #b71c1c;
+}
+
+.dropdown-item.logout-btn mat-icon {
+    color: #b71c1c;
+}
+
 /* MOBILE */
 @media (max-width: 768px) {
     .navbar {
@@ -123,10 +220,5 @@
 
     .role {
         display: none;
-    }
-
-    .logout-btn {
-        min-width: 44px;
-        padding: 0 12px !important;
     }
 }

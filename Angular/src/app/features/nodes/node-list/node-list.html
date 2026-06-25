@@ -36,8 +36,8 @@
             class="search-input"
             type="text"
             placeholder="Search nodes..."
-            [(ngModel)]="searchText"
-            (ngModelChange)="applyFilter()">
+            [ngModel]="searchTextSignal()"
+            (input)="onSearchInput($event)">
 
         </div>
 
@@ -45,7 +45,7 @@
 
       <div class="table-wrapper">
 
-        <table mat-table [dataSource]="dataSource">
+        <table mat-table [dataSource]="nodesSignal()">
 
           <ng-container matColumnDef="nodeId">
             <th mat-header-cell *matHeaderCellDef>ID</th>
@@ -131,9 +131,9 @@
       </div>
 
       <mat-paginator
-        [length]="totalRecords"
-        [pageIndex]="pageIndex"
-        [pageSize]="pageSize"
+        [length]="totalSignal()"
+        [pageIndex]="pageSignal()"
+        [pageSize]="limitSignal()"
         [pageSizeOptions]="pageSizeOptions"
         showFirstLastButtons
         (page)="onPageChange($event)">

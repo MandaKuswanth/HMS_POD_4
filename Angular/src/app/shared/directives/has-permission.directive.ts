@@ -1,31 +1,33 @@
 import {
   Directive,
-  Input,
   TemplateRef,
   ViewContainerRef,
-  OnChanges,
   inject,
+  effect,
+  input
 } from '@angular/core';
-
 import { AuthService } from '../../core/services/auth';
 
 @Directive({
   selector: '[appHasPermission]',
   standalone: true,
 })
-export class HasPermissionDirective implements OnChanges {
+export class HasPermissionDirective {
   private readonly authService = inject(AuthService);
   private readonly templateRef = inject(TemplateRef<unknown>);
   private readonly viewContainer = inject(ViewContainerRef);
 
-  @Input('appHasPermission')
-  permission = '';
+  // Signal input for the permission name
+  appHasPermission = input.required<string>();
 
-  ngOnChanges(): void {
-    this.viewContainer.clear();
-
-    if (this.permission && this.authService.hasPermission(this.permission)) {
-      this.viewContainer.createEmbeddedView(this.templateRef);
-    }
+  constructor() {
+    effect(() => {
+      const permission = this.appHasPermission();
+      this.viewContainer.clear();
+      
+      if (permission && this.authService.hasPermission(permission)) {
+        this.viewContainer.createEmbeddedView(this.templateRef);
+      }
+    });
   }
 }

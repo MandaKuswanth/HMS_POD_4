@@ -76,22 +76,20 @@
       </mat-form-field>
 
       <!-- Gender -->
-      <mat-form-field appearance="outline">
-        <mat-label>Gender</mat-label>
-
-        <mat-select formControlName="gender">
-          <mat-option
-            *ngFor="let g of genders"
-            [value]="g"
-          >
-            {{ g }}
-          </mat-option>
-        </mat-select>
-
-        <mat-error *ngIf="form.get('gender')?.hasError('required')">
-          Gender is required
-        </mat-error>
-      </mat-form-field>
+      <div class="form-field-wrapper">
+        <label class="field-label">Gender</label>
+        <app-search-dropdown
+          [searchFn]="searchGenders"
+          [displayField]="'name'"
+          [valueField]="'_id'"
+          [initialDisplay]="form.get('gender')?.value || ''"
+          formControlName="gender"
+          placeholder="Select gender..."
+        ></app-search-dropdown>
+        @if (form.get('gender')?.touched && form.get('gender')?.hasError('required')) {
+          <span class="field-error">Gender is required</span>
+        }
+      </div>
 
       <!-- DOB -->
       <mat-form-field appearance="outline">

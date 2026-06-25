@@ -12,12 +12,12 @@
                 <div class="toolbar-row">
                     <div class="search-container">
                         <input class="search-input" type="text"
-                            placeholder="Search by record, appointment, patient, doctor..." [(ngModel)]="searchText"
-                            (ngModelChange)="applyFilter()" />
+                            placeholder="Search by record, appointment, patient, doctor..." [ngModel]="searchTextSignal()"
+                            (input)="onSearchInput($event)" />
                     </div>
 
                     <div class="header-actions">
-                        @if (searchText) {
+                        @if (searchTextSignal()) {
                         <button mat-stroked-button type="button" (click)="clearSearch()">
                             Clear
                         </button>
@@ -31,14 +31,14 @@
                 </div>
             </div>
 
-            @if (isLoading) {
+            @if (loadingSignal()) {
             <div class="no-data">
                 <mat-icon>hourglass_empty</mat-icon>
                 <p>Loading health records...</p>
             </div>
-            } @else if (filteredHealthRecords.length > 0){
+            } @else if (recordsSignal().length > 0){
             <div class="table-wrapper">
-                <table mat-table [dataSource]="filteredHealthRecords" class="mat-elevation-z1" multiTemplateDataRows>
+                <table mat-table [dataSource]="recordsSignal()" class="mat-elevation-z1" multiTemplateDataRows>
 
                     <ng-container matColumnDef="healthRecordId">
                         <th mat-header-cell *matHeaderCellDef>Record ID</th>
@@ -90,7 +90,7 @@
 
                     <ng-container matColumnDef="expandedDetail">
                         <td mat-cell *matCellDef="let record" [attr.colspan]="displayedColumns.length">
-                            @if (expandedRecord === record) {
+                            @if (expandedRecordSignal()?.healthRecordId === record.healthRecordId) {
                             <div class="health-action-panel">
 
                                 <div class="health-info">
@@ -102,7 +102,7 @@
                                 </div>
 
                                 <div class="health-action-buttons">
-                                    <button *appHasPermission="PERMISSIONS.HEALTH_RECORD_UPDATE" mat-stroked-button
+                                    <button *appHasPermission="PERMISSIONS.HEALTH_RECORD_UPDATE" mat-focused-button mat-stroked-button
                                         class="edit-action" matTooltip="Update Health Record"
                                         (click)="openEditDialog(record); $event.stopPropagation()">
                                         <mat-icon>edit</mat-icon>
@@ -125,16 +125,17 @@
                     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
 
                     <tr mat-row *matRowDef="let row; columns: displayedColumns" class="health-row"
-                        [class.selected-row]="expandedRecord === row" tabindex="0" (click)="toggleRow(row)"
+                        [class.selected-row]="expandedRecordSignal()?.healthRecordId === row.healthRecordId" tabindex="0" (click)="toggleRow(row)"
                         (keydown.enter)="toggleRow(row)" (keydown.space)="toggleRow(row)">
                     </tr>
 
-                    <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row">
+                    <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"
+                        [class.hidden]="expandedRecordSignal()?.healthRecordId !== row.healthRecordId">
                     </tr>
 
                 </table>
 
-                <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
+                <mat-paginator [length]="totalSignal()" [pageSize]="limitSignal()" [pageIndex]="pageSignal()"
                     [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
                 </mat-paginator>
             </div>

@@ -29,12 +29,17 @@ export class NodeService {
 
   getNodes(
     page = 1,
-    limit = 5
+    limit = 5,
+    search = ''
   ): Observable<any> {
     return this.http.get(
-      `${this.API_URL}?page=${page}&limit=${limit}`
+      `${this.API_URL}?page=${page}&limit=${limit}&search=${search}`
     );
   }
+
+  search = (query: string): Observable<any> => {
+    return this.http.get<any>(`${this.API_URL}/search?q=${query}&limit=10`);
+  };
 
   getNodeById(nodeId: string): Observable<any> {
     return this.http.get(`${this.API_URL}/${nodeId}`);

@@ -1,18 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, Inject, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import {
-  MAT_DIALOG_DATA,
-  MatDialogModule,
-  MatDialogRef,
-} from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-
+import { Observable, of } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
+
 import { RoleRequest, RoleService } from '../../../core/services/role';
+import { SearchDropdownComponent } from '../../../shared/components/search-dropdown/search-dropdown';
 
 @Component({
   selector: 'app-role-dialog',
@@ -24,7 +21,7 @@ import { RoleRequest, RoleService } from '../../../core/services/role';
     MatButtonModule,
     MatCheckboxModule,
     MatInputModule,
-    MatSelectModule,
+    SearchDropdownComponent
   ],
   templateUrl: './role-dialouge.html',
   styleUrl: './role-dialouge.css',
@@ -121,6 +118,14 @@ export class RoleDialog {
       };
     }
   }
+
+  searchStatus = (query: string): Observable<any> => {
+    const list = [
+      { _id: true, name: 'Active' },
+      { _id: false, name: 'Inactive' }
+    ];
+    return of(list.filter(s => s.name.toLowerCase().includes(query.toLowerCase())));
+  };
 
   isChecked(permission: string): boolean {
     return this.form.permissions.includes(permission);

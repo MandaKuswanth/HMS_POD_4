@@ -5,70 +5,76 @@
 </h2>
 
 <mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
 
-    <!-- Appointment -->
-    <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Appointment</mat-label>
+    <!-- Appointment Autocomplete -->
+    <div class="form-field-wrapper" *ngIf="data?.mode !== 'edit'">
+        <label class="field-label">Completed Appointment</label>
+        <app-search-dropdown
+            [searchFn]="searchAppointments"
+            [displayField]="'appointmentId'"
+            [valueField]="'appointmentId'"
+            formControlName="appointmentId"
+            (selectionChange)="onAppointmentSelected($event)"
+            placeholder="Search completed appointments..."
+        ></app-search-dropdown>
+        @if (form.get('appointmentId')?.touched && form.get('appointmentId')?.hasError('required')) {
+          <span class="field-error">Appointment is required</span>
+        }
+    </div>
 
-        <mat-select [(ngModel)]="formData.appointmentId" (selectionChange)="onAppointmentChange()"
-            [disabled]="data?.mode === 'edit'">
-            @for (appointment of appointments; track appointment.appointmentId) {
-            <mat-option [value]="appointment.appointmentId">
-                {{ appointment.appointmentId }}
-                |
-                {{ appointment.patientName }}
-                |
-                Dr. {{ appointment.doctorName }}
-            </mat-option>
-            }
+    <!-- Readonly fields shown if selected -->
+    <div class="row" *ngIf="form.get('patientId')?.value">
+        <mat-form-field appearance="outline">
+            <mat-label>Patient ID (UHID)</mat-label>
+            <input matInput formControlName="patientId" readonly />
+        </mat-form-field>
 
-        </mat-select>
-    </mat-form-field>
+        <mat-form-field appearance="outline">
+            <mat-label>Doctor ID</mat-label>
+            <input matInput formControlName="doctorEmployeeId" readonly />
+        </mat-form-field>
+    </div>
 
     <!-- Symptoms -->
     <mat-form-field appearance="outline" class="full-width">
         <mat-label>Symptoms</mat-label>
-
-        <textarea matInput rows="3" [(ngModel)]="formData.symptoms" placeholder="Enter symptoms">
-    </textarea>
+        <textarea matInput rows="3" formControlName="symptoms" placeholder="Enter symptoms"></textarea>
+        @if (form.get('symptoms')?.touched && form.get('symptoms')?.hasError('required')) {
+          <mat-error>Symptoms are required</mat-error>
+        }
     </mat-form-field>
 
     <!-- Diagnosis -->
     <mat-form-field appearance="outline" class="full-width">
         <mat-label>Diagnosis</mat-label>
-
-        <textarea matInput rows="3" [(ngModel)]="formData.diagnosis" placeholder="Enter diagnosis">
-    </textarea>
+        <textarea matInput rows="3" formControlName="diagnosis" placeholder="Enter diagnosis"></textarea>
+        @if (form.get('diagnosis')?.touched && form.get('diagnosis')?.hasError('required')) {
+          <mat-error>Diagnosis is required</mat-error>
+        }
     </mat-form-field>
 
     <!-- Prescription -->
     <mat-form-field appearance="outline" class="full-width">
         <mat-label>Prescription</mat-label>
-
-        <textarea matInput rows="3" [(ngModel)]="formData.prescription" placeholder="Enter prescription">
-    </textarea>
+        <textarea matInput rows="3" formControlName="prescription" placeholder="Enter prescription"></textarea>
     </mat-form-field>
 
     <!-- Notes -->
     <mat-form-field appearance="outline" class="full-width">
         <mat-label>Notes</mat-label>
-
-        <textarea matInput rows="3" [(ngModel)]="formData.notes" placeholder="Additional notes">
-    </textarea>
+        <textarea matInput rows="3" formControlName="notes" placeholder="Additional notes"></textarea>
     </mat-form-field>
 
+  </form>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-
-    <button mat-stroked-button mat-dialog-close>
+    <button mat-stroked-button mat-dialog-close [disabled]="loading">
         Cancel
     </button>
 
-    <button mat-flat-button color="primary" (click)="save()">
-        {{ data?.mode === 'edit'
-        ? 'Update'
-        : 'Save' }}
+    <button mat-flat-button color="primary" [disabled]="loading" (click)="save()">
+        {{ loading ? 'Saving...' : (data?.mode === 'edit' ? 'Update' : 'Save') }}
     </button>
-
 </mat-dialog-actions>

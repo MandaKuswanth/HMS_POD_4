@@ -1,23 +1,16 @@
 import { Component, Inject, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-import {
-  MAT_DIALOG_DATA,
-  MatDialogModule,
-  MatDialogRef,
-} from '@angular/material/dialog';
-
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
-
-
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 
 import { NodeService } from '../../../core/services/node';
-
+import { SearchDropdownComponent } from '../../../shared/components/search-dropdown/search-dropdown';
 
 @Component({
   selector: 'app-node-dialog',
@@ -29,18 +22,17 @@ import { NodeService } from '../../../core/services/node';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatSelectModule,
+    SearchDropdownComponent
   ],
   templateUrl: './node-dialog.html',
   styleUrl: './node-dialog.css',
 })
 export class NodeDialog implements OnInit {
   private readonly dialogRef = inject(MatDialogRef<NodeDialog>);
-  private readonly nodeService = inject(NodeService);
+  readonly nodeService = inject(NodeService);
   private readonly toastr = inject(ToastrService);
 
-
-  nodes: any[] = [];
+  readonly data = inject<any>(MAT_DIALOG_DATA, { optional: true });
 
   formData = {
     name: '',
@@ -52,14 +44,7 @@ export class NodeDialog implements OnInit {
     status: true,
   };
 
-  constructor(
-    @Inject(MAT_DIALOG_DATA)
-    public data: any
-  ) { }
-
   ngOnInit(): void {
-    this.loadParentNodes();
-
     if (this.data?.mode === 'edit' && this.data?.node) {
       this.formData = {
         name: this.data.node.name || '',
@@ -73,23 +58,23 @@ export class NodeDialog implements OnInit {
     }
   }
 
-  loadParentNodes(): void {
-    this.nodeService.getNodes(1, 1000).subscribe({
-      next: (response: any) => {
-        const nodes = Array.isArray(response?.data?.records)
-          ? response.data.records
-          : [];
+  searchParentNodes = (query: string): Observable<any> => {
+    return this.nodeService.search(query).pipe(
+      map((res: any) => {
+        const list = res?.data || res || [];
+        return list.filter((n: any) => n.nodeId !== this.data?.node?.nodeId);
+      })
+    );
+  };
 
-        this.nodes = nodes.filter(
-          (node: any) =>
-            node.nodeId !== this.data?.node?.nodeId
-        );
-      },
-      error: () => {
-        this.toastr.error('Failed to load parent nodes');
-      },
-    });
-  }
+  searchStatus = (query: string): Observable<any> => {
+    const list = [
+      { _id: true, name: 'Active' },
+      { _id: false, name: 'Inactive' }
+    ];
+    return of(list.filter(s => s.name.toLowerCase().includes(query.toLowerCase())));
+  };
+
   onNameChange(value: string): void {
     this.formData.name = value;
 

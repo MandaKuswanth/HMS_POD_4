@@ -1,6 +1,6 @@
-
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Observable, of } from 'rxjs';
 
 import {
   FormArray,
@@ -25,6 +25,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { ToastrService } from 'ngx-toastr';
 import { EmployeeService } from '../../../core/services/employee';
+import { SearchDropdownComponent } from '../../../shared/components/search-dropdown/search-dropdown';
 import {
   EMPLOYEE_ROLES,
   NAME_PATTERN,
@@ -85,7 +86,8 @@ export interface EmployeeDialogData {
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatIconModule
+    MatIconModule,
+    SearchDropdownComponent
   ],
   templateUrl: './employee-dialog.html',
   styleUrl: './employee-dialog.css'
@@ -101,6 +103,21 @@ export class EmployeeDialog implements OnInit {
 
   loading = false;
   readonly roles = EMPLOYEE_ROLES;
+
+  searchRoles = (query: string): Observable<any> => {
+    const list = this.roles
+      .filter(r => r.toLowerCase().includes(query.toLowerCase()))
+      .map(r => ({ _id: r, name: r }));
+    return of(list);
+  };
+
+  searchStatus = (query: string): Observable<any> => {
+    const list = [
+      { _id: true, name: 'Active' },
+      { _id: false, name: 'Inactive' }
+    ];
+    return of(list.filter(s => s.name.toLowerCase().includes(query.toLowerCase())));
+  };
   timeSlots: string[] = [
     '09:00 AM - 09:30 AM',
     '09:30 AM - 10:00 AM',

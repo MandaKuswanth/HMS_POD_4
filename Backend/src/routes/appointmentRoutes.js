@@ -11,7 +11,7 @@ router.post(
   "/",
   auth,
   allowPermission(PERMISSIONS.APPOINTMENT_CREATE),
-  appointmentController.createAppointment,
+  appointmentController.createAppointment
 );
 
 // GET ALL APPOINTMENTS
@@ -19,7 +19,14 @@ router.get(
   "/",
   auth,
   allowPermission(PERMISSIONS.APPOINTMENT_READ),
-  appointmentController.getAppointments,
+  appointmentController.getAppointments
+);
+
+// AUTOCOMPLETE APPOINTMENT SEARCH
+router.get(
+  "/search",
+  auth,
+  appointmentController.getAppointmentsSearch
 );
 
 // APPROVE APPOINTMENT
@@ -27,7 +34,7 @@ router.put(
   "/:appointmentId/approve",
   auth,
   allowPermission(PERMISSIONS.APPOINTMENT_UPDATE),
-  appointmentController.approveAppointment,
+  appointmentController.approveAppointment
 );
 
 // REJECT APPOINTMENT
@@ -35,15 +42,15 @@ router.put(
   "/:appointmentId/reject",
   auth,
   allowPermission(PERMISSIONS.APPOINTMENT_UPDATE),
-  appointmentController.rejectAppointment,
+  appointmentController.rejectAppointment
 );
 
-// UPDATE APPOINTMENT STATUS  👈 added
+// UPDATE APPOINTMENT STATUS
 router.put(
   "/:appointmentId/status",
   auth,
   allowPermission(PERMISSIONS.APPOINTMENT_UPDATE),
-  appointmentController.updateAppointmentStatus,
+  appointmentController.updateAppointmentStatus
 );
 
 // GET SINGLE APPOINTMENT
@@ -51,7 +58,7 @@ router.get(
   "/:appointmentId",
   auth,
   allowPermission(PERMISSIONS.APPOINTMENT_READ),
-  appointmentController.getAppointmentById,
+  appointmentController.getAppointmentById
 );
 
 // UPDATE APPOINTMENT
@@ -59,7 +66,7 @@ router.put(
   "/:appointmentId",
   auth,
   allowPermission(PERMISSIONS.APPOINTMENT_UPDATE),
-  appointmentController.updateAppointment,
+  appointmentController.updateAppointment
 );
 
 // DELETE APPOINTMENT
@@ -67,7 +74,7 @@ router.delete(
   "/:appointmentId",
   auth,
   allowPermission(PERMISSIONS.APPOINTMENT_DELETE),
-  appointmentController.deleteAppointment,
+  appointmentController.deleteAppointment
 );
 
 module.exports = router;

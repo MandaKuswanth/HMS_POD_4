@@ -26,9 +26,9 @@
       <div class="toolbar">
         <div class="search-container">
           <input class="search-input" type="text" placeholder="Search by role ID, name or description..."
-            [(ngModel)]="searchText" (ngModelChange)="applyFilter()" />
+            [ngModel]="searchTextSignal()" (input)="onSearchInput($event)" />
 
-          @if (searchText) {
+          @if (searchTextSignal()) {
           <button mat-icon-button type="button" (click)="clearSearch()">
             <mat-icon>close</mat-icon>
           </button>
@@ -37,7 +37,7 @@
       </div>
 
       <div class="table-wrapper">
-        <table mat-table [dataSource]="dataSource" class="mat-elevation-z1">
+        <table mat-table [dataSource]="rolesSignal()" class="mat-elevation-z1">
 
           <ng-container matColumnDef="roleId">
             <th mat-header-cell *matHeaderCellDef>Role ID</th>
@@ -100,7 +100,7 @@
 
         </table>
 
-        <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
+        <mat-paginator [length]="totalSignal()" [pageSize]="limitSignal()" [pageIndex]="pageSignal()"
           [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
         </mat-paginator>
       </div>

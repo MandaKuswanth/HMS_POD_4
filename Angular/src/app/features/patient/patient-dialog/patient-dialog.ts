@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
+import { Observable, of } from 'rxjs';
 import {
     AbstractControl,
     FormBuilder,
@@ -25,6 +26,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ToastrService } from 'ngx-toastr';
 
 import { PatientService } from '../../../core/services/patient';
+import { SearchDropdownComponent } from '../../../shared/components/search-dropdown/search-dropdown';
 
 export interface PatientDialogData {
     mode: 'add' | 'edit' | 'view';
@@ -44,7 +46,8 @@ export interface PatientDialogData {
         MatSelectModule,
         MatDatepickerModule,
         MatNativeDateModule,
-        MatIconModule
+        MatIconModule,
+        SearchDropdownComponent
     ],
     templateUrl: './patient-dialog.html',
     styleUrl: './patient-dialog.css'
@@ -60,6 +63,13 @@ export class PatientDialog implements OnInit {
     loading = false;
 
     genders = ['male', 'female', 'others'];
+
+    searchGenders = (query: string): Observable<any> => {
+        const list = this.genders
+            .filter(g => g.toLowerCase().includes(query.toLowerCase()))
+            .map(g => ({ _id: g, name: g }));
+        return of(list);
+    };
 
     form = this.fb.group({
         name: [

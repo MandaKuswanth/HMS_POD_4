@@ -1,41 +1,65 @@
 <div class="sidebar">
-  <div class="sidebar-brand"></div>
-
-  <a
-    class="nav-item nav-item--dashboard"
-    routerLink="/dashboard"
-    routerLinkActive="active"
-    [routerLinkActiveOptions]="{ exact: true }"
-  >
-    <mat-icon>dashboard</mat-icon>
-    <span class="nav-label">Dashboard</span>
-  </a>
-
-  <div class="sidebar-divider"></div>
+  <div class="sidebar-brand">
+    <mat-icon class="brand-logo">local_hospital</mat-icon>
+    <span class="brand-label">HMS Portal</span>
+  </div>
 
   <nav class="sidebar-nav">
-    
-    @for (item of menuItems(); track item.nodeId) {
-      @if (item.path !== '/dashboard') {
-        <a
-          class="nav-item"
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          <mat-icon>{{ item.icon }}</mat-icon>
-          <span class="nav-label">{{ item.name }}</span>
-        </a>
-      }
+    <!-- Dashboard Link (accessible to all who have DASHBOARD_READ) -->
+    <a
+      *appHasPermission="'DASHBOARD_READ'"
+      class="nav-item"
+      routerLink="/dashboard"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <mat-icon>dashboard</mat-icon>
+      <span class="nav-label">Dashboard</span>
+    </a>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Groups -->
+    @for (group of menuGroups; track group.name) {
+      <ng-container *appHasPermission="group.permission">
+        <div class="menu-group-header" (click)="toggleGroup(group.name)">
+          <div class="group-title">
+            <mat-icon>{{ group.icon }}</mat-icon>
+            <span class="nav-label">{{ group.name }}</span>
+          </div>
+          <mat-icon class="expand-icon" [class.expanded]="menuOpenState()[group.name]">
+            keyboard_arrow_down
+          </mat-icon>
+        </div>
+
+        <!-- Group items -->
+        <div class="menu-group-items" [class.open]="menuOpenState()[group.name]">
+          @for (item of group.items; track item.name) {
+            <a
+              *appHasPermission="item.permission"
+              class="nav-item sub-item"
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: true }"
+            >
+              <mat-icon>{{ item.icon }}</mat-icon>
+              <span class="nav-label">{{ item.name }}</span>
+            </a>
+          }
+        </div>
+      </ng-container>
     }
-    
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Profile Link -->
     <a
       class="nav-item"
       routerLink="/profile"
       routerLinkActive="active"
     >
       <mat-icon>person</mat-icon>
-      <span class="nav-label">Profile</span>
+      <span class="nav-label">My Profile</span>
     </a>
   </nav>
 </div>

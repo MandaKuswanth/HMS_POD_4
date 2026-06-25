@@ -1,17 +1,12 @@
 import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-import {
-  MAT_DIALOG_DATA,
-  MatDialogModule,
-  MatDialogRef
-} from '@angular/material/dialog';
-
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
+import { Observable, of } from 'rxjs';
+import { SearchDropdownComponent } from '../../../shared/components/search-dropdown/search-dropdown';
 
 export interface UpdateStatusDialogData {
   appointmentId: string;
@@ -28,16 +23,14 @@ export interface UpdateStatusDialogData {
     MatDialogModule,
     MatButtonModule,
     MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule
+    MatInputModule,
+    SearchDropdownComponent
   ],
   template: `
     <h2 mat-dialog-title>Update Appointment Status</h2>
 
     <mat-dialog-content>
-
       <div class="row">
-
         <mat-form-field appearance="outline">
           <mat-label>Appointment ID</mat-label>
           <input
@@ -53,34 +46,24 @@ export interface UpdateStatusDialogData {
             [value]="data.currentStatus"
             readonly>
         </mat-form-field>
-
       </div>
 
-      <div class="row">
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Select New Status</mat-label>
-
-          <mat-select [(ngModel)]="selectedStatus">
-
-            <mat-option
-              *ngFor="let status of data.nextStatuses"
-              [value]="status">
-
-              {{ status }}
-
-            </mat-option>
-
-          </mat-select>
-
-        </mat-form-field>
-
+      <div class="row full-width-row">
+        <div class="form-field-wrapper">
+          <label class="field-label">Select New Status</label>
+          <app-search-dropdown
+            [searchFn]="searchNextStatuses"
+            [displayField]="'name'"
+            [valueField]="'_id'"
+            [initialDisplay]="selectedStatus"
+            [(ngModel)]="selectedStatus"
+            placeholder="Choose new status..."
+          ></app-search-dropdown>
+        </div>
       </div>
-
     </mat-dialog-content>
 
     <mat-dialog-actions align="end">
-
       <button
         mat-stroked-button
         (click)="onCancel()">
@@ -92,16 +75,13 @@ export interface UpdateStatusDialogData {
         color="primary"
         [disabled]="!selectedStatus"
         (click)="onConfirm()">
-
         Update Status
-
       </button>
-
     </mat-dialog-actions>
   `,
   styles: [`
     h2 {
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 600;
       margin-bottom: 20px;
     }
@@ -113,8 +93,21 @@ export interface UpdateStatusDialogData {
       margin-top: 15px;
     }
 
-    .full-width {
-      grid-column: span 2;
+    .full-width-row {
+      grid-template-columns: 1fr;
+    }
+
+    .form-field-wrapper {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-label {
+      font-size: 13px;
+      color: #666;
+      font-weight: 500;
     }
 
     mat-form-field {
@@ -122,26 +115,31 @@ export interface UpdateStatusDialogData {
     }
 
     mat-dialog-content {
-      min-width: 700px;
+      min-width: 450px;
       padding-top: 10px;
     }
 
     mat-dialog-actions {
-      padding: 20px 0;
+      padding: 20px 0 0 0;
     }
   `]
 })
 export class UpdateStatusDialog {
-
   selectedStatus!: string;
 
   constructor(
     public dialogRef: MatDialogRef<UpdateStatusDialog>,
-    @Inject(MAT_DIALOG_DATA)
-    public data: UpdateStatusDialogData
+    @Inject(MAT_DIALOG_DATA) public data: UpdateStatusDialogData
   ) {
     this.selectedStatus = data.currentStatus;
   }
+
+  searchNextStatuses = (query: string): Observable<any> => {
+    const list = (this.data.nextStatuses || [])
+      .filter(s => s.toLowerCase().includes(query.toLowerCase()))
+      .map(s => ({ _id: s, name: s }));
+    return of(list);
+  };
 
   onConfirm(): void {
     this.dialogRef.close(this.selectedStatus);

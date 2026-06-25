@@ -1,9 +1,9 @@
 const Node = require("../models/Node");
 const Role = require("../models/Role");
-
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../middleware/asyncHandler");
+const { paginateQuery } = require("../utils/pagination");
 
 const buildNodeResponse = (node) => {
     return {
@@ -40,14 +40,8 @@ const buildMenuTree = (nodes) => {
     const menu = [];
 
     nodeMap.forEach((node) => {
-        if (
-            node.parentNodeId &&
-            nodeMap.has(node.parentNodeId)
-        ) {
-            nodeMap
-                .get(node.parentNodeId)
-                .children
-                .push(node);
+        if (node.parentNodeId && nodeMap.has(node.parentNodeId)) {
+            nodeMap.get(node.parentNodeId).children.push(node);
         } else {
             menu.push(node);
         }
@@ -55,7 +49,6 @@ const buildMenuTree = (nodes) => {
 
     const sortMenu = (items) => {
         items.sort((a, b) => a.order - b.order);
-
         items.forEach((item) => {
             if (item.children?.length) {
                 sortMenu(item.children);
@@ -64,7 +57,6 @@ const buildMenuTree = (nodes) => {
     };
 
     sortMenu(menu);
-
     return menu;
 };
 
@@ -75,15 +67,11 @@ const getUserPermissions = async (roleIds) => {
     });
 
     const permissions = roles.flatMap((role) => {
-        return Array.isArray(role.permissions)
-            ? role.permissions
-            : [];
+        return Array.isArray(role.permissions) ? role.permissions : [];
     });
 
     return [...new Set(permissions)];
 };
-
-
 
 const handlePathUpdate = async (node, path, nodeId) => {
     if (!path || path === node.path) return;
@@ -100,7 +88,6 @@ const handlePathUpdate = async (node, path, nodeId) => {
 
     node.path = path;
 };
-
 
 const handleParentUpdate = async (node, parentNodeId, nodeId) => {
     if (parentNodeId === undefined) return;
@@ -126,7 +113,6 @@ const handleParentUpdate = async (node, parentNodeId, nodeId) => {
     node.parentNodeId = parentNodeId;
 };
 
-
 const handlePermissionsUpdate = (node, permissions) => {
     if (permissions === undefined) return;
 
@@ -144,33 +130,16 @@ const applySimpleUpdates = (node, { name, icon, order, status }) => {
     if (status !== undefined) node.status = status;
 };
 
-
+// ─── Create Node ─────────────────────────────────────────────────────────────
 exports.createNode = asyncHandler(async (req, res) => {
-    const {
-        name,
-        path,
-        icon,
-        permissions,
-        parentNodeId,
-        order,
-        status
-    } = req.body;
+    const { name, path, icon, permissions, parentNodeId, order, status } = req.body;
 
     if (!name || !path) {
-        throw new ApiError(
-            400,
-            "Node name and path are required"
-        );
+        throw new ApiError(400, "Node name and path are required");
     }
 
-    if (
-        !Array.isArray(permissions) ||
-        permissions.length === 0
-    ) {
-        throw new ApiError(
-            400,
-            "At least one permission is required"
-        );
+    if (!Array.isArray(permissions) || permissions.length === 0) {
+        throw new ApiError(400, "At least one permission is required");
     }
 
     const existingNode = await Node.findOne({
@@ -179,10 +148,7 @@ exports.createNode = asyncHandler(async (req, res) => {
     });
 
     if (existingNode) {
-        throw new ApiError(
-            409,
-            "Node path already exists"
-        );
+        throw new ApiError(409, "Node path already exists");
     }
 
     if (parentNodeId) {
@@ -192,10 +158,7 @@ exports.createNode = asyncHandler(async (req, res) => {
         });
 
         if (!parentNode) {
-            throw new ApiError(
-                404,
-                "Parent node not found"
-            );
+            throw new ApiError(404, "Parent node not found");
         }
     }
 
@@ -210,113 +173,64 @@ exports.createNode = asyncHandler(async (req, res) => {
     });
 
     return res.status(201).json(
-        new ApiResponse(
-            201,
-            buildNodeResponse(node),
-            "Node created successfully"
-        )
+        new ApiResponse(201, buildNodeResponse(node), "Node created successfully")
     );
 });
 
+// ─── Get Nodes List (Paginated & Searchable) ─────────────────────────────────
 exports.getNodes = asyncHandler(async (req, res) => {
-    const page = Math.max(
-        Number(req.query.page) || 1,
-        1
-    );
-
-    const limit = Math.max(
-        Number(req.query.limit) || 10,
-        1
-    );
-
-    const skip = (page - 1) * limit;
-
-    const query = {
-        isDeleted: false
-    };
+    const baseFilter = { isDeleted: false };
 
     if (req.query.status !== undefined) {
-        query.status = req.query.status === "true";
+        baseFilter.status = req.query.status === "true";
     }
 
     if (req.query.parentNodeId) {
-        query.parentNodeId = req.query.parentNodeId;
+        baseFilter.parentNodeId = req.query.parentNodeId;
     }
 
-    const totalRecords = await Node.countDocuments(query);
+    const searchFields = ["name", "path", "nodeId"];
 
-    const nodes = await Node.find(query)
-        .sort({
-            order: 1,
-            createdAt: -1
-        })
-        .skip(skip)
-        .limit(limit);
+    const result = await paginateQuery({
+        model: Node,
+        query: req.query,
+        baseFilter,
+        searchFields,
+        defaultSortField: "order"
+    });
+
+    const formattedRecords = result.data.map(buildNodeResponse);
 
     return res.status(200).json(
-        new ApiResponse(
-            200,
-            {
-                records: nodes.map(buildNodeResponse),
-                pagination: {
-                    totalRecords,
-                    currentPage: page,
-                    totalPages: Math.ceil(totalRecords / limit),
-                    limit
-                }
-            },
-            "Nodes fetched successfully"
-        )
+        new ApiResponse(200, formattedRecords, "Nodes fetched successfully", result.pagination)
     );
 });
 
+// ─── Get Node By ID ──────────────────────────────────────────────────────────
 exports.getNodeById = asyncHandler(async (req, res) => {
     const { nodeId } = req.params;
 
-    const node = await Node.findOne({
-        nodeId,
-        isDeleted: false
-    });
-
-    if (!node) {
-        throw new ApiError(
-            404,
-            "Node not found"
-        );
-    }
-
-    return res.status(200).json(
-        new ApiResponse(
-            200,
-            buildNodeResponse(node),
-            "Node fetched successfully"
-        )
-    );
-});
-
-exports.updateNode = asyncHandler(async (req, res) => {
-    const { nodeId } = req.params;
-
-    const node = await Node.findOne({
-        nodeId,
-        isDeleted: false
-    });
-
+    const node = await Node.findOne({ nodeId, isDeleted: false });
     if (!node) {
         throw new ApiError(404, "Node not found");
     }
 
-    const {
-        name,
-        path,
-        icon,
-        permissions,
-        parentNodeId,
-        order,
-        status
-    } = req.body;
+    return res.status(200).json(
+        new ApiResponse(200, buildNodeResponse(node), "Node fetched successfully")
+    );
+});
 
-    //  Split logic into helpers (reduces complexity)
+// ─── Update Node ─────────────────────────────────────────────────────────────
+exports.updateNode = asyncHandler(async (req, res) => {
+    const { nodeId } = req.params;
+
+    const node = await Node.findOne({ nodeId, isDeleted: false });
+    if (!node) {
+        throw new ApiError(404, "Node not found");
+    }
+
+    const { name, path, icon, permissions, parentNodeId, order, status } = req.body;
+
     await handlePathUpdate(node, path, nodeId);
     await handleParentUpdate(node, parentNodeId, nodeId);
     handlePermissionsUpdate(node, permissions);
@@ -325,62 +239,39 @@ exports.updateNode = asyncHandler(async (req, res) => {
     await node.save();
 
     return res.status(200).json(
-        new ApiResponse(
-            200,
-            buildNodeResponse(node),
-            "Node updated successfully"
-        )
+        new ApiResponse(200, buildNodeResponse(node), "Node updated successfully")
     );
 });
 
-
+// ─── Delete Node ─────────────────────────────────────────────────────────────
 exports.deleteNode = asyncHandler(async (req, res) => {
     const { nodeId } = req.params;
 
-    const node = await Node.findOne({
-        nodeId,
-        isDeleted: false
-    });
-
+    const node = await Node.findOne({ nodeId, isDeleted: false });
     if (!node) {
-        throw new ApiError(
-            404,
-            "Node not found"
-        );
+        throw new ApiError(404, "Node not found");
     }
 
     node.isDeleted = true;
     node.status = false;
-
     await node.save();
 
     await Node.updateMany(
-        {
-            parentNodeId: nodeId,
-            isDeleted: false
-        },
-        {
-            status: false
-        }
+        { parentNodeId: nodeId, isDeleted: false },
+        { status: false }
     );
 
     return res.status(200).json(
-        new ApiResponse(
-            200,
-            null,
-            "Node deleted successfully"
-        )
+        new ApiResponse(200, null, "Node deleted successfully")
     );
 });
 
+// ─── Get My Menu ─────────────────────────────────────────────────────────────
 exports.getMyMenu = asyncHandler(async (req, res) => {
     const roleIds = req.user?.roleIds || [];
 
     if (!roleIds.length) {
-        throw new ApiError(
-            403,
-            "No roles found for user"
-        );
+        throw new ApiError(403, "No roles found for user");
     }
 
     const userPermissions = await getUserPermissions(roleIds);
@@ -388,12 +279,8 @@ exports.getMyMenu = asyncHandler(async (req, res) => {
     const nodes = await Node.find({
         status: true,
         isDeleted: false,
-        permissions: {
-            $in: userPermissions
-        }
-    }).sort({
-        order: 1
-    });
+        permissions: { $in: userPermissions }
+    }).sort({ order: 1 });
 
     const menuTree = buildMenuTree(nodes);
 
@@ -406,5 +293,25 @@ exports.getMyMenu = asyncHandler(async (req, res) => {
             },
             "Menu fetched successfully"
         )
+    );
+});
+
+// ─── Autocomplete Node Search ────────────────────────────────────────────────
+exports.getNodesSearch = asyncHandler(async (req, res) => {
+    const q = req.query.q || "";
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100);
+
+    const filter = { isDeleted: false, status: true };
+    if (q.trim()) {
+        filter.name = { $regex: q.trim(), $options: "i" };
+    }
+
+    const nodes = await Node.find(filter)
+        .select("_id nodeId name path icon parentNodeId status")
+        .limit(limit)
+        .lean();
+
+    return res.status(200).json(
+        new ApiResponse(200, nodes, "Nodes autocomplete fetched successfully")
     );
 });

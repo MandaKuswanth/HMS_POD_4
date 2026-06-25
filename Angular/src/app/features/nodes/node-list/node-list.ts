@@ -1,18 +1,21 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MatDialog } from '@angular/material/dialog';
 
 import { ToastrService } from 'ngx-toastr';
-
 import { Navbar } from '../../../shared/components/navbar/navbar';
 import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 import { NodeService } from '../../../core/services/node';
@@ -21,6 +24,7 @@ import { NodeDialog } from '../node-dialog/node-dialog';
 @Component({
   selector: 'app-node-list',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -30,6 +34,8 @@ import { NodeDialog } from '../node-dialog/node-dialog';
     MatIconModule,
     MatCardModule,
     MatTooltipModule,
+    MatFormFieldModule,
+    MatInputModule,
     Navbar,
     Sidebar,
   ],
@@ -41,6 +47,8 @@ export class NodeList implements OnInit {
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
 
+  readonly pageSizeOptions = [5, 10, 25, 50];
+
   displayedColumns: string[] = [
     'nodeId',
     'name',
@@ -51,67 +59,76 @@ export class NodeList implements OnInit {
     'actions',
   ];
 
-  nodes: any[] = [];
-  dataSource = new MatTableDataSource<any>([]);
+  // Signal States
+  readonly nodesSignal = signal<any[]>([]);
+  readonly totalSignal = signal(0);
+  readonly pageSignal = signal(0); // 0-indexed
+  readonly limitSignal = signal(5);
+  readonly loadingSignal = signal(false);
 
-  searchText = '';
+  readonly searchTextSignal = signal('');
 
-  pageIndex = 0;
-  pageSize = 5;
-  pageSizeOptions = [5, 10, 25];
-  totalRecords = 0;
+  private readonly searchSubject = new Subject<string>();
 
-  ngOnInit(): void {
-    this.loadNodes();
+  constructor() {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntilDestroyed()
+    ).subscribe((val) => {
+      this.searchTextSignal.set(val);
+      this.pageSignal.set(0);
+    });
+
+    // Reactive load effect
+    effect(() => {
+      const page = this.pageSignal() + 1;
+      const limit = this.limitSignal();
+      const search = this.searchTextSignal();
+
+      this.loadNodes(page, limit, search);
+    });
   }
 
-  loadNodes(): void {
+  ngOnInit(): void {}
+
+  loadNodes(page: number, limit: number, search: string): void {
+    this.loadingSignal.set(true);
     this.nodeService
-      .getNodes(this.pageIndex + 1, this.pageSize)
+      .getNodes(page, limit, search)
       .subscribe({
         next: (response: any) => {
-          const nodes = Array.isArray(response?.data?.records)
-            ? response.data.records
-            : [];
+          this.loadingSignal.set(false);
+          const nodes = Array.isArray(response?.data)
+            ? response.data
+            : (Array.isArray(response?.data?.records) ? response.data.records : []);
 
-          this.nodes = nodes;
-          this.dataSource.data = nodes;
-
-          this.totalRecords =
-            response?.data?.pagination?.totalRecords || 0;
+          this.nodesSignal.set(nodes);
+          this.totalSignal.set(response?.pagination?.totalItems || response?.data?.pagination?.totalRecords || 0);
         },
         error: (err) => {
+          this.loadingSignal.set(false);
           console.error('NODE LIST ERROR:', err);
-          this.nodes = [];
-          this.dataSource.data = [];
-          this.totalRecords = 0;
+          this.nodesSignal.set([]);
+          this.totalSignal.set(0);
           this.toastr.error('Failed to load nodes');
         },
       });
   }
 
-  applyFilter(): void {
-    const search = this.searchText.trim().toLowerCase();
-
-    this.dataSource.data = search
-      ? this.nodes.filter((node) =>
-          node.nodeId?.toLowerCase().includes(search) ||
-          node.name?.toLowerCase().includes(search) ||
-          node.path?.toLowerCase().includes(search) ||
-          node.icon?.toLowerCase().includes(search)
-        )
-      : [...this.nodes];
+  onSearchInput(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.searchSubject.next(val);
   }
 
   clearSearch(): void {
-    this.searchText = '';
-    this.dataSource.data = [...this.nodes];
+    this.searchTextSignal.set('');
+    this.pageSignal.set(0);
   }
 
   onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.loadNodes();
+    this.pageSignal.set(event.pageIndex);
+    this.limitSignal.set(event.pageSize);
   }
 
   openAddDialog(): void {
@@ -127,8 +144,7 @@ export class NodeList implements OnInit {
 
     ref.afterClosed().subscribe((result: boolean) => {
       if (result) {
-        this.pageIndex = 0;
-        this.loadNodes();
+        this.pageSignal.set(0);
       }
     });
   }
@@ -147,7 +163,7 @@ export class NodeList implements OnInit {
 
     ref.afterClosed().subscribe((result: boolean) => {
       if (result) {
-        this.loadNodes();
+        this.pageSignal.set(this.pageSignal());
       }
     });
   }
@@ -167,7 +183,7 @@ export class NodeList implements OnInit {
     this.nodeService.deleteNode(node.nodeId).subscribe({
       next: () => {
         this.toastr.success('Node deleted successfully');
-        this.loadNodes();
+        this.pageSignal.set(0);
       },
       error: (err) => {
         this.toastr.error(

@@ -2,15 +2,13 @@ const express = require("express");
 const router = express.Router();
 
 const employeeController = require("../controllers/employeeController");
-
 const verifyJWT = require("../middleware/authMiddleware");
 const allowPermission = require("../middleware/checkPermission");
+const validateRequest = require("../middleware/validate");
 
 const {
     selfRegistrationValidation
 } = require("../middleware/employeeValidations");
-
-const validateRequest = require("../middleware/validate");
 
 const {
     PERMISSIONS
@@ -21,7 +19,6 @@ const {
 | Public Routes
 |--------------------------------------------------------------------------
 */
-
 router.post(
     "/register",
     selfRegistrationValidation,
@@ -39,7 +36,6 @@ router.post(
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */
-
 router.post(
     "/reset-password",
     verifyJWT,
@@ -57,6 +53,11 @@ router.get(
 | Employee Management
 |--------------------------------------------------------------------------
 */
+router.get(
+    "/search",
+    verifyJWT,
+    employeeController.getEmployeesSearch
+);
 
 router.post(
     "/admin/add-employee",
@@ -98,7 +99,6 @@ router.put(
 | Employee Approval Workflow
 |--------------------------------------------------------------------------
 */
-
 router.get(
     "/pending-employees",
     verifyJWT,

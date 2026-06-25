@@ -8,6 +8,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
 const employeeRoutes = require("./src/routes/employeeRoutes");
+const doctorRoutes = require("./src/routes/doctorRoutes");
 const patientRoutes = require("./src/routes/patientRoute");
 const appointmentRoutes = require("./src/routes/appointmentRoutes");
 const patientAuthRoutes = require("./src/routes/patientAuthRoutes");
@@ -15,6 +16,11 @@ const patientAppointmentRoutes=require("./src/routes/patientAppointmentRoutes");
 const roleRoutes = require("./src/routes/roleRoutes");
 const nodeRoutes = require("./src/routes/nodeRoutes");
 const healthRecordRoutes = require("./src/routes/healthRecordRoutes");
+const authRoutes = require("./src/routes/authRoutes");
+const medicineRoutes = require("./src/routes/medicineRoutes");
+const prescriptionRoutes = require("./src/routes/prescriptionRoutes");
+const consultationRoutes = require("./src/routes/consultationRoutes");
+const auditLogRoutes = require("./src/routes/auditLogRoutes");
 const errorMiddleware = require("./src/middleware/errorMiddleware");
 
 const app = express();
@@ -42,14 +48,58 @@ app.get("/", (req, res) => {
 });
 
 // API routes
+// Auth
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/auth", authRoutes);
+
+// Employees
+app.use("/api/v1/employees", employeeRoutes);
 app.use("/api/employees", employeeRoutes);
+
+// Doctors
+app.use("/api/v1/doctors", doctorRoutes);
+app.use("/api/doctors", doctorRoutes);
+
+// Patients
+app.use("/api/v1/patients", patientRoutes);
 app.use("/api/patients", patientRoutes);
+
+// Appointments
+app.use("/api/v1/appointments", appointmentRoutes);
 app.use("/api/appointments", appointmentRoutes);
-app.use("/api/patient-auth", patientAuthRoutes);
-app.use("/api/patientAppointment-auth",patientAppointmentRoutes);
-app.use("/api/roles", roleRoutes);
-app.use("/api/nodes", nodeRoutes);
+
+// Health Records
+app.use("/api/v1/health-records", healthRecordRoutes);
 app.use("/api/health-records", healthRecordRoutes);
+
+// Roles
+app.use("/api/v1/roles", roleRoutes);
+app.use("/api/roles", roleRoutes);
+
+// Nodes
+app.use("/api/v1/nodes", nodeRoutes);
+app.use("/api/nodes", nodeRoutes);
+
+// Medicines
+app.use("/api/v1/medicines", medicineRoutes);
+app.use("/api/medicines", medicineRoutes);
+
+// Prescriptions
+app.use("/api/v1/prescriptions", prescriptionRoutes);
+app.use("/api/prescriptions", prescriptionRoutes);
+
+// Consultations
+app.use("/api/v1/consultations", consultationRoutes);
+app.use("/api/consultations", consultationRoutes);
+
+// Audit Logs
+app.use("/api/v1/audit-logs", auditLogRoutes);
+app.use("/api/audit-logs", auditLogRoutes);
+
+// Deprecated or helper auth routes
+app.use("/api/patient-auth", patientAuthRoutes);
+app.use("/api/patientAppointment-auth", patientAppointmentRoutes);
+
 // Global error middleware should always be last
 app.use(errorMiddleware);
 

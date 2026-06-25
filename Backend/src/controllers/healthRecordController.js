@@ -7,9 +7,10 @@ const Role = require("../models/Role");
 
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
+const asyncHandler = require("../middleware/asyncHandler");
+const { paginateQuery } = require("../utils/pagination");
 
-// ─── Helper: resolve caller's roles ─────────────────────────────────────────
-
+// Helper: resolve caller's roles
 const getCallerRoles = async (req) => {
     const loggedInEmployeeId = req.user?.employeeId;
 
@@ -19,451 +20,323 @@ const getCallerRoles = async (req) => {
 
     const doctorRole = await Role.findOne({ name: "DOCTOR", status: true });
 
-    const isDoctor =
-        doctorRole && loggedInUser?.roleIds?.includes(doctorRole.roleId);
+    const isDoctor = doctorRole && loggedInUser?.roleIds?.includes(doctorRole.roleId);
 
     return { loggedInUser, loggedInEmployeeId, isDoctor };
 };
 
 // ─── Create Health Record ────────────────────────────────────────────────────
+exports.createHealthRecord = asyncHandler(async (req, res) => {
+    const {
+        appointmentId,
+        patientId,
+        doctorEmployeeId,
+        symptoms,
+        diagnosis,
+        prescription,
+        notes
+    } = req.body;
 
-exports.createHealthRecord = async (req, res) => {
-    try {
-        const {
-            appointmentId,
-            patientId,
-            doctorEmployeeId,
-            symptoms,
-            diagnosis,
-            prescription,
-            notes
-        } = req.body;
-
-        // Required field validation
-        if (!appointmentId || !patientId || !doctorEmployeeId || !symptoms || !diagnosis) {
-            return res.status(400).json(
-                new ApiError(
-                    400,
-                    "appointmentId, patientId, doctorEmployeeId, symptoms and diagnosis are required"
-                )
-            );
-        }
-
-        // Appointment must exist and not be soft-deleted
-        const appointment = await Appointment.findOne({ appointmentId, isDeleted: false });
-        if (!appointment) {
-            return res.status(404).json(new ApiError(404, "Appointment not found"));
-        }
-
-        // ── CORE RULE: Only COMPLETED appointments can have a health record ──
-        if (appointment.status !== "COMPLETED") {
-            return res.status(400).json(
-                new ApiError(
-                    400,
-                    `Health records can only be created for COMPLETED appointments. Current status: ${appointment.status}`
-                )
-            );
-        }
-
-        // Validate patient exists and is not deleted
-        const patient = await Patient.findOne({ UHID: patientId, isDeleted: false });
-        if (!patient) {
-            return res.status(404).json(new ApiError(404, "Patient not found"));
-        }
-
-        // Validate doctor exists and is not deleted
-        const doctor = await Employee.findOne({ employeeCode: doctorEmployeeId, isDeleted: false });
-        if (!doctor) {
-            return res.status(404).json(new ApiError(404, "Doctor not found"));
-        }
-
-        // Cross-check appointment belongs to submitted patientId
-        if (appointment.patientId !== patientId) {
-            return res.status(400).json(
-                new ApiError(400, "Appointment does not belong to the specified patient")
-            );
-        }
-
-        // Cross-check appointment belongs to submitted doctorEmployeeId
-        if (appointment.doctorEmployeeId !== doctorEmployeeId) {
-            return res.status(400).json(
-                new ApiError(400, "Appointment does not belong to the specified doctor")
-            );
-        }
-
-        // Prevent duplicate health record for the same appointment
-        const existingRecord = await HealthRecord.findOne({
-            appointmentId,
-            isDeleted: false
-        });
-
-        if (existingRecord) {
-            return res.status(409).json(
-                new ApiError(409, "Health record already exists for this appointment")
-            );
-        }
-
-        // Doctor ownership: a doctor can only create records for their own appointments
-        const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
-
-        if (isDoctor && appointment.doctorEmployeeId !== loggedInEmployeeId) {
-            return res.status(403).json(
-                new ApiError(403, "Doctors can create health records only for their own appointments")
-            );
-        }
-
-        const createdBy = req.user?.employeeId || req.user?.id;
-
-        const healthRecord = await HealthRecord.create({
-            appointmentId,
-            patientId,
-            doctorEmployeeId,
-            symptoms,
-            diagnosis,
-            prescription: prescription || "",
-            notes: notes || "",
-            createdBy
-        });
-
-        return res.status(201).json(
-            new ApiResponse(201, healthRecord, "Health record created successfully")
-        );
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    if (!appointmentId || !patientId || !doctorEmployeeId || !symptoms || !diagnosis) {
+        throw new ApiError(400, "appointmentId, patientId, doctorEmployeeId, symptoms and diagnosis are required");
     }
-};
 
-// ─── Get All Health Records (paginated, doctor-filtered) ─────────────────────
-
-exports.getHealthRecords = async (req, res) => {
-    try {
-        const page = Math.max(Number(req.query.page) || 1, 1);
-        const limit = Math.max(Number(req.query.limit) || 10, 1);
-        const skip = (page - 1) * limit;
-
-        const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
-
-        const filter = { isDeleted: false };
-
-        if (isDoctor) {
-            filter.doctorEmployeeId = loggedInEmployeeId;
-        }
-
-        const totalRecords = await HealthRecord.countDocuments(filter);
-
-        const healthRecords = await HealthRecord.find(filter)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
-
-        // Batch-fetch patients and doctors instead of N+1 queries
-        const patientIds = healthRecords.map((r) => r.patientId);
-        const doctorIds = healthRecords.map((r) => r.doctorEmployeeId);
-
-        const patients = await Patient.find({ UHID: { $in: patientIds }, isDeleted: false });
-        const doctors = await Employee.find({ employeeCode: { $in: doctorIds }, isDeleted: false });
-
-        const patientMap = new Map(patients.map((p) => [p.UHID, p]));
-        const doctorMap = new Map(doctors.map((d) => [d.employeeCode, d]));
-
-        const records = healthRecords.map((record) => {
-            const patient = patientMap.get(record.patientId);
-            const doctor = doctorMap.get(record.doctorEmployeeId);
-
-            return {
-                ...record.toObject(),
-                patientName: patient?.name || "",
-                patientPhone: patient?.phone || "",
-                doctorName: doctor?.name || "",
-                specialization: doctor?.specialization || ""
-            };
-        });
-
-        return res.status(200).json(
-            new ApiResponse(
-                200,
-                {
-                    records,
-                    pagination: {
-                        totalRecords,
-                        currentPage: page,
-                        totalPages: Math.ceil(totalRecords / limit),
-                        limit
-                    }
-                },
-                "Health records fetched successfully"
-            )
-        );
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    // Appointment validation
+    const appointment = await Appointment.findOne({ appointmentId, isDeleted: false });
+    if (!appointment) {
+        throw new ApiError(400, "Completed appointment not found for this patient");
     }
-};
 
-// ─── Get Health Record By ID ─────────────────────────────────────────────────
-
-exports.getHealthRecordById = async (req, res) => {
-    try {
-        const { healthRecordId } = req.params;
-
-        const healthRecord = await HealthRecord.findOne({ healthRecordId, isDeleted: false });
-        if (!healthRecord) {
-            return res.status(404).json(new ApiError(404, "Health record not found"));
-        }
-
-        // Doctor can only view their own records
-        const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
-
-        if (isDoctor && healthRecord.doctorEmployeeId !== loggedInEmployeeId) {
-            return res.status(403).json(
-                new ApiError(403, "You are not authorized to view this health record")
-            );
-        }
-
-        const patient = await Patient.findOne({ UHID: healthRecord.patientId, isDeleted: false });
-        const doctor = await Employee.findOne({
-            employeeCode: healthRecord.doctorEmployeeId,
-            isDeleted: false
-        });
-
-        return res.status(200).json(
-            new ApiResponse(
-                200,
-                {
-                    ...healthRecord.toObject(),
-                    patient: patient
-                        ? {
-                              UHID: patient.UHID,
-                              name: patient.name,
-                              phone: patient.phone,
-                              email: patient.email,
-                              gender: patient.gender,
-                              bloodGroup: patient.bloodGroup
-                          }
-                        : null,
-                    doctor: doctor
-                        ? {
-                              employeeCode: doctor.employeeCode,
-                              name: doctor.name,
-                              specialization: doctor.specialization,
-                              department: doctor.department
-                          }
-                        : null
-                },
-                "Health record fetched successfully"
-            )
-        );
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    if (appointment.status !== "COMPLETED") {
+        throw new ApiError(400, `Health records can only be created for COMPLETED appointments. Current status: ${appointment.status}`);
     }
-};
 
-// ─── Update Health Record ─────────────────────────────────────────────────────
-
-exports.updateHealthRecord = async (req, res) => {
-    try {
-        const { healthRecordId } = req.params;
-
-        const healthRecord = await HealthRecord.findOne({ healthRecordId, isDeleted: false });
-        if (!healthRecord) {
-            return res.status(404).json(new ApiError(404, "Health record not found"));
-        }
-
-        // Doctor can only update their own records
-        const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
-
-        if (isDoctor && healthRecord.doctorEmployeeId !== loggedInEmployeeId) {
-            return res.status(403).json(
-                new ApiError(403, "You are not authorized to update this health record")
-            );
-        }
-
-        const allowedFields = ["symptoms", "diagnosis", "prescription", "notes"];
-
-        allowedFields.forEach((field) => {
-            if (req.body[field] !== undefined) {
-                healthRecord[field] = req.body[field];
-            }
-        });
-
-        healthRecord.updatedBy = req.user?.employeeId || req.user?.id;
-
-        await healthRecord.save();
-
-        return res.status(200).json(
-            new ApiResponse(200, healthRecord, "Health record updated successfully")
-        );
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    // Patient validation
+    const patient = await Patient.findOne({ UHID: patientId, isDeleted: false });
+    if (!patient) {
+        throw new ApiError(404, "Patient not found");
     }
-};
 
-// ─── Soft Delete Health Record ───────────────────────────────────────────────
-
-exports.deleteHealthRecord = async (req, res) => {
-    try {
-        const { healthRecordId } = req.params;
-
-        const healthRecord = await HealthRecord.findOne({ healthRecordId, isDeleted: false });
-        if (!healthRecord) {
-            return res.status(404).json(new ApiError(404, "Health record not found"));
-        }
-
-        healthRecord.isDeleted = true;
-        healthRecord.deletedAt = new Date();
-        healthRecord.deletedBy = req.user?.employeeId || req.user?.id;
-
-        await healthRecord.save();
-
-        return res.status(200).json(
-            new ApiResponse(
-                200,
-                {
-                    healthRecordId: healthRecord.healthRecordId,
-                    patientId: healthRecord.patientId,
-                    appointmentId: healthRecord.appointmentId
-                },
-                "Health record deleted successfully"
-            )
-        );
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    // Doctor validation
+    const doctor = await Employee.findOne({ employeeCode: doctorEmployeeId, isDeleted: false });
+    if (!doctor) {
+        throw new ApiError(404, "Doctor not found");
     }
-};
 
-// ─── Patient: Get My Health Records ─────────────────────────────────────────
-
-exports.getMyHealthRecords = async (req, res) => {
-    try {
-        const patientId = req.user.UHID;
-
-        if (!patientId) {
-            return res.status(401).json(
-                new ApiError(401, "Patient UHID missing. Please login again.")
-            );
-        }
-
-        const healthRecords = await HealthRecord.find({
-            patientId,
-            isDeleted: false
-        }).sort({ createdAt: -1 });
-
-        // Batch fetch doctors and appointments
-        const doctorIds = healthRecords.map((r) => r.doctorEmployeeId);
-        const appointmentIds = healthRecords.map((r) => r.appointmentId);
-
-        const doctors = await Employee.find({
-            employeeCode: { $in: doctorIds },
-            isDeleted: false
-        });
-
-        const appointments = await Appointment.find({
-            appointmentId: { $in: appointmentIds },
-            isDeleted: false
-        });
-
-        const doctorMap = new Map(doctors.map((d) => [d.employeeCode, d]));
-        const appointmentMap = new Map(appointments.map((a) => [a.appointmentId, a]));
-
-        const records = healthRecords.map((record) => {
-            const doctor = doctorMap.get(record.doctorEmployeeId);
-            const appointment = appointmentMap.get(record.appointmentId);
-
-            return {
-                ...record.toObject(),
-                doctorName: doctor?.name || "",
-                specialization: doctor?.specialization || "",
-                appointmentDate: appointment?.date || null
-            };
-        });
-
-        return res.status(200).json(
-            new ApiResponse(200, records, "Health records fetched successfully")
-        );
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    if (appointment.patientId !== patientId) {
+        throw new ApiError(400, "Appointment does not belong to the specified patient");
     }
-};
-exports.getEligibleAppointments = async (req, res) => {
-    try {
-        const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
 
-        const existingRecords = await HealthRecord.find({
-            isDeleted: false
-        }).select("appointmentId");
+    if (appointment.doctorEmployeeId !== doctorEmployeeId) {
+        throw new ApiError(400, "Appointment does not belong to the specified doctor");
+    }
 
-        const usedAppointmentIds = existingRecords.map(
-            (record) => record.appointmentId
-        );
+    const existingRecord = await HealthRecord.findOne({
+        appointmentId,
+        isDeleted: false
+    });
 
-        const filter = {
-            status: "COMPLETED",
-            isDeleted: false,
-            appointmentId: {
-                $nin: usedAppointmentIds
-            }
+    if (existingRecord) {
+        throw new ApiError(409, "Health record already exists for this appointment");
+    }
+
+    const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
+    if (isDoctor && appointment.doctorEmployeeId !== loggedInEmployeeId) {
+        throw new ApiError(403, "Doctors can create health records only for their own appointments");
+    }
+
+    const createdBy = req.user?.employeeId || req.user?.id;
+
+    const healthRecord = await HealthRecord.create({
+        appointmentId,
+        patientId,
+        doctorEmployeeId,
+        symptoms,
+        diagnosis,
+        prescription: prescription || "",
+        notes: notes || "",
+        createdBy
+    });
+
+    return res.status(201).json(
+        new ApiResponse(201, healthRecord, "Health record created successfully")
+    );
+});
+
+// ─── Get All Health Records (Paginated) ──────────────────────────────────────
+exports.getHealthRecords = asyncHandler(async (req, res) => {
+    const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
+    const baseFilter = { isDeleted: false };
+
+    if (isDoctor) {
+        baseFilter.doctorEmployeeId = loggedInEmployeeId;
+    }
+
+    if (req.query.patientId) {
+        baseFilter.patientId = req.query.patientId;
+    }
+
+    const searchFields = ["patientId", "doctorEmployeeId", "diagnosis", "symptoms"];
+
+    const result = await paginateQuery({
+        model: HealthRecord,
+        query: req.query,
+        baseFilter,
+        searchFields,
+        defaultSortField: "createdAt"
+    });
+
+    // Populate patients and doctors names
+    const patientIds = [...new Set(result.data.map((r) => r.patientId))];
+    const doctorIds = [...new Set(result.data.map((r) => r.doctorEmployeeId))];
+
+    const [patients, doctors] = await Promise.all([
+        Patient.find({ UHID: { $in: patientIds } }).select("UHID name").lean(),
+        Employee.find({ employeeCode: { $in: doctorIds } }).select("employeeCode name").lean()
+    ]);
+
+    const patientMap = new Map(patients.map((p) => [p.UHID, p]));
+    const doctorMap = new Map(doctors.map((d) => [d.employeeCode, d]));
+
+    const formattedRecords = result.data.map((record) => ({
+        ...record,
+        patientName: patientMap.get(record.patientId)?.name || "N/A",
+        doctorName: doctorMap.get(record.doctorEmployeeId)?.name || "N/A"
+    }));
+
+    return res.status(200).json(
+        new ApiResponse(200, formattedRecords, "Health records fetched successfully", result.pagination)
+    );
+});
+
+// ─── Autocomplete Health Records Search ───────────────────────────────────────
+exports.getHealthRecordsSearch = asyncHandler(async (req, res) => {
+    const q = req.query.q || "";
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100);
+
+    const filter = { isDeleted: false };
+    if (q.trim()) {
+        filter.$or = [
+            { diagnosis: { $regex: q.trim(), $options: "i" } },
+            { symptoms: { $regex: q.trim(), $options: "i" } }
+        ];
+    }
+
+    const records = await HealthRecord.find(filter)
+        .select("_id appointmentId patientId doctorEmployeeId symptoms diagnosis")
+        .limit(limit)
+        .lean();
+
+    return res.status(200).json(
+        new ApiResponse(200, records, "Health records autocomplete fetched successfully")
+    );
+});
+
+// ─── Get Single Health Record By ID ──────────────────────────────────────────
+exports.getHealthRecordById = asyncHandler(async (req, res) => {
+    const { healthRecordId } = req.params;
+
+    const record = await HealthRecord.findOne({ _id: healthRecordId, isDeleted: false }).lean();
+    if (!record) {
+        throw new ApiError(404, "Health record not found");
+    }
+
+    const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
+    if (isDoctor && record.doctorEmployeeId !== loggedInEmployeeId) {
+        throw new ApiError(403, "Access denied to this health record");
+    }
+
+    const [patient, doctor] = await Promise.all([
+        Patient.findOne({ UHID: record.patientId }).select("name phone email gender dob bloodGroup address").lean(),
+        Employee.findOne({ employeeCode: record.doctorEmployeeId }).select("name department designation").lean()
+    ]);
+
+    const formatted = {
+        ...record,
+        patientName: patient?.name || "N/A",
+        patientDetails: patient || null,
+        doctorName: doctor?.name || "N/A",
+        doctorDetails: doctor || null
+    };
+
+    return res.status(200).json(
+        new ApiResponse(200, formatted, "Health record fetched successfully")
+    );
+});
+
+// ─── Get My Health Records (For Patients) ───────────────────────────────────
+exports.getMyHealthRecords = asyncHandler(async (req, res) => {
+    // Patients see their own records
+    const patientUHID = req.user?.UHID;
+
+    if (!patientUHID) {
+        throw new ApiError(403, "Only patients can view their health records here");
+    }
+
+    const baseFilter = { patientId: patientUHID, isDeleted: false };
+    const searchFields = ["diagnosis", "symptoms"];
+
+    const result = await paginateQuery({
+        model: HealthRecord,
+        query: req.query,
+        baseFilter,
+        searchFields,
+        defaultSortField: "createdAt"
+    });
+
+    const doctorIds = [...new Set(result.data.map((r) => r.doctorEmployeeId))];
+    const doctors = await Employee.find({ employeeCode: { $in: doctorIds } }).select("employeeCode name").lean();
+    const doctorMap = new Map(doctors.map((d) => [d.employeeCode, d]));
+
+    const formatted = result.data.map((record) => ({
+        ...record,
+        doctorName: doctorMap.get(record.doctorEmployeeId)?.name || "N/A"
+    }));
+
+    return res.status(200).json(
+        new ApiResponse(200, formatted, "My health records fetched successfully", result.pagination)
+    );
+});
+
+// ─── Get Eligible Appointments ───────────────────────────────────────────────
+exports.getEligibleAppointments = asyncHandler(async (req, res) => {
+    const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
+
+    const existingRecords = await HealthRecord.find({ isDeleted: false }).select("appointmentId").lean();
+    const usedAppointmentIds = existingRecords.map((r) => r.appointmentId);
+
+    const filter = {
+        status: "COMPLETED",
+        isDeleted: false,
+        appointmentId: { $nin: usedAppointmentIds }
+    };
+
+    if (isDoctor) {
+        filter.doctorEmployeeId = loggedInEmployeeId;
+    }
+
+    const appointments = await Appointment.find(filter).sort({ date: -1 }).lean();
+
+    const patientIds = appointments.map((a) => a.patientId);
+    const doctorIds = appointments.map((a) => a.doctorEmployeeId);
+
+    const [patients, doctors] = await Promise.all([
+        Patient.find({ UHID: { $in: patientIds }, isDeleted: false }).lean(),
+        Employee.find({ employeeCode: { $in: doctorIds }, isDeleted: false }).lean()
+    ]);
+
+    const patientMap = new Map(patients.map((p) => [p.UHID, p]));
+    const doctorMap = new Map(doctors.map((d) => [d.employeeCode, d]));
+
+    const records = appointments.map((appointment) => {
+        const patient = patientMap.get(appointment.patientId);
+        const doctor = doctorMap.get(appointment.doctorEmployeeId);
+
+        return {
+            appointmentId: appointment.appointmentId,
+            patientId: appointment.patientId,
+            patientName: patient?.name || "",
+            doctorEmployeeId: appointment.doctorEmployeeId,
+            doctorName: doctor?.name || "",
+            date: appointment.date,
+            timeSlot: appointment.timeSlot,
+            status: appointment.status
         };
+    });
 
-        if (isDoctor) {
-            filter.doctorEmployeeId = loggedInEmployeeId;
-        }
+    return res.status(200).json(
+        new ApiResponse(200, records, "Eligible completed appointments fetched successfully")
+    );
+});
 
-        const appointments = await Appointment.find(filter)
-            .sort({ date: -1 });
+// ─── Update Health Record ────────────────────────────────────────────────────
+exports.updateHealthRecord = asyncHandler(async (req, res) => {
+    const { healthRecordId } = req.params;
+    const { symptoms, diagnosis, prescription, notes } = req.body;
 
-        const patientIds = appointments.map((a) => a.patientId);
-        const doctorIds = appointments.map((a) => a.doctorEmployeeId);
-
-        const patients = await Patient.find({
-            UHID: { $in: patientIds },
-            isDeleted: false
-        });
-
-        const doctors = await Employee.find({
-            employeeCode: { $in: doctorIds },
-            isDeleted: false
-        });
-
-        const patientMap = new Map(
-            patients.map((p) => [p.UHID, p])
-        );
-
-        const doctorMap = new Map(
-            doctors.map((d) => [d.employeeCode, d])
-        );
-
-        const records = appointments.map((appointment) => {
-            const patient = patientMap.get(appointment.patientId);
-            const doctor = doctorMap.get(appointment.doctorEmployeeId);
-
-            return {
-                appointmentId: appointment.appointmentId,
-                patientId: appointment.patientId,
-                patientName: patient?.name || "",
-                doctorEmployeeId: appointment.doctorEmployeeId,
-                doctorName: doctor?.name || "",
-                date: appointment.date,
-                timeSlot: appointment.timeSlot,
-                status: appointment.status
-            };
-        });
-
-        return res.status(200).json(
-            new ApiResponse(
-                200,
-                records,
-                "Eligible completed appointments fetched successfully"
-            )
-        );
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json(
-            new ApiError(500, err.message || "Internal Server Error")
-        );
+    const record = await HealthRecord.findOne({ _id: healthRecordId, isDeleted: false });
+    if (!record) {
+        throw new ApiError(404, "Health record not found");
     }
-};
+
+    const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
+    if (isDoctor && record.doctorEmployeeId !== loggedInEmployeeId) {
+        throw new ApiError(403, "Doctors can update only their own health records");
+    }
+
+    if (symptoms !== undefined) record.symptoms = symptoms;
+    if (diagnosis !== undefined) record.diagnosis = diagnosis;
+    if (prescription !== undefined) record.prescription = prescription;
+    if (notes !== undefined) record.notes = notes;
+
+    record.updatedBy = req.user?.employeeId || req.user?.id;
+    await record.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, record, "Health record updated successfully")
+    );
+});
+
+// ─── Delete Health Record ────────────────────────────────────────────────────
+exports.deleteHealthRecord = asyncHandler(async (req, res) => {
+    const { healthRecordId } = req.params;
+
+    const record = await HealthRecord.findOne({ _id: healthRecordId, isDeleted: false });
+    if (!record) {
+        throw new ApiError(404, "Health record not found");
+    }
+
+    const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
+    if (isDoctor && record.doctorEmployeeId !== loggedInEmployeeId) {
+        throw new ApiError(403, "Doctors can delete only their own health records");
+    }
+
+    record.isDeleted = true;
+    record.deletedAt = new Date();
+    record.deletedBy = req.user?.employeeId || req.user?.id;
+    await record.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, null, "Health record deleted successfully")
+    );
+});

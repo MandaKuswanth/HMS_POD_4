@@ -68,6 +68,9 @@ const patientSchema = new mongoose.Schema(
     }
 );
 
+patientSchema.index({ phone: 1 });
+patientSchema.index({ name: 1 });
+
 patientSchema.pre("save", async function (next) {
     if (this.isNew) {
         try {
@@ -81,7 +84,6 @@ patientSchema.pre("save", async function (next) {
             return next(err);
         }
     }
-  
 });
 
 module.exports = mongoose.model("Patient", patientSchema);

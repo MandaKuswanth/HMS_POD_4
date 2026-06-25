@@ -103,6 +103,10 @@ const userSchema = new Schema(
         deletedBy: {
             type: String,
             default: null
+        },
+        refreshToken: {
+            type: String,
+            default: null
         }
     },
     {
@@ -125,11 +129,13 @@ userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.passwordHash);
 };
 
-userSchema.methods.generateAccessToken = function () {
+userSchema.methods.generateAccessToken = function (roles = [], permissions = []) {
     const payload = {
         id: this._id,
         email: this.email,
         roleIds: this.roleIds,
+        roles: roles,
+        permissions: permissions,
         isEmployee: this.isEmployee,
         status: this.status
     };
@@ -141,8 +147,16 @@ userSchema.methods.generateAccessToken = function () {
     }
 
     return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN || "1h"
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "15m"
     });
+};
+
+userSchema.methods.generateRefreshToken = function () {
+    return jwt.sign(
+        { id: this._id },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d" }
+    );
 };
 
 // Generate 6-digit OTP with 10-minute expiry

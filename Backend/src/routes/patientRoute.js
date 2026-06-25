@@ -4,55 +4,54 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const allowPermission = require("../middleware/checkPermission");
 
-const {
-    createPatient,
-    getPatients,
-    getPatientById,
-    updatePatient,
-    deletePatient,
-    togglePatientStatus
-} = require("../controllers/patientController");
+const patientController = require("../controllers/patientController");
 
 router.post(
     "/",
     authMiddleware,
     allowPermission("PATIENT_CREATE"),
-    createPatient
+    patientController.createPatient
 );
 
 router.get(
     "/",
     authMiddleware,
     allowPermission("PATIENT_READ"),
-    getPatients
+    patientController.getPatients
+);
+
+router.get(
+    "/search",
+    authMiddleware,
+    patientController.getPatientsSearch
 );
 
 router.get(
     "/:uhid",
     authMiddleware,
     allowPermission("PATIENT_READ"),
-    getPatientById
+    patientController.getPatientById
 );
 
 router.put(
     "/:uhid",
     authMiddleware,
     allowPermission("PATIENT_UPDATE"),
-    updatePatient
+    patientController.updatePatient
 );
 
 router.delete(
     "/:uhid",
     authMiddleware,
     allowPermission("PATIENT_DELETE"),
-    deletePatient
+    patientController.deletePatient
 );
 
 router.patch(
     "/:uhid/status",
     authMiddleware,
     allowPermission("PATIENT_UPDATE"),
-    togglePatientStatus
+    patientController.togglePatientStatus
 );
 
 module.exports = router;

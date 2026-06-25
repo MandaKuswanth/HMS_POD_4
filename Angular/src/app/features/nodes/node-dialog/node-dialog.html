@@ -19,33 +19,36 @@
     <input matInput [(ngModel)]="formData.icon" placeholder="groups" />
   </mat-form-field>
 
-  <mat-form-field appearance="outline" class="full-width">
-    <mat-label>Parent Node</mat-label>
-    <mat-select [(ngModel)]="formData.parentNodeId">
-      <mat-option [value]="null">No Parent</mat-option>
+  <div class="form-field-wrapper">
+    <label class="field-label">Parent Node</label>
+    <app-search-dropdown
+      [searchFn]="searchParentNodes"
+      [displayField]="'name'"
+      [valueField]="'nodeId'"
+      [initialDisplay]="formData.parentNodeId || 'No Parent'"
+      [(ngModel)]="formData.parentNodeId"
+      placeholder="Select parent node..."
+    ></app-search-dropdown>
+  </div>
 
-      @for (node of nodes; track node.nodeId) {
-      <mat-option [value]="node.nodeId">
-        {{ node.name }} - {{ node.path }}
-      </mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
-
-  <mat-form-field appearance="outline" class="full-width">
+  <mat-form-field appearance="outline" class="full-width" style="margin-top: 15px;">
     <mat-label>Order</mat-label>
     <input matInput type="number" [(ngModel)]="formData.order" />
   </mat-form-field>
 
-  <mat-form-field appearance="outline" class="full-width">
-    <mat-label>Status</mat-label>
-    <mat-select [(ngModel)]="formData.status">
-      <mat-option [value]="true">Active</mat-option>
-      <mat-option [value]="false">Inactive</mat-option>
-    </mat-select>
-  </mat-form-field>
+  <div class="form-field-wrapper">
+    <label class="field-label">Status</label>
+    <app-search-dropdown
+      [searchFn]="searchStatus"
+      [displayField]="'name'"
+      [valueField]="'_id'"
+      [initialDisplay]="formData.status ? 'Active' : 'Inactive'"
+      [(ngModel)]="formData.status"
+      placeholder="Select status..."
+    ></app-search-dropdown>
+  </div>
 
-  <div class="permission-section">
+  <div class="permission-section" style="margin-top: 15px;">
     <h3>Permissions</h3>
 
     <div class="permission-section">

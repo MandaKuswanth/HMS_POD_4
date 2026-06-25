@@ -25,6 +25,13 @@ router.get(
 // 3. GET MY MENU (Authenticated access only, no specific permission string needed if everyone can see their menu)
 router.get("/my-menu", auth, nodeController.getMyMenu);
 
+// 3.5. GET SEARCH AUTOCOMPLETE
+router.get(
+  "/search",
+  auth,
+  nodeController.getNodesSearch
+);
+
 // 4. GET NODE BY ID
 router.get(
   "/:nodeId",

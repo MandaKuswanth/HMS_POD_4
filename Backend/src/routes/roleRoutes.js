@@ -2,10 +2,8 @@ const express = require("express");
 const router = express.Router();
 
 const roleController = require("../controllers/roleController");
-
 const auth = require("../middleware/authMiddleware");
 const allowPermission = require("../middleware/checkPermission");
-
 const { PERMISSIONS } = require("../constants/permission");
 
 router.post(
@@ -20,6 +18,12 @@ router.get(
     auth,
     allowPermission(PERMISSIONS.ROLE_READ),
     roleController.getRoles
+);
+
+router.get(
+    "/search",
+    auth,
+    roleController.getRolesSearch
 );
 
 router.get(

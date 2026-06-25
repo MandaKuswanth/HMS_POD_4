@@ -1,21 +1,25 @@
-import { Component, OnInit, inject, ViewChild } from '@angular/core';
+import { Component, OnInit, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatDialog } from '@angular/material/dialog';
 
 import { ToastrService } from 'ngx-toastr';
-
 import { Navbar } from '../../../shared/components/navbar/navbar';
 import { Sidebar } from '../../../shared/components/sidebar/sidebar';
-import { AuthService } from '../../../core/services/auth'
+import { AuthService } from '../../../core/services/auth';
 import { RoleService, RoleRequest } from '../../../core/services/role';
-import { MatDialog } from '@angular/material/dialog';
 import { RoleDialog } from '../role-dialouge/role-dialouge';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { PERMISSIONS } from '../../../constants/permission';
@@ -32,6 +36,8 @@ import { PERMISSIONS } from '../../../constants/permission';
     MatIconModule,
     MatButtonModule,
     MatTooltipModule,
+    MatFormFieldModule,
+    MatInputModule,
     Navbar,
     Sidebar,
     HasPermissionDirective,
@@ -44,19 +50,20 @@ export class RoleList implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
+
   readonly PERMISSIONS = PERMISSIONS;
-  @ViewChild(MatPaginator)
-  paginator!: MatPaginator;
+  readonly pageSizeOptions = [5, 10, 25, 50];
 
-  dataSource = new MatTableDataSource<RoleRequest>([]);
-  roles: RoleRequest[] = [];
+  // Signal States
+  readonly rolesSignal = signal<RoleRequest[]>([]);
+  readonly totalSignal = signal(0);
+  readonly pageSignal = signal(0); // 0-indexed
+  readonly limitSignal = signal(5);
+  readonly loadingSignal = signal(false);
 
-  searchText = '';
-  totalRecords = 0;
-  pageSize = 5;
-  pageIndex = 0;
-  pageSizeOptions = [5, 10, 25];
+  readonly searchTextSignal = signal('');
 
+  private readonly searchSubject = new Subject<string>();
 
   displayedColumns: string[] = [
     'roleId',
@@ -67,60 +74,58 @@ export class RoleList implements OnInit {
     'actions',
   ];
 
-  ngOnInit(): void {
-    this.loadRoles();
+  constructor() {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntilDestroyed()
+    ).subscribe((val) => {
+      this.searchTextSignal.set(val);
+      this.pageSignal.set(0);
+    });
+
+    // Reactive load effect
+    effect(() => {
+      const page = this.pageSignal() + 1;
+      const limit = this.limitSignal();
+      const search = this.searchTextSignal();
+
+      this.loadRoles(page, limit, search);
+    });
   }
 
+  ngOnInit(): void {}
 
-  loadRoles(): void {
-    const page = this.pageIndex + 1;
-
-    this.roleService.getRoles(page, this.pageSize).subscribe({
+  loadRoles(page: number, limit: number, search: string): void {
+    this.loadingSignal.set(true);
+    this.roleService.getRoles(page, limit, search).subscribe({
       next: (response: any) => {
-        const roles = Array.isArray(response?.data?.records)
-          ? response.data.records
-          : [];
+        this.loadingSignal.set(false);
+        const roles = Array.isArray(response?.data)
+          ? response.data
+          : (Array.isArray(response?.data?.records) ? response.data.records : []);
 
-        this.roles = roles;
-        this.dataSource.data = roles;
-
-        this.totalRecords =
-          response?.data?.pagination?.totalRecords || 0;
+        this.rolesSignal.set(roles);
+        this.totalSignal.set(response?.pagination?.totalItems || response?.data?.pagination?.totalRecords || 0);
       },
       error: (error) => {
+        this.loadingSignal.set(false);
         console.error('ROLE LIST ERROR:', error);
-        this.toastr.error(
-          error?.error?.message || 'Failed to load roles'
-        );
+        this.rolesSignal.set([]);
+        this.totalSignal.set(0);
+        this.toastr.error(error?.error?.message || 'Failed to load roles');
       },
     });
   }
 
-  applyFilter(): void {
-    const search = this.searchText.trim().toLowerCase();
-
-    if (search) {
-      this.dataSource.data = this.roles.filter((role) =>
-        role.roleId?.toLowerCase().includes(search) ||
-        role.name?.toLowerCase().includes(search) ||
-        role.description?.toLowerCase().includes(search)
-      );
-    } else {
-      this.dataSource.data = this.roles;
-    }
-
-    if (this.paginator) {
-      this.paginator.firstPage();
-    }
+  onSearchInput(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.searchSubject.next(val);
   }
 
   clearSearch(): void {
-    this.searchText = '';
-    this.dataSource.data = this.roles;
-
-    if (this.paginator) {
-      this.paginator.firstPage();
-    }
+    this.searchTextSignal.set('');
+    this.pageSignal.set(0);
   }
 
   deleteRole(role: RoleRequest): void {
@@ -129,7 +134,7 @@ export class RoleList implements OnInit {
       return;
     }
 
-    if (role.name === 'SUPER_ADMIN') {
+    if (role.name === 'SUPER_ADMIN' || role.name === 'SUPER ADMIN') {
       this.toastr.warning('SUPER_ADMIN role cannot be deleted');
       return;
     }
@@ -145,7 +150,7 @@ export class RoleList implements OnInit {
     this.roleService.deleteRole(role.roleId).subscribe({
       next: () => {
         this.toastr.success('Role deleted successfully');
-        this.loadRoles();
+        this.pageSignal.set(0);
       },
       error: (error) => {
         this.toastr.error(
@@ -154,6 +159,7 @@ export class RoleList implements OnInit {
       },
     });
   }
+
   openAddDialog(): void {
     const ref = this.dialog.open(RoleDialog, {
       width: '760px',
@@ -165,7 +171,7 @@ export class RoleList implements OnInit {
 
     ref.afterClosed().subscribe((result) => {
       if (result) {
-        this.loadRoles();
+        this.pageSignal.set(0);
       }
     });
   }
@@ -182,14 +188,13 @@ export class RoleList implements OnInit {
 
     ref.afterClosed().subscribe((result) => {
       if (result) {
-        this.loadRoles();
+        this.pageSignal.set(this.pageSignal());
       }
     });
   }
-  onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
 
-    this.loadRoles();
+  onPageChange(event: PageEvent): void {
+    this.pageSignal.set(event.pageIndex);
+    this.limitSignal.set(event.pageSize);
   }
 }

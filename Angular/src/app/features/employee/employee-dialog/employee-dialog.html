@@ -148,35 +148,35 @@
       </mat-form-field>
 
       <!-- Role -->
-      <mat-form-field appearance="outline">
-        <mat-label>Role</mat-label>
-
-        <mat-select
+      <div class="form-field-wrapper">
+        <label class="field-label">Role</label>
+        <app-search-dropdown
+          [searchFn]="searchRoles"
+          [displayField]="'name'"
+          [valueField]="'_id'"
+          [initialDisplay]="form.get('role')?.value || ''"
           formControlName="role"
           (selectionChange)="onRoleChange()"
-        >
-          @for (role of roles; track role) {
-            <mat-option [value]="role">
-              {{ role }}
-            </mat-option>
-          }
-        </mat-select>
-
-        @if (form.get('role')?.hasError('required')) {
-          <mat-error>Role is required</mat-error>
+          placeholder="Select role..."
+        ></app-search-dropdown>
+        @if (form.get('role')?.touched && form.get('role')?.hasError('required')) {
+          <span class="field-error">Role is required</span>
         }
-      </mat-form-field>
+      </div>
 
       <!-- Status -->
       @if (data.mode === 'edit') {
-        <mat-form-field appearance="outline">
-          <mat-label>Status</mat-label>
-
-          <mat-select formControlName="status">
-            <mat-option [value]="true">Active</mat-option>
-            <mat-option [value]="false">Inactive</mat-option>
-          </mat-select>
-        </mat-form-field>
+        <div class="form-field-wrapper">
+          <label class="field-label">Status</label>
+          <app-search-dropdown
+            [searchFn]="searchStatus"
+            [displayField]="'name'"
+            [valueField]="'_id'"
+            [initialDisplay]="form.get('status')?.value ? 'Active' : 'Inactive'"
+            formControlName="status"
+            placeholder="Select status..."
+          ></app-search-dropdown>
+        </div>
       }
 
     </div>

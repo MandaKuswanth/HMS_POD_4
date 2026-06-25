@@ -1,20 +1,34 @@
 <nav class="navbar">
   <!-- Left side brand -->
-  <button class="brand brand-btn" type="button">
+  <button class="brand brand-btn" type="button" (click)="goDashboard()">
     <mat-icon>local_hospital</mat-icon>
-    <span>HMS</span>
+    <span>HMS Portal</span>
   </button>
 
   <!-- This pushes items to right -->
   <div class="spacer"></div>
 
-  <!-- Right side -->
-  <div class="navbar-actions">
-    <span class="role">Role: {{ role }}</span>
+  <!-- Right side profile actions -->
+  <div class="navbar-actions" *ngIf="currentUser() as user">
+    <div class="profile-container">
+      <button class="profile-toggle-btn" (click)="toggleProfileMenu()">
+        <span class="user-avatar">{{ user.name[0] | uppercase }}</span>
+        <span class="user-name">{{ user.name }}</span>
+        <mat-icon>arrow_drop_down</mat-icon>
+      </button>
 
-    <button mat-raised-button class="logout-btn" (click)="logout()">
-      <mat-icon>logout</mat-icon>
-      <span>Logout</span>
-    </button>
+      <!-- Dropdown Menu -->
+      <div class="profile-dropdown" *ngIf="isProfileOpenSignal()">
+        <button class="dropdown-item" (click)="viewProfile()">
+          <mat-icon>person</mat-icon>
+          <span>👤 View Profile</span>
+        </button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item logout-btn" (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>🚪 Logout</span>
+        </button>
+      </div>
+    </div>
   </div>
 </nav>

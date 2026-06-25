@@ -1,124 +1,113 @@
 import { ChangeDetectorRef, Component, Inject, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-
-import {
-  MAT_DIALOG_DATA,
-  MatDialogModule,
-  MatDialogRef
-} from '@angular/material/dialog';
-
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
-
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 
-import { AppointmentService } from '../../../core/services/appointment';
 import { HealthRecordService } from '../../../core/services/health-record';
+import { SearchDropdownComponent } from '../../../shared/components/search-dropdown/search-dropdown';
 
 @Component({
   selector: 'app-health-record-dialog',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
+    ReactiveFormsModule,
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatSelectModule
+    SearchDropdownComponent
   ],
   templateUrl: './health-record-dialog.html',
   styleUrl: './health-record-dialog.css'
 })
 export class HealthRecordDialog implements OnInit {
+  private readonly fb = inject(FormBuilder);
   private readonly dialogRef = inject(MatDialogRef<HealthRecordDialog>);
-  private readonly appointmentService = inject(AppointmentService);
   private readonly healthRecordService = inject(HealthRecordService);
   private readonly toastr = inject(ToastrService);
+  private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  appointments: any[] = [];
+  readonly data = inject<any>(MAT_DIALOG_DATA, { optional: true });
 
-  formData = {
-    appointmentId: '',
-    patientId: '',
-    doctorEmployeeId: '',
-    symptoms: '',
-    diagnosis: '',
-    prescription: '',
-    notes: ''
-  };
+  loading = false;
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: any) { }
+  form = this.fb.group({
+    appointmentId: ['', Validators.required],
+    patientId: ['', Validators.required],
+    doctorEmployeeId: ['', Validators.required],
+    symptoms: ['', Validators.required],
+    diagnosis: ['', Validators.required],
+    prescription: [''],
+    notes: ['']
+  });
 
   ngOnInit(): void {
     if (this.data?.mode === 'edit' && this.data?.record) {
-      this.formData = {
-        appointmentId: this.data.record.appointmentId || '',
-        patientId: this.data.record.patientId || '',
-        doctorEmployeeId: this.data.record.doctorEmployeeId || '',
-        symptoms: this.data.record.symptoms || '',
-        diagnosis: this.data.record.diagnosis || '',
-        prescription: this.data.record.prescription || '',
-        notes: this.data.record.notes || ''
-      };
+      const record = this.data.record;
+      this.form.patchValue({
+        appointmentId: record.appointmentId || '',
+        patientId: record.patientId || '',
+        doctorEmployeeId: record.doctorEmployeeId || '',
+        symptoms: record.symptoms || '',
+        diagnosis: record.diagnosis || '',
+        prescription: record.prescription || '',
+        notes: record.notes || ''
+      });
+      // In edit mode, disable appointment select
+      this.form.get('appointmentId')?.disable();
     }
-
-    this.loadAppointments();
   }
 
-  loadAppointments(): void {
-  this.healthRecordService
-    .getEligibleAppointments()
-    .subscribe({
-      next: (response: any) => {
-        this.appointments = Array.isArray(response?.data)
-          ? response.data
-          : [];
-
-        setTimeout(() => {
-          this.cdr.detectChanges();
-        });
-      },
-      error: () => {
-        this.appointments = [];
-        this.toastr.error('Failed to load eligible appointments');
-      }
-    });
-}
-
-  onAppointmentChange(): void {
-    const selected = this.appointments.find(
-      (appointment) =>
-        appointment.appointmentId === this.formData.appointmentId
+  searchAppointments = (query: string): Observable<any> => {
+    return this.http.get<any>(
+      `http://localhost:3000/api/appointments/search?q=${query}&status=COMPLETED&limit=10`
     );
+  };
 
-    this.formData.patientId = selected?.patientId || '';
-    this.formData.doctorEmployeeId = selected?.doctorEmployeeId || '';
+  onAppointmentSelected(appointment: any): void {
+    if (appointment) {
+      this.form.patchValue({
+        patientId: appointment.patientId || '',
+        doctorEmployeeId: appointment.doctorEmployeeId || ''
+      });
+      this.cdr.detectChanges();
+    }
   }
 
   save(): void {
-    if (
-      !this.formData.appointmentId ||
-      !this.formData.patientId ||
-      !this.formData.doctorEmployeeId ||
-      !this.formData.symptoms ||
-      !this.formData.diagnosis
-    ) {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
       this.toastr.warning('Please fill all required fields');
       return;
     }
 
+    this.loading = true;
+    const formValue = this.form.getRawValue();
+    const payload = {
+      appointmentId: formValue.appointmentId || '',
+      patientId: formValue.patientId || '',
+      doctorEmployeeId: formValue.doctorEmployeeId || '',
+      symptoms: formValue.symptoms || '',
+      diagnosis: formValue.diagnosis || '',
+      prescription: formValue.prescription || undefined,
+      notes: formValue.notes || undefined
+    };
+
     const request$ =
       this.data?.mode === 'edit'
         ? this.healthRecordService.updateHealthRecord(
-          this.data.record.healthRecordId,
-          this.formData
-        )
-        : this.healthRecordService.createHealthRecord(this.formData);
+            this.data.record.healthRecordId,
+            payload
+          )
+        : this.healthRecordService.createHealthRecord(payload);
 
     request$.subscribe({
       next: () => {
@@ -127,13 +116,14 @@ export class HealthRecordDialog implements OnInit {
             ? 'Health record updated successfully'
             : 'Health record created successfully'
         );
-
         this.dialogRef.close(true);
       },
       error: (err) => {
+        this.loading = false;
         this.toastr.error(
           err?.error?.message || 'Failed to save health record'
         );
+        this.cdr.detectChanges();
       }
     });
   }

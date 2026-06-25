@@ -45,12 +45,17 @@ export class HealthRecordService {
 
   getHealthRecords(
     page = 1,
-    limit = 5
+    limit = 5,
+    search = ''
   ): Observable<any> {
     return this.http.get(
-      `${this.baseUrl}?page=${page}&limit=${limit}`
+      `${this.baseUrl}?page=${page}&limit=${limit}&search=${search}`
     );
   }
+
+  search = (query: string): Observable<any> => {
+    return this.http.get<any>(`${this.baseUrl}/search?q=${query}&limit=10`);
+  };
 
   getHealthRecordById(
     healthRecordId: string

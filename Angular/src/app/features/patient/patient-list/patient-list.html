@@ -23,14 +23,12 @@
 
         <mat-form-field appearance="outline" class="search-field">
           <mat-label>Search</mat-label>
-
-          <input matInput [(ngModel)]="searchText" (input)="applyFilters()" />
+          <input matInput [ngModel]="searchTextSignal()" (input)="onSearchInput($event)" placeholder="Search UHID, name, email, phone..." />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Gender</mat-label>
-
-          <mat-select [(value)]="selectedGender" (selectionChange)="applyFilters()">
+          <mat-select [value]="genderSignal()" (selectionChange)="onGenderChange($event.value)">
             <mat-option value="ALL">All</mat-option>
             <mat-option value="male">Male</mat-option>
             <mat-option value="female">Female</mat-option>
@@ -39,8 +37,7 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Status</mat-label>
-
-          <mat-select [(value)]="selectedStatus" (selectionChange)="applyFilters()">
+          <mat-select [value]="statusSignal()" (selectionChange)="onStatusChange($event.value)">
             <mat-option value="ALL">All</mat-option>
             <mat-option value="ACTIVE">Active</mat-option>
             <mat-option value="INACTIVE">Inactive</mat-option>
@@ -58,12 +55,12 @@
 
         <div class="table-header">
           <h3>Patients</h3>
-          <span>{{ dataSource.data.length || 0 }} records</span>
+          <span>{{ patientsSignal().length || 0 }} records</span>
         </div>
 
         <div class="table-scroll">
 
-          <table mat-table [dataSource]="dataSource" multiTemplateDataRows>
+          <table mat-table [dataSource]="patientsSignal()" multiTemplateDataRows>
 
             <!-- UHID -->
             <ng-container matColumnDef="UHID">
@@ -143,7 +140,7 @@
             <ng-container matColumnDef="expandedDetail">
               <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length">
 
-                <div class="patient-action-panel" *ngIf="expandedPatient?.UHID === row.UHID">
+                <div class="patient-action-panel" *ngIf="expandedPatientSignal()?.UHID === row.UHID">
 
                   <div class="patient-action-info">
                     <strong>{{ row.name }}</strong>
@@ -183,15 +180,13 @@
 
             <!-- DETAIL ROW -->
             <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"
-              [class.hidden]="expandedPatient?.UHID !== row.UHID">
+              [class.hidden]="expandedPatientSignal()?.UHID !== row.UHID">
             </tr>
 
           </table>
 
-
-
         </div>
-        <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
+        <mat-paginator [length]="totalSignal()" [pageSize]="limitSignal()" [pageIndex]="pageSignal()"
           [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
         </mat-paginator>
       </div>

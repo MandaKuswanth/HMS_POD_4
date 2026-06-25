@@ -1,15 +1,10 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-
-} from '@angular/core';
-
+import { Component, inject, OnInit, ChangeDetectionStrategy, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
@@ -18,15 +13,18 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
-import { PERMISSIONS } from '../../../constants/permission';
-import { ToastrService } from 'ngx-toastr';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 
+import { ToastrService } from 'ngx-toastr';
 import { Navbar } from '../../../shared/components/navbar/navbar';
 import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 import { EmployeeService } from '../../../core/services/employee';
 import { AuthService } from '../../../core/services/auth';
 import { EmployeeDialog } from '../employee-dialog/employee-dialog';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
+import { PERMISSIONS } from '../../../constants/permission';
 
 @Component({
   selector: 'app-employee-list',
@@ -35,7 +33,6 @@ import { EmployeeDialog } from '../employee-dialog/employee-dialog';
   imports: [
     CommonModule,
     FormsModule,
-
     MatTableModule,
     MatCardModule,
     MatIconModule,
@@ -43,8 +40,10 @@ import { EmployeeDialog } from '../employee-dialog/employee-dialog';
     MatDialogModule,
     MatTooltipModule,
     MatPaginatorModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
     HasPermissionDirective,
-
     Navbar,
     Sidebar,
   ],
@@ -56,23 +55,47 @@ export class EmployeeList implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
-  private readonly cdr = inject(ChangeDetectorRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+
   readonly PERMISSIONS = PERMISSIONS;
-  employees: any[] = [];
-  expandedEmployee: any = null;
+  readonly pageSizeOptions = [5, 10, 25, 50];
 
-  searchText = '';
-  selectedRole = 'ALL ROLES';
-  selectedDepartment = 'ALL DEPARTMENTS';
+  // Signal States
+  readonly employeesSignal = signal<any[]>([]);
+  readonly totalSignal = signal(0);
+  readonly pageSignal = signal(0); // 0-indexed
+  readonly limitSignal = signal(5);
+  readonly loadingSignal = signal(false);
 
-  activeView: 'all' | 'active' | 'pending' = 'all';
+  readonly searchTextSignal = signal('');
+  readonly roleSignal = signal('ALL ROLES');
+  readonly departmentSignal = signal('ALL DEPARTMENTS');
+  readonly statusSignal = signal<'all' | 'active' | 'pending'>('all'); // all, active, pending
+  readonly expandedEmployeeSignal = signal<any | null>(null);
 
-  totalRecords = 0;
-  pageSize = 5;
-  pageIndex = 0;
-  pageSizeOptions = [5, 10, 25];
+  private readonly searchSubject = new Subject<string>();
+
+  readonly departmentsList = [
+    'ALL DEPARTMENTS',
+    'Cardiology',
+    'Pediatrics',
+    'General Medicine',
+    'Orthopedics',
+    'Neurology',
+    'Nursing',
+    'Front Desk',
+    'Administration'
+  ];
+
+  readonly rolesList = [
+    'ALL ROLES',
+    'DOCTOR',
+    'NURSE',
+    'RECEPTIONIST',
+    'HR',
+    'ADMIN'
+  ];
 
   displayedColumns: string[] = [
     'employeeCode',
@@ -85,130 +108,93 @@ export class EmployeeList implements OnInit {
     'status',
   ];
 
-
-  get filteredEmployees(): any[] {
-    let employees = [...this.employees];
-
-    if (this.activeView === 'active') {
-      employees = employees.filter((emp: any) => emp.status === true);
-    } else if (this.activeView === 'pending') {
-      employees = employees.filter((emp: any) => emp.status === false);
-    }
-
-    if (this.selectedRole !== 'ALL ROLES') {
-      employees = employees.filter((emp: any) => {
-        if (Array.isArray(emp.roles)) {
-          return emp.roles.includes(this.selectedRole);
-        }
-        return emp.role === this.selectedRole;
-      });
-    }
-
-    if (this.selectedDepartment !== 'ALL DEPARTMENTS') {
-      employees = employees.filter(
-        (emp: any) => emp.department === this.selectedDepartment
-      );
-    }
-
-    if (this.searchText.trim()) {
-      const search = this.searchText.toLowerCase().trim();
-
-      employees = employees.filter((emp: any) =>
-        emp.employeeCode?.toLowerCase().includes(search) ||
-        emp.name?.toLowerCase().includes(search) ||
-        emp.email?.toLowerCase().includes(search) ||
-        emp.phone?.includes(search)
-      );
-    }
-
-    return employees;
-  }
-
-  get activeCount(): number {
-    return this.employees.filter((emp: any) => emp.status === true).length;
-  }
-
-  get pendingCount(): number {
-    return this.employees.filter((emp: any) => emp.status === false).length;
-  }
-
-  get roles(): string[] {
-    const rolesSet = new Set<string>();
-    this.employees.forEach((emp: any) => {
-      if (Array.isArray(emp.roles)) {
-        emp.roles.forEach((r: string) => rolesSet.add(r));
-      } else if (emp.role) {
-        rolesSet.add(emp.role);
-      }
+  constructor() {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntilDestroyed()
+    ).subscribe((val) => {
+      this.searchTextSignal.set(val);
+      this.pageSignal.set(0);
     });
 
-    return ['ALL ROLES', ...Array.from(rolesSet).filter(Boolean)];
-  }
+    // Reactive load effect
+    effect(() => {
+      const page = this.pageSignal() + 1;
+      const limit = this.limitSignal();
+      const search = this.searchTextSignal();
+      const role = this.roleSignal();
+      const department = this.departmentSignal();
+      const status = this.statusSignal();
 
-  get departments(): string[] {
-    const departments = this.employees
-      .map((emp: any) => emp.department)
-      .filter(Boolean);
-
-    return ['ALL DEPARTMENTS', ...new Set(departments)];
+      this.loadEmployees(page, limit, search, role, department, status);
+    });
   }
 
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
       if (params['view'] === 'active') {
-        this.activeView = 'active';
+        this.statusSignal.set('active');
       } else if (params['view'] === 'pending') {
-        this.activeView = 'pending';
+        this.statusSignal.set('pending');
       } else {
-        this.activeView = 'all';
+        this.statusSignal.set('all');
       }
-
-      this.expandedEmployee = null;
-      this.cdr.markForCheck();
+      this.pageSignal.set(0);
+      this.expandedEmployeeSignal.set(null);
     });
-
-    this.loadEmployees();
   }
 
   setView(view: 'all' | 'active' | 'pending'): void {
-    this.activeView = view;
-    this.resetPagination();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { view: view === 'all' ? null : view },
+      queryParamsHandling: 'merge',
+    });
   }
 
+  loadEmployees(page: number, limit: number, search: string, role: string, department: string, status: 'all' | 'active' | 'pending'): void {
+    this.loadingSignal.set(true);
+    this.employeeService.getEmployees(page, limit, search, department, role, status).subscribe({
+      next: (response: any) => {
+        this.loadingSignal.set(false);
+        const records = Array.isArray(response?.data)
+          ? response.data
+          : (Array.isArray(response?.data?.records) ? response.data.records : []);
 
-
-  loadEmployees(): void {
-    this.employeeService
-      .getEmployees(this.pageIndex + 1, this.pageSize)
-      .subscribe({
-        next: (response: any) => {
-          const employees = Array.isArray(response?.data?.records)
-            ? response.data.records
-            : [];
-
-          this.employees = employees;
-
-          this.totalRecords =
-            response?.data?.pagination?.totalRecords || 0;
-
-          this.expandedEmployee = null;
-          this.cdr.markForCheck();
-        },
-        error: (error) => {
-          console.error('EMPLOYEE LIST ERROR:', error);
-
-          this.employees = [];
-          this.totalRecords = 0;
-          this.expandedEmployee = null;
-
-          this.toastr.warning('Failed to load employees');
-          this.cdr.markForCheck();
-        },
-      });
+        this.employeesSignal.set(records);
+        this.totalSignal.set(response?.pagination?.totalItems || response?.data?.pagination?.totalRecords || 0);
+        this.expandedEmployeeSignal.set(null);
+      },
+      error: (error) => {
+        this.loadingSignal.set(false);
+        console.error('EMPLOYEE LIST ERROR:', error);
+        this.employeesSignal.set([]);
+        this.totalSignal.set(0);
+        this.expandedEmployeeSignal.set(null);
+        this.toastr.warning('Failed to load employees');
+      },
+    });
   }
+
+  onSearchInput(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.searchSubject.next(val);
+  }
+
+  onRoleChange(val: string): void {
+    this.roleSignal.set(val);
+    this.pageSignal.set(0);
+  }
+
+  onDepartmentChange(val: string): void {
+    this.departmentSignal.set(val);
+    this.pageSignal.set(0);
+  }
+
   toggleRow(employee: any): void {
-    this.expandedEmployee = this.expandedEmployee === employee ? null : employee;
-    this.cdr.markForCheck();
+    const current = this.expandedEmployeeSignal();
+    this.expandedEmployeeSignal.set(current?.employeeCode === employee.employeeCode ? null : employee);
   }
 
   openAddDialog(): void {
@@ -220,7 +206,7 @@ export class EmployeeList implements OnInit {
 
     ref.afterClosed().subscribe((result) => {
       if (result) {
-        this.loadEmployees();
+        this.pageSignal.set(0);
       }
     });
   }
@@ -237,7 +223,8 @@ export class EmployeeList implements OnInit {
 
     ref.afterClosed().subscribe((result) => {
       if (result) {
-        this.loadEmployees();
+        // Force reload by re-setting page
+        this.pageSignal.set(this.pageSignal());
       }
     });
   }
@@ -258,24 +245,18 @@ export class EmployeeList implements OnInit {
 
     this.employeeService.deleteEmployee(employee.employeeCode).subscribe({
       next: () => {
-        const currentUser = JSON.parse(
-          localStorage.getItem('user') || '{}'
-        );
-
-        const isDeletingOwnAccount =
-          currentUser?.employeeId === employee.employeeCode;
+        const currentUser = this.authService.user();
+        const isDeletingOwnAccount = currentUser?.employeeId === employee.employeeCode;
 
         if (isDeletingOwnAccount) {
           this.toastr.success('Your account has been deleted. Please login again.');
-
-          localStorage.clear();
-          this.router.navigate(['/login']);
+          this.authService.clearAuthState();
           return;
         }
 
         this.toastr.success('Employee deleted successfully');
-        this.expandedEmployee = null;
-        this.loadEmployees();
+        this.expandedEmployeeSignal.set(null);
+        this.pageSignal.set(0);
       },
       error: (err) => {
         this.toastr.error(
@@ -292,7 +273,6 @@ export class EmployeeList implements OnInit {
     }
 
     const action = employee.status ? 'deactivate' : 'activate';
-
     const isDoctor = Array.isArray(employee.roles)
       ? employee.roles.includes('DOCTOR')
       : employee.role === 'DOCTOR';
@@ -313,9 +293,8 @@ export class EmployeeList implements OnInit {
         this.toastr.success(
           response?.message || `Employee ${action}d successfully`
         );
-
-        this.expandedEmployee = null;
-        this.loadEmployees();
+        this.expandedEmployeeSignal.set(null);
+        this.pageSignal.set(this.pageSignal());
       },
       error: (err) => {
         this.toastr.error(
@@ -324,19 +303,18 @@ export class EmployeeList implements OnInit {
       },
     });
   }
+
   onPageChange(event: PageEvent): void {
-
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-
-    this.expandedEmployee = null;
-
-    this.loadEmployees();
+    this.pageSignal.set(event.pageIndex);
+    this.limitSignal.set(event.pageSize);
+    this.expandedEmployeeSignal.set(null);
   }
 
-  resetPagination(): void {
-    this.pageIndex = 0;
-    this.expandedEmployee = null;
-    this.cdr.markForCheck();
+  clearFilters(): void {
+    this.searchTextSignal.set('');
+    this.roleSignal.set('ALL ROLES');
+    this.departmentSignal.set('ALL DEPARTMENTS');
+    this.pageSignal.set(0);
+    this.expandedEmployeeSignal.set(null);
   }
 }

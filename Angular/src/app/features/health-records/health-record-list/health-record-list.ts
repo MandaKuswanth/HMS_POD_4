@@ -1,33 +1,32 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, signal, effect } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 import { ToastrService } from 'ngx-toastr';
-
 import { Navbar } from '../../../shared/components/navbar/navbar';
 import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 import { HealthRecordDialog } from '../health-record-dialog/health-record-dialog';
-
-import {
-  HealthRecordRequest,
-  HealthRecordService,
-} from '../../../core/services/health-record';
-
+import { HealthRecordRequest, HealthRecordService } from '../../../core/services/health-record';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { PERMISSIONS } from '../../../constants/permission';
 
 @Component({
   selector: 'app-health-record-list',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -38,6 +37,8 @@ import { PERMISSIONS } from '../../../constants/permission';
     MatIconModule,
     MatButtonModule,
     MatTooltipModule,
+    MatFormFieldModule,
+    MatInputModule,
     Navbar,
     Sidebar,
     HasPermissionDirective,
@@ -49,21 +50,21 @@ export class HealthRecordList implements OnInit {
   private readonly healthRecordService = inject(HealthRecordService);
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
-  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly PERMISSIONS = PERMISSIONS;
+  readonly pageSizeOptions = [5, 10, 25, 50];
 
-  healthRecords: HealthRecordRequest[] = [];
-  filteredHealthRecords: HealthRecordRequest[] = [];
+  // Signal States
+  readonly recordsSignal = signal<HealthRecordRequest[]>([]);
+  readonly totalSignal = signal(0);
+  readonly pageSignal = signal(0); // 0-indexed
+  readonly limitSignal = signal(5);
+  readonly loadingSignal = signal(false);
 
-  expandedRecord: HealthRecordRequest | null = null;
-  searchText = '';
-  isLoading = false;
+  readonly searchTextSignal = signal('');
+  readonly expandedRecordSignal = signal<HealthRecordRequest | null>(null);
 
-  pageIndex = 0;
-  pageSize = 5;
-  pageSizeOptions = [5, 10, 25];
-  totalRecords = 0;
+  private readonly searchSubject = new Subject<string>();
 
   displayedColumns: string[] = [
     'healthRecordId',
@@ -74,80 +75,74 @@ export class HealthRecordList implements OnInit {
     'createdAt',
   ];
 
-  ngOnInit(): void {
-    this.loadHealthRecords();
+  constructor() {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntilDestroyed()
+    ).subscribe((val) => {
+      this.searchTextSignal.set(val);
+      this.pageSignal.set(0);
+    });
+
+    // Reactive load effect
+    effect(() => {
+      const page = this.pageSignal() + 1;
+      const limit = this.limitSignal();
+      const search = this.searchTextSignal();
+
+      this.loadHealthRecords(page, limit, search);
+    });
   }
 
-  loadHealthRecords(): void {
-    this.isLoading = true;
-    this.expandedRecord = null;
-    this.cdr.detectChanges();
+  ngOnInit(): void {}
 
+  loadHealthRecords(page: number, limit: number, search: string): void {
+    this.loadingSignal.set(true);
     this.healthRecordService
-      .getHealthRecords(this.pageIndex + 1, this.pageSize)
+      .getHealthRecords(page, limit, search)
       .subscribe({
         next: (response: any) => {
-          const records = Array.isArray(response?.data?.records)
-            ? response.data.records
-            : [];
+          this.loadingSignal.set(false);
+          const records = Array.isArray(response?.data)
+            ? response.data
+            : (Array.isArray(response?.data?.records) ? response.data.records : []);
 
-          this.healthRecords = records;
-          this.filteredHealthRecords = [...records];
-
-          this.totalRecords =
-            response?.data?.pagination?.totalRecords || 0;
-
-          this.isLoading = false;
-          this.expandedRecord = null;
-          this.cdr.detectChanges();
+          this.recordsSignal.set(records);
+          this.totalSignal.set(response?.pagination?.totalItems || response?.data?.pagination?.totalRecords || 0);
+          this.expandedRecordSignal.set(null);
         },
         error: (error) => {
+          this.loadingSignal.set(false);
           console.error('HEALTH RECORD LOAD ERROR:', error);
-
-          this.healthRecords = [];
-          this.filteredHealthRecords = [];
-          this.totalRecords = 0;
-          this.isLoading = false;
-          this.expandedRecord = null;
-
+          this.recordsSignal.set([]);
+          this.totalSignal.set(0);
+          this.expandedRecordSignal.set(null);
           this.toastr.error('Failed to load health records');
-          this.cdr.detectChanges();
         },
       });
   }
 
-  applyFilter(): void {
-    const search = this.searchText.trim().toLowerCase();
-
-    this.filteredHealthRecords = search
-      ? this.healthRecords.filter((record) =>
-          (record.healthRecordId ?? '').toLowerCase().includes(search) ||
-          (record.appointmentId ?? '').toLowerCase().includes(search) ||
-          (record.patientId ?? '').toLowerCase().includes(search) ||
-          (record.patientName ?? '').toLowerCase().includes(search) ||
-          (record.doctorName ?? '').toLowerCase().includes(search) ||
-          (record.diagnosis ?? '').toLowerCase().includes(search)
-        )
-      : [...this.healthRecords];
-
-    this.expandedRecord = null;
+  onSearchInput(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.searchSubject.next(val);
   }
 
   clearSearch(): void {
-    this.searchText = '';
-    this.filteredHealthRecords = [...this.healthRecords];
-    this.expandedRecord = null;
+    this.searchTextSignal.set('');
+    this.pageSignal.set(0);
+    this.expandedRecordSignal.set(null);
   }
 
   onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.loadHealthRecords();
+    this.pageSignal.set(event.pageIndex);
+    this.limitSignal.set(event.pageSize);
+    this.expandedRecordSignal.set(null);
   }
 
   toggleRow(record: HealthRecordRequest): void {
-    this.expandedRecord =
-      this.expandedRecord === record ? null : record;
+    const current = this.expandedRecordSignal();
+    this.expandedRecordSignal.set(current?.healthRecordId === record.healthRecordId ? null : record);
   }
 
   openAddDialog(): void {
@@ -161,8 +156,7 @@ export class HealthRecordList implements OnInit {
 
     ref.afterClosed().subscribe((result: boolean) => {
       if (result) {
-        this.pageIndex = 0;
-        this.loadHealthRecords();
+        this.pageSignal.set(0);
       }
     });
   }
@@ -181,7 +175,7 @@ export class HealthRecordList implements OnInit {
 
     ref.afterClosed().subscribe((result: boolean) => {
       if (result) {
-        this.loadHealthRecords();
+        this.pageSignal.set(this.pageSignal());
       }
     });
   }
@@ -203,8 +197,8 @@ export class HealthRecordList implements OnInit {
       .subscribe({
         next: () => {
           this.toastr.success('Health record deleted successfully');
-          this.expandedRecord = null;
-          this.loadHealthRecords();
+          this.expandedRecordSignal.set(null);
+          this.pageSignal.set(0);
         },
         error: (error) => {
           this.toastr.error(

@@ -1,17 +1,7 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface ResetPasswordRequest {
-  newPassword: string;
-  confirmPassword?: string;
-}
+import { Observable, tap } from 'rxjs';
 
 export interface UserRole {
   roleId: string;
@@ -20,7 +10,8 @@ export interface UserRole {
 
 export interface User {
   id: string;
-  employeeId: string;
+  employeeId?: string;
+  UHID?: string;
   name: string;
   email: string;
   roleIds: string[];
@@ -35,7 +26,7 @@ export interface LoginResponse {
   success: boolean;
   message: string;
   data: {
-    token: string;
+    accessToken: string;
     resetRequired: boolean;
     user: User;
   };
@@ -48,98 +39,88 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
-  private readonly API_URL = 'http://localhost:3000/api/employees';
+  private readonly API_URL = 'http://localhost:3000/api/v1/auth';
+  private readonly EMP_API_URL = 'http://localhost:3000/api/v1/employees';
 
-  private readonly TOKEN_KEY = 'token';
-  private readonly USER_KEY = 'user';
-  private readonly PERMISSIONS_KEY = 'permissions';
+  // State Signals
+  private readonly _accessToken = signal<string | null>(null);
+  private readonly _user = signal<User | null>(null);
+  private readonly _permissions = signal<string[]>([]);
 
-  login(data: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(
-      `${this.API_URL}/login`,
-      data
+  // Public Read-Only Signals
+  readonly accessToken = this._accessToken.asReadonly();
+  readonly user = this._user.asReadonly();
+  readonly permissions = this._permissions.asReadonly();
+  readonly isLoggedIn = computed(() => !!this._accessToken());
+
+  login(data: any): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.API_URL}/login`, data).pipe(
+      tap((res) => {
+        if (res.success && res.data) {
+          this.setAuthState(res.data.accessToken, res.data.user);
+        }
+      })
     );
   }
 
-  resetPassword(data: ResetPasswordRequest): Observable<any> {
-    return this.http.post(
-      `${this.API_URL}/reset-password`,
-      data
+  refresh(): Observable<any> {
+    return this.http.post<any>(`${this.API_URL}/refresh`, {}, { withCredentials: true }).pipe(
+      tap((res) => {
+        if (res.success && res.data) {
+          this.setAuthState(res.data.accessToken, res.data.user);
+        }
+      })
     );
   }
 
-  saveLoginData(response: LoginResponse): void {
-    const token = response?.data?.token;
-    const user = response?.data?.user;
-
-    if (token) {
-      localStorage.setItem(this.TOKEN_KEY, token);
-    }
-
-    if (user) {
-      localStorage.setItem(
-        this.USER_KEY,
-        JSON.stringify(user)
-      );
-
-      this.savePermissions(user.permissions || []);
-    }
+  logout(): Observable<any> {
+    return this.http.post<any>(`${this.API_URL}/logout`, {}, { withCredentials: true }).pipe(
+      tap(() => {
+        this.clearAuthState();
+      })
+    );
   }
 
-  logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.USER_KEY);
-    localStorage.removeItem(this.PERMISSIONS_KEY);
+  resetPassword(data: any): Observable<any> {
+    return this.http.post(`${this.EMP_API_URL}/reset-password`, data);
+  }
 
+  setAuthState(token: string, user: User): void {
+    this._accessToken.set(token);
+    this._user.set(user);
+    this._permissions.set(user.permissions || []);
+  }
+
+  clearAuthState(): void {
+    this._accessToken.set(null);
+    this._user.set(null);
+    this._permissions.set([]);
     this.router.navigate(['/login']);
   }
 
-  isLoggedIn(): boolean {
-    return !!this.getToken();
+  hasPermission(permission: string): boolean {
+    return this._permissions().includes(permission);
   }
 
-  getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
-  getUser(): User | null {
-    const user = localStorage.getItem(this.USER_KEY);
-    return user ? JSON.parse(user) : null;
-  }
-
-  getRole(): string | null {
-    return this.getUser()?.roles?.[0]?.name ?? null;
-  }
-
-  getRoles(): string[] {
-    return this.getUser()?.roles?.map((role) => role.name) ?? [];
-  }
-
-  hasRole(role: string): boolean {
-    return this.getRoles().includes(role);
-  }
-
-  getEmployeeId(): string | null {
-    return this.getUser()?.employeeId ?? null;
+  saveLoginData(response: any): void {
+    if (response && response.data) {
+      this.setAuthState(response.data.accessToken, response.data.user);
+    }
   }
 
   mustResetPassword(): boolean {
-    return this.getUser()?.mustResetPassword ?? false;
+    return this._user()?.mustResetPassword || false;
   }
 
-  savePermissions(permissions: string[]): void {
-    localStorage.setItem(
-      this.PERMISSIONS_KEY,
-      JSON.stringify(permissions)
-    );
+  getUser(): User | null {
+    return this._user();
   }
 
-  getPermissions(): string[] {
-    const permissions = localStorage.getItem(this.PERMISSIONS_KEY);
-    return permissions ? JSON.parse(permissions) : [];
-  }
-
-  hasPermission(permission: string): boolean {
-    return this.getPermissions().includes(permission);
+  getRole(): string | null {
+    const user = this._user();
+    if (!user || !user.roles || user.roles.length === 0) {
+      return null;
+    }
+    return user.roles[0].name;
   }
 }

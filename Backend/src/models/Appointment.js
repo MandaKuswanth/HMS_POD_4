@@ -48,6 +48,9 @@ const appointmentSchema = new mongoose.Schema(
             type: Date,
             default: null
         },
+        scheduledAt: {
+            type: Date
+        },
         // Soft delete fields
         isDeleted: {
             type: Boolean,
@@ -67,7 +70,13 @@ const appointmentSchema = new mongoose.Schema(
     }
 );
 
+appointmentSchema.index({ doctorEmployeeId: 1, scheduledAt: 1 });
+appointmentSchema.index({ status: 1 });
+
 appointmentSchema.pre("save", async function (next) {
+    if (this.date) {
+        this.scheduledAt = this.date;
+    }
     if (this.isNew) {
         try {
             const counter = await Counter.findOneAndUpdate(
@@ -80,7 +89,6 @@ appointmentSchema.pre("save", async function (next) {
             return next(err);
         }
     }
-  
 });
 
 module.exports = mongoose.model("Appointment", appointmentSchema);

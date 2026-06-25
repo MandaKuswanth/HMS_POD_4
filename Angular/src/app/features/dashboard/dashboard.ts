@@ -130,7 +130,7 @@ export class Dashboard implements OnInit {
   }
 
   private loadPatientsCount(): void {
-    this.patientService.getPatients(1, 1000).subscribe({
+    this.patientService.getPatients({ page: 1, limit: 1000 }).subscribe({
       next: (response: any) => {
         const patients = Array.isArray(response?.data?.records)
           ? response.data.records

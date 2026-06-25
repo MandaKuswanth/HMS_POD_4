@@ -38,4 +38,22 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+let logoutCallback = null;
+
+export const setLogoutCallback = (callback) => {
+    logoutCallback = callback;
+};
+
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        if (error.response && error.response.status === 401) {
+            if (logoutCallback) {
+                await logoutCallback();
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;
