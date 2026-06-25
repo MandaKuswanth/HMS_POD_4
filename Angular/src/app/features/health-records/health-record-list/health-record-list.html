@@ -1,0 +1,150 @@
+<app-navbar></app-navbar>
+
+<div class="layout">
+    <app-sidebar></app-sidebar>
+
+    <main class="content">
+        <mat-card class="table-card">
+
+            <div class="page-header">
+                <h2 class="page-title">Health Records</h2>
+
+                <div class="toolbar-row">
+                    <div class="search-container">
+                        <input class="search-input" type="text"
+                            placeholder="Search by record, appointment, patient, doctor..." [(ngModel)]="searchText"
+                            (ngModelChange)="applyFilter()" />
+                    </div>
+
+                    <div class="header-actions">
+                        @if (searchText) {
+                        <button mat-stroked-button type="button" (click)="clearSearch()">
+                            Clear
+                        </button>
+                        }
+
+                        <button *appHasPermission="PERMISSIONS.HEALTH_RECORD_CREATE" mat-fab color="primary"
+                            matTooltip="Add Health Record" (click)="openAddDialog()">
+                            <mat-icon>add</mat-icon>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            @if (isLoading) {
+            <div class="no-data">
+                <mat-icon>hourglass_empty</mat-icon>
+                <p>Loading health records...</p>
+            </div>
+            } @else if (filteredHealthRecords.length > 0){
+            <div class="table-wrapper">
+                <table mat-table [dataSource]="filteredHealthRecords" class="mat-elevation-z1" multiTemplateDataRows>
+
+                    <ng-container matColumnDef="healthRecordId">
+                        <th mat-header-cell *matHeaderCellDef>Record ID</th>
+                        <td mat-cell *matCellDef="let record">
+                            {{ record.healthRecordId || '-' }}
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="appointmentId">
+                        <th mat-header-cell *matHeaderCellDef>Appointment</th>
+                        <td mat-cell *matCellDef="let record">
+                            {{ record.appointmentId || '-' }}
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="patient">
+                        <th mat-header-cell *matHeaderCellDef>Patient</th>
+                        <td mat-cell *matCellDef="let record">
+                            <strong>{{ record.patientName || 'N/A' }}</strong>
+                            <br />
+                            <small>{{ record.patientId || '-' }}</small>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="doctor">
+                        <th mat-header-cell *matHeaderCellDef>Doctor</th>
+                        <td mat-cell *matCellDef="let record">
+                            <strong>
+                                {{ record.doctorName ? ('Dr. ' + record.doctorName) : 'N/A' }}
+                            </strong>
+                            <br />
+                            <small>{{ record.doctorEmployeeId || '-' }}</small>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="diagnosis">
+                        <th mat-header-cell *matHeaderCellDef>Diagnosis</th>
+                        <td mat-cell *matCellDef="let record">
+                            {{ record.diagnosis || '-' }}
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="createdAt">
+                        <th mat-header-cell *matHeaderCellDef>Date</th>
+                        <td mat-cell *matCellDef="let record">
+                            {{ record.createdAt | date:'mediumDate' }}
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="expandedDetail">
+                        <td mat-cell *matCellDef="let record" [attr.colspan]="displayedColumns.length">
+                            @if (expandedRecord === record) {
+                            <div class="health-action-panel">
+
+                                <div class="health-info">
+                                    <strong>{{ record.healthRecordId }}</strong>
+                                    <span>Symptoms: {{ record.symptoms || '-' }}</span>
+                                    <span>Diagnosis: {{ record.diagnosis || '-' }}</span>
+                                    <span>Prescription: {{ record.prescription || '-' }}</span>
+                                    <span>Notes: {{ record.notes || '-' }}</span>
+                                </div>
+
+                                <div class="health-action-buttons">
+                                    <button *appHasPermission="PERMISSIONS.HEALTH_RECORD_UPDATE" mat-stroked-button
+                                        class="edit-action" matTooltip="Update Health Record"
+                                        (click)="openEditDialog(record); $event.stopPropagation()">
+                                        <mat-icon>edit</mat-icon>
+                                        Update
+                                    </button>
+
+                                    <button *appHasPermission="PERMISSIONS.HEALTH_RECORD_DELETE" mat-stroked-button
+                                        class="delete-action" matTooltip="Delete Health Record"
+                                        (click)="deleteHealthRecord(record); $event.stopPropagation()">
+                                        <mat-icon>delete</mat-icon>
+                                        Delete
+                                    </button>
+                                </div>
+
+                            </div>
+                            }
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns" class="health-row"
+                        [class.selected-row]="expandedRecord === row" tabindex="0" (click)="toggleRow(row)"
+                        (keydown.enter)="toggleRow(row)" (keydown.space)="toggleRow(row)">
+                    </tr>
+
+                    <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row">
+                    </tr>
+
+                </table>
+
+                <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
+                    [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
+                </mat-paginator>
+            </div>
+            } @else {
+            <div class="no-data">
+                <mat-icon>medical_information</mat-icon>
+                <p>No health records found.</p>
+            </div>
+            }
+
+        </mat-card>
+    </main>
+</div>

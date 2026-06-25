@@ -1,0 +1,20 @@
+<nav class="navbar">
+  <!-- Left side brand -->
+  <button class="brand brand-btn" type="button">
+    <mat-icon>local_hospital</mat-icon>
+    <span>HMS</span>
+  </button>
+
+  <!-- This pushes items to right -->
+  <div class="spacer"></div>
+
+  <!-- Right side -->
+  <div class="navbar-actions">
+    <span class="role">Role: {{ role }}</span>
+
+    <button mat-raised-button class="logout-btn" (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      <span>Logout</span>
+    </button>
+  </div>
+</nav>

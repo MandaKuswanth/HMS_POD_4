@@ -1,0 +1,92 @@
+:host {
+    display: block;
+}
+
+/* TITLE */
+h2[mat-dialog-title] {
+    margin: 0;
+    padding: 20px 24px 12px;
+    color: #0d47a1;
+    font-size: 22px;
+    font-weight: 800;
+    border-bottom: 1px solid #dbeafe;
+}
+
+/* CONTENT */
+mat-dialog-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px !important;
+    background: #ffffff;
+
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+/* FULL WIDTH FIELDS */
+.full-width {
+    width: 100%;
+}
+
+/* MATERIAL FIELDS */
+.mat-mdc-form-field {
+    width: 100%;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* ACTION BUTTONS */
+mat-dialog-actions {
+    padding: 16px 24px 20px !important;
+    border-top: 1px solid #dbeafe;
+    gap: 12px;
+}
+
+mat-dialog-actions button {
+    min-width: 110px;
+    height: 42px;
+    border-radius: 10px !important;
+    font-weight: 700;
+}
+
+/* PRIMARY BUTTON */
+button[color="primary"] {
+    box-shadow: 0 4px 12px rgba(13, 71, 161, 0.15);
+}
+
+/* TEXTAREA LOOK */
+textarea.mat-mdc-input-element {
+    line-height: 1.5;
+}
+
+/* SCROLL FIX */
+.mat-mdc-dialog-content {
+    max-height: 70vh;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+
+    h2[mat-dialog-title] {
+        font-size: 20px;
+        padding: 18px;
+    }
+
+    mat-dialog-content {
+        padding: 18px !important;
+    }
+
+    mat-dialog-actions {
+        padding: 16px 18px !important;
+        flex-wrap: wrap;
+    }
+
+    mat-dialog-actions button {
+        flex: 1;
+        min-width: 100px;
+    }
+}

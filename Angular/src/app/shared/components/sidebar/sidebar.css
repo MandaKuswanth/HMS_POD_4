@@ -1,0 +1,212 @@
+:host {
+    display: block;
+    width: 260px;
+    height: calc(100vh - 72px);
+    flex-shrink: 0;
+    /* FIX: host must not clip the scrollable nav */
+    overflow: hidden;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 260px;
+    height: 100%;
+    padding: 10px 12px 22px;
+    background: linear-gradient(180deg, #0d47a1 0%, #1565c0 45%, #1976d2 100%);
+    border-right: 1px solid #90caf9;
+    box-shadow: 4px 0 18px rgba(25, 118, 210, 0.25);
+
+    display: flex;
+    flex-direction: column;
+    /* FIX: sidebar itself should not scroll — only the nav inside does */
+    overflow: hidden;
+}
+.nav-item--dashboard {
+    min-height: 68px !important;
+    font-size: 19px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.4px !important;
+    margin-bottom: 2px;
+}
+
+.nav-item--dashboard mat-icon {
+    font-size: 26px !important;
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+}
+
+/* BRAND — hidden but kept for collapsed mode future use */
+.sidebar-brand {
+    display: none;
+    
+}
+
+.brand-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: #e3f2fd;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.brand-icon mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    color: #0d47a1;
+}
+
+.brand-label {
+    font-size: 18px;
+    font-weight: 800;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+/* DIVIDER */
+.sidebar-divider {
+    height: 1px;
+    background: rgba(187, 222, 251, 0.9);
+    margin: 12px 6px 16px;
+    flex-shrink: 0;
+}
+
+
+
+/* NAV — the only scrollable region */
+.sidebar-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    /* FIX: was overflow: hidden — items beyond viewport were invisible */
+    overflow-y: auto;
+
+    /* keep a little bottom breathing room */
+    padding-bottom: 16px;
+    scrollbar-width: none;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    display: none;               /* Chrome / Safari */
+}
+
+/* NAV ITEM */
+.nav-item {
+    width: calc(100% - 12px);
+    min-height: 56px;
+    margin: 0 6px;
+    /* prevent items from shrinking when the list is taller than the viewport */
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    padding: 0 18px;
+    border-radius: 14px;
+
+    color: #ffffff;
+    text-decoration: none;
+    cursor: pointer;
+
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+
+    box-sizing: border-box;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+/* ICON */
+.nav-item mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: inherit;
+}
+
+/* LABEL */
+.nav-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* HOVER */
+.nav-item:hover {
+    background-color: #1e5aa8;
+    color: #ffffff;
+    transform: translateX(2px);
+}
+
+/* ACTIVE */
+.nav-item.active {
+    background: #ffffff;
+    color: #0d47a1;
+    font-weight: 800;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+    transform: none;
+}
+
+/* ACTIVE HOVER */
+.nav-item.active:hover {
+    background: #ffffff;
+    color: #0d47a1;
+    transform: none;
+}
+
+/* COLLAPSED OPTIONAL */
+.sidebar.collapsed {
+    width: 78px;
+}
+
+.sidebar.collapsed .brand-label,
+.sidebar.collapsed .nav-label {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-brand {
+    justify-content: center;
+    padding: 0;
+}
+
+.sidebar.collapsed .nav-item {
+    width: 54px;
+    margin: 0 auto;
+    justify-content: center;
+    padding: 0;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    :host {
+        position: fixed;
+        top: 72px;
+        left: 0;
+        z-index: 999;
+        height: calc(100vh - 72px);
+    }
+
+    .sidebar {
+        height: 100%;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
+    }
+}

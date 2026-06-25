@@ -1,0 +1,823 @@
+const Employee = require("../models/Employee");
+const User = require("../models/User");
+const Appointment = require("../models/Appointment");
+const Patient = require("../models/Patient");
+const Role = require("../models/Role");
+const crypto = require("node:crypto");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+const ApiResponse = require("../utils/ApiResponse");
+const ApiError = require("../utils/ApiError");
+const {sendEmail} = require("../utils/sendEmail");
+
+// ─── Internal: Cancel doctor appointments on deactivation / deletion ──────────
+
+const cancelDoctorAppointments = async (doctorEmployeeId, reason) => {
+    const appointments = await Appointment.find({
+        doctorEmployeeId,
+        isDeleted: false,
+        status: { $nin: ["CANCELLED", "COMPLETED"] }
+    });
+
+    let cancelledCount = 0;
+
+    for (const appointment of appointments) {
+        appointment.status = "CANCELLED";
+        appointment.cancellationReason = reason;
+        await appointment.save();
+
+        const patient = await Patient.findOne({
+            UHID: appointment.patientId,
+            isDeleted: false
+        });
+
+        if (patient?.email) {
+            await sendEmail({
+                to: patient.email,
+                subject: "HMS Appointment Cancelled",
+                html: `
+                    <h2>Appointment Cancelled</h2>
+                    <p>Hello ${patient.name},</p>
+                    <p>Your appointment has been cancelled because the assigned doctor is currently unavailable.</p>
+                    <p><strong>Appointment ID:</strong> ${appointment.appointmentId}</p>
+                    <p><strong>Date:</strong> ${appointment.date?.toDateString()}</p>
+                    <p><strong>Time Slot:</strong> ${appointment.timeSlot}</p>
+                    <p><strong>Reason:</strong> ${reason}</p>
+                    <p>Please contact hospital reception to book another appointment.</p>
+                    <p>Thank you,<br/>HMS Team</p>
+                `
+            });
+        }
+
+        cancelledCount++;
+    }
+
+    return cancelledCount;
+};
+
+// ─── Admin: Add Employee ─────────────────────────────────────────────────────
+
+exports.adminAddEmployee = async (req, res) => {
+    try {
+        const {
+            name, phone, email, role, department, designation,
+            medicalRegistrationNo, joiningDate, specialization,
+            qualification, consultationFee, availabilitySlots
+        } = req.body;
+
+        if (!name || !phone || !email || !role || !department || !designation) {
+            return res.status(400).json(new ApiError(400, "Required fields are missing"));
+        }
+
+        // Check for existing active employee
+        const existingEmp = await Employee.findOne({
+            $or: [{ email }, { phone }],
+            isDeleted: false
+        });
+
+        if (existingEmp) {
+            return res.status(409).json(new ApiResponse(409, null, "Employee already exists with this email or phone"));
+        }
+
+        const existingUser = await User.findOne({ email, isDeleted: false });
+        if (existingUser) {
+            return res.status(409).json(new ApiResponse(409, null, "User already exists with this email"));
+        }
+
+        const roleDoc = await Role.findOne({ name: role.trim().toUpperCase(), status: true });
+        if (!roleDoc) {
+            return res.status(404).json(new ApiError(404, "Role not found"));
+        }
+
+        const tempPassword = crypto.randomBytes(8).toString("hex");
+        console.log(`Temporary Password for ${email}: ${tempPassword}`);
+
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+        const employee = await Employee.create({
+            name, phone, email, department, designation,
+            joiningDate, medicalRegistrationNo, specialization,
+            qualification, consultationFee, availabilitySlots,
+            status: true
+        });
+
+        const user = await User.create({
+            email,
+            passwordHash: hashedPassword,
+            employeeId: employee.employeeCode,
+            roleIds: [roleDoc.roleId],
+            status: true,
+            mustResetPassword: true
+        });
+
+        await sendEmail({
+            to: email,
+            subject: "HMS Employee Account Created",
+            html: `
+                <h2>Welcome to HMS</h2>
+                <p>Your employee account has been created by admin.</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Role:</strong> ${roleDoc.name}</p>
+                <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+                <p>Please login and reset your password immediately.</p>
+                <p><a href="http://localhost:4200/login" target="_blank">Login to HMS Portal</a></p>
+            `
+        });
+
+        return res.status(201).json(
+            new ApiResponse(
+                201,
+                {
+                    employee,
+                    user: {
+                        _id: user._id,
+                        email: user.email,
+                        employeeId: user.employeeId,
+                        roleIds: user.roleIds,
+                        role: { roleId: roleDoc.roleId, name: roleDoc.name },
+                        status: user.status,
+                        mustResetPassword: user.mustResetPassword
+                    }
+                },
+                "Employee created successfully"
+            )
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    }
+};
+
+// ─── Self Register ───────────────────────────────────────────────────────────
+
+exports.selfRegister = async (req, res) => {
+    try {
+        const {
+            name, phone, email, role, department, designation,
+            medicalRegistrationNo, joiningDate, specialization,
+            qualification, consultationFee, availabilitySlots,
+            password, confirmPassword
+        } = req.body;
+
+        if (
+            !name || !phone || !email || !role || !department ||
+            !designation || !password || !confirmPassword
+        ) {
+            return res.status(400).json(new ApiError(400, "Required fields are missing"));
+        }
+
+        const roleDoc = await Role.findOne({ name: role.trim().toUpperCase(), status: true });
+        if (!roleDoc) {
+            return res.status(404).json(new ApiError(404, "Role not found"));
+        }
+
+        const blockedRoles = new Set(["OWNER", "SUPER_ADMIN", "ADMIN"]);
+        if (blockedRoles.has(roleDoc.name)) {
+            return res.status(403).json(
+                new ApiError(403, "You cannot register as OWNER, SUPER_ADMIN or ADMIN")
+            );
+        }
+
+        if (password !== confirmPassword) {
+            return res.status(400).json(new ApiError(400, "Password and confirm password do not match"));
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json(new ApiError(400, "Password must be at least 8 characters"));
+        }
+
+        const existingEmp = await Employee.findOne({
+            $or: [{ email }, { phone }],
+            isDeleted: false
+        });
+
+        if (existingEmp) {
+            return res.status(409).json(new ApiResponse(409, null, "Employee already exists"));
+        }
+
+        const existingUser = await User.findOne({ email, isDeleted: false });
+        if (existingUser) {
+            return res.status(409).json(new ApiResponse(409, null, "User already exists"));
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const employee = await Employee.create({
+            name, phone, email, department, designation,
+            joiningDate, medicalRegistrationNo, specialization,
+            qualification, consultationFee, availabilitySlots,
+            status: false
+        });
+
+        const user = await User.create({
+            email,
+            passwordHash: hashedPassword,
+            employeeId: employee.employeeCode,
+            roleIds: [roleDoc.roleId],
+            status: false,
+            mustResetPassword: false
+        });
+
+        await sendEmail({
+            to: email,
+            subject: "HMS Registration Submitted",
+            html: `
+                <h2>Registration Submitted</h2>
+                <p>Hello ${name},</p>
+                <p>Your HMS employee registration has been submitted successfully.</p>
+                <p>Your account is currently <strong>pending admin approval</strong>.</p>
+                <p>You will be able to login once admin approves your account.</p>
+            `
+        });
+
+        await sendEmail({
+            to: process.env.BREVO_SENDER_EMAIL,
+            subject: "New Employee Registration - Approval Required",
+            html: `
+                <h2>New Employee Registration</h2>
+                <p>A new employee has registered and is waiting for approval.</p>
+                <p><strong>Name:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Role:</strong> ${roleDoc.name}</p>
+                <p><strong>Department:</strong> ${department}</p>
+                <p><a href="http://localhost:4200/pending-employees" target="_blank">Review Pending Employees</a></p>
+            `
+        });
+
+        return res.status(201).json(
+            new ApiResponse(
+                201,
+                {
+                    employee,
+                    user: {
+                        _id: user._id,
+                        email: user.email,
+                        employeeId: user.employeeId,
+                        roleIds: user.roleIds,
+                        role: { roleId: roleDoc.roleId, name: roleDoc.name },
+                        status: user.status,
+                        mustResetPassword: user.mustResetPassword
+                    }
+                },
+                "Registration submitted successfully. Please wait for admin approval."
+            )
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    }
+};
+
+// ─── Login ───────────────────────────────────────────────────────────────────
+
+exports.login = async (req, res) => {
+    try {
+        const { email, password } = req.body || {};
+
+        if (!email || !password) {
+            return res.status(400).json(new ApiError(400, "Email and password are required"));
+        }
+
+        const user = await User.findOne({
+            email: email.trim().toLowerCase(),
+            isDeleted: false
+        });
+
+        if (!user) {
+            return res.status(404).json(
+                new ApiError(404, `No user found with email: ${email}`)
+            );
+        }
+
+        if (!user.isEmployee) {
+            return res.status(409).json(
+                new ApiError(409, "Patient accounts cannot login through the employee portal")
+            );
+        }
+
+        const passCheck = await user.isPasswordCorrect(password);
+        if (!passCheck) {
+            return res.status(401).json(new ApiError(401, "Invalid email or password"));
+        }
+
+        if (!user.status) {
+            return res.status(403).json(
+                new ApiError(403, "Your account is pending admin approval or has been deactivated")
+            );
+        }
+
+        const employee = await Employee.findOne({
+            employeeCode: user.employeeId,
+            isDeleted: false
+        });
+
+        if (!employee || !employee.status) {
+            return res.status(403).json(
+                new ApiError(403, "Your employee profile is inactive or has been removed")
+            );
+        }
+
+        const roles = await Role.find({
+            roleId: { $in: user.roleIds },
+            status: true
+        }).select("roleId name permissions");
+
+        const permissions = [
+            ...new Set(roles.flatMap((role) => role.permissions || []))
+        ];
+
+        const accessToken = user.generateAccessToken();
+
+        const userData = {
+            id: user._id,
+            employeeId: user.employeeId,
+            name: employee?.name || "",
+            email: user.email,
+            roleIds: user.roleIds,
+            roles: roles.map((role) => ({ roleId: role.roleId, name: role.name })),
+            permissions,
+            status: user.status,
+            mustResetPassword: user.mustResetPassword
+        };
+
+        if (user.mustResetPassword) {
+            return res.status(200).json(
+                new ApiResponse(
+                    200,
+                    { resetRequired: true, token: accessToken, user: userData },
+                    "Password reset required"
+                )
+            );
+        }
+
+        user.lastLogin = new Date();
+        await user.save();
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                { resetRequired: false, token: accessToken, user: userData },
+                "User is successfully logged-in."
+            )
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    }
+};
+
+// ─── Reset Password ───────────────────────────────────────────────────────────
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const { id } = req.user;
+        const { newPassword, confirmPassword } = req.body;
+
+        if (!newPassword || !confirmPassword) {
+            return res.status(400).json(
+                new ApiError(400, "New password and confirm password are required")
+            );
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json(new ApiError(400, "Passwords do not match"));
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json(new ApiError(400, "Password must be at least 8 characters"));
+        }
+
+        const user = await User.findById(id);
+        if (!user || user.isDeleted) {
+            return res.status(404).json(new ApiError(404, "User not found"));
+        }
+
+        const isSamePassword = await user.isPasswordCorrect(newPassword);
+        if (isSamePassword) {
+            return res.status(400).json(
+                new ApiError(400, "New password cannot be the same as current password")
+            );
+        }
+
+        user.passwordHash = await bcrypt.hash(newPassword, 10);
+        user.mustResetPassword = false;
+        await user.save();
+
+        return res.status(200).json(
+            new ApiResponse(200, null, "Password updated successfully")
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    }
+};
+
+// ─── Get Profile ─────────────────────────────────────────────────────────────
+
+exports.getProfile = async (req, res) => {
+    try {
+        const { id } = req.user;
+
+        const user = await User.findById(id).select("-passwordHash");
+        if (!user || user.isDeleted) {
+            return res.status(404).json(new ApiError(404, "User not found"));
+        }
+
+        const employee = await Employee.findOne({ email: user.email, isDeleted: false });
+        if (!employee) {
+            return res.status(404).json(new ApiError(404, "Employee profile not found"));
+        }
+
+        const roles = await Role.find({ roleId: { $in: user.roleIds } }).select("roleId name");
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                { employee, user: { ...user.toObject(), roles } },
+                "Profile retrieved successfully"
+            )
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    }
+};
+
+// ─── Get Employees (paginated) ────────────────────────────────────────────────
+
+exports.getEmployees = async (req, res) => {
+    try {
+        const page = Math.max(Number(req.query.page) || 1, 1);
+        const limit = Math.max(Number(req.query.limit) || 10, 1);
+        const skip = (page - 1) * limit;
+
+        const totalRecords = await Employee.countDocuments({ isDeleted: false });
+
+        const employees = await Employee.find({ isDeleted: false })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        const users = await User.find({ isDeleted: false }).select("-passwordHash");
+        const roles = await Role.find().select("roleId name");
+
+        const roleMap = new Map(roles.map((role) => [role.roleId, role.name]));
+
+        const employeesWithUser = employees.map((employee) => {
+            const empObj = employee.toObject();
+            const matchingUser = users.find(
+                (u) => u.email?.toLowerCase() === empObj.email?.toLowerCase()
+            );
+            const roleNames = matchingUser?.roleIds?.map((id) => roleMap.get(id)) || [];
+
+            return {
+                ...empObj,
+                userId: matchingUser?._id || null,
+                roleIds: matchingUser?.roleIds || [],
+                roles: roleNames,
+                userStatus: matchingUser?.status ?? false,
+                mustResetPassword: matchingUser?.mustResetPassword ?? false
+            };
+        });
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    records: employeesWithUser,
+                    pagination: {
+                        totalRecords,
+                        currentPage: page,
+                        totalPages: Math.ceil(totalRecords / limit),
+                        limit
+                    }
+                },
+                "Employees fetched successfully"
+            )
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Failed to fetch employees"));
+    }
+};
+
+// ─── Update Employee ──────────────────────────────────────────────────────────
+
+exports.updateEmployee = async (req, res) => {
+    try {
+        const { employeeCode } = req.params;
+
+        const employee = await Employee.findOne({ employeeCode, isDeleted: false });
+        if (!employee) {
+            return res.status(404).json(new ApiError(404, "Employee not found"));
+        }
+
+        const oldEmail = employee.email;
+
+        const allowedFields = [
+            "name", "phone", "email", "department", "designation",
+            "joiningDate", "medicalRegistrationNo", "specialization",
+            "qualification", "consultationFee", "availabilitySlots", "status"
+        ];
+
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                employee[field] = req.body[field];
+            }
+        });
+
+        await employee.save();
+
+        const user = await User.findOne({ email: oldEmail, isDeleted: false });
+
+        if (user) {
+            if (req.body.email !== undefined) user.email = req.body.email;
+            if (req.body.status !== undefined) user.status = req.body.status;
+
+            if (req.body.role !== undefined) {
+                const roleData = await Role.findOne({
+                    name: req.body.role.trim().toUpperCase(),
+                    status: true
+                });
+
+                if (!roleData) {
+                    return res.status(404).json(new ApiError(404, "Role not found"));
+                }
+
+                user.roleIds = [roleData.roleId];
+            }
+
+            await user.save();
+        }
+
+        const updatedRoles = user?.roleIds?.length
+            ? await Role.find({ roleId: { $in: user.roleIds } }).select("roleId name")
+            : [];
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    employee,
+                    user: user ? { ...user.toObject(), roles: updatedRoles } : null
+                },
+                "Employee updated successfully"
+            )
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Failed to update employee"));
+    }
+};
+
+// ─── Soft Delete Employee ─────────────────────────────────────────────────────
+
+exports.deleteEmployee = async (req, res) => {
+    try {
+        const { employeeCode } = req.params;
+
+        const employee = await Employee.findOne({ employeeCode, isDeleted: false });
+        if (!employee) {
+            return res.status(404).json(new ApiError(404, "Employee not found"));
+        }
+
+        const user = await User.findOne({ employeeId: employee.employeeCode, isDeleted: false });
+
+        let cancelledAppointments = 0;
+
+        if (user) {
+            const doctorRole = await Role.findOne({ name: "DOCTOR", status: true });
+            const isDoctor = doctorRole && user.roleIds?.includes(doctorRole.roleId);
+
+            if (isDoctor) {
+                cancelledAppointments = await cancelDoctorAppointments(
+                    employee.employeeCode,
+                    "Doctor has been removed from the hospital system"
+                );
+            }
+
+            // Soft delete user
+            user.isDeleted = true;
+            user.deletedAt = new Date();
+            user.deletedBy = req.user?.employeeId || req.user?.id;
+            user.status = false;
+            await user.save();
+        }
+
+        // Soft delete employee
+        employee.isDeleted = true;
+        employee.deletedAt = new Date();
+        employee.deletedBy = req.user?.employeeId || req.user?.id;
+        employee.status = false;
+        await employee.save();
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    employeeCode: employee.employeeCode,
+                    name: employee.name,
+                    email: employee.email,
+                    cancelledAppointments
+                },
+                `Employee deleted successfully. ${cancelledAppointments} related appointment(s) cancelled.`
+            )
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Failed to delete employee"));
+    }
+};
+
+// ─── Get Pending Employees ────────────────────────────────────────────────────
+
+exports.getPendingEmployees = async (req, res) => {
+    try {
+        const pendingUsers = await User.find({ status: false, isDeleted: false })
+            .select("-passwordHash")
+            .sort({ createdAt: -1 });
+
+        const employees = await Employee.find({
+            email: { $in: pendingUsers.map((u) => u.email) },
+            isDeleted: false
+        });
+
+        const roles = await Role.find().select("roleId name");
+        const roleMap = new Map(roles.map((r) => [r.roleId, r.name]));
+
+        const pendingEmployees = pendingUsers.map((user) => {
+            const employee = employees.find(
+                (emp) => emp.email.toLowerCase() === user.email.toLowerCase()
+            );
+            const roleNames = user.roleIds?.map((id) => roleMap.get(id)) || [];
+
+            return {
+                user: { ...user.toObject(), roles: roleNames },
+                employee
+            };
+        });
+
+        return res.status(200).json(
+            new ApiResponse(200, pendingEmployees, "Pending employees fetched successfully")
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    }
+};
+
+// ─── Approve Employee ─────────────────────────────────────────────────────────
+
+exports.approveEmployee = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId);
+        if (!user || user.isDeleted) {
+            return res.status(404).json(new ApiError(404, "User not found"));
+        }
+
+        const employee = await Employee.findOne({ email: user.email, isDeleted: false });
+        if (!employee) {
+            return res.status(404).json(new ApiError(404, "Employee not found"));
+        }
+
+        user.status = true;
+        employee.status = true;
+
+        await user.save();
+        await employee.save();
+
+        await sendEmail({
+            to: user.email,
+            subject: "HMS Account Approved",
+            html: `
+                <h2>Account Approved</h2>
+                <p>Hello ${employee.name},</p>
+                <p>Your HMS account has been approved by admin.</p>
+                <p>You can now login to the HMS portal.</p>
+                <p><a href="http://localhost:4200/login" target="_blank">Login to HMS Portal</a></p>
+            `
+        });
+
+        return res.status(200).json(
+            new ApiResponse(200, { user, employee }, "Employee approved successfully")
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    }
+};
+
+// ─── Reject Employee ──────────────────────────────────────────────────────────
+
+exports.rejectEmployee = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId);
+        if (!user || user.isDeleted) {
+            return res.status(404).json(new ApiError(404, "User not found"));
+        }
+
+        const employee = await Employee.findOne({ email: user.email, isDeleted: false });
+
+        await sendEmail({
+            to: user.email,
+            subject: "HMS Registration Rejected",
+            html: `
+                <h2>Registration Rejected</h2>
+                <p>Hello ${employee?.name || "Employee"},</p>
+                <p>Your HMS employee registration request has been rejected by admin.</p>
+                <p>Please contact hospital administration for more information.</p>
+            `
+        });
+
+        // Soft delete both
+        if (employee) {
+            employee.isDeleted = true;
+            employee.deletedAt = new Date();
+            employee.deletedBy = req.user?.employeeId || req.user?.id;
+            await employee.save();
+        }
+
+        user.isDeleted = true;
+        user.deletedAt = new Date();
+        user.deletedBy = req.user?.employeeId || req.user?.id;
+        await user.save();
+
+        return res.status(200).json(
+            new ApiResponse(200, null, "Employee registration rejected successfully")
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    }
+};
+
+// ─── Toggle Employee Status ───────────────────────────────────────────────────
+
+exports.toggleEmployeeStatus = async (req, res) => {
+    try {
+        const { employeeCode } = req.params;
+
+        const employee = await Employee.findOne({ employeeCode, isDeleted: false });
+        if (!employee) {
+            return res.status(404).json(new ApiError(404, "Employee not found"));
+        }
+
+        const user = await User.findOne({ employeeId: employee.employeeCode, isDeleted: false });
+        if (!user) {
+            return res.status(404).json(new ApiError(404, "User account not found"));
+        }
+
+        const newStatus = !user.status;
+        user.status = newStatus;
+        employee.status = newStatus;
+
+        await user.save();
+        await employee.save();
+
+        let cancelledAppointments = 0;
+
+        if (!newStatus) {
+            const doctorRole = await Role.findOne({ name: "DOCTOR", status: true });
+            const isDoctor = doctorRole && user.roleIds?.includes(doctorRole.roleId);
+
+            if (isDoctor) {
+                cancelledAppointments = await cancelDoctorAppointments(
+                    employee.employeeCode,
+                    "Doctor account has been deactivated"
+                );
+            }
+        }
+
+        await sendEmail({
+            to: user.email,
+            subject: "HMS Account Status Updated",
+            html: `
+                <h2>HMS Account Status Updated</h2>
+                <p>Hello ${employee.name},</p>
+                <p>Your account status has been updated.</p>
+                <p><strong>Status:</strong> ${newStatus ? "ACTIVE" : "INACTIVE"}</p>
+                ${
+                    newStatus
+                        ? `<p>You can now login to HMS.</p><p><a href="http://localhost:4200/login" target="_blank">Login to HMS Portal</a></p>`
+                        : `<p>Your account has been deactivated. Please contact admin.</p>`
+                }
+            `
+        });
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                { employeeCode: employee.employeeCode, status: newStatus, cancelledAppointments },
+                `Employee account ${newStatus ? "activated" : "deactivated"} successfully. ${cancelledAppointments} appointment(s) cancelled.`
+            )
+        );
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    }
+};

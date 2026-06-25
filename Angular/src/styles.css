@@ -1,0 +1,81 @@
+/* You can add global styles to this file, and also import other style files */
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+@import 'ngx-toastr/toastr';
+
+:host {
+    display: block;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* MAIN LAYOUT */
+.layout {
+    display: flex;
+    height: calc(100vh - 72px);
+    overflow: hidden;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+}
+
+/* SIDEBAR - FIXED NO SCROLLBAR */
+app-sidebar {
+    width: 260px;
+    min-width: 260px;
+    max-width: 260px;
+    height: calc(100vh - 72px);
+    flex-shrink: 0;
+    overflow: hidden !important;
+}
+
+/* HIDE SIDEBAR SCROLLBAR */
+app-sidebar * {
+    scrollbar-width: none;
+}
+
+app-sidebar *::-webkit-scrollbar {
+    display: none;
+}
+
+/* CONTENT AREA */
+.content {
+    flex: 1;
+    min-width: 0;
+    height: calc(100vh - 72px);
+    padding: 24px;
+    overflow: hidden;
+}
+
+/* TABLE CARD */
+.table-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
+    overflow: hidden;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    border: 1px solid #dbeafe;
+    box-shadow:
+        0 10px 28px rgba(13, 71, 161, 0.08),
+        0 4px 10px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* TABLE WRAPPER - ONLY TABLE SCROLLS */
+.table-wrapper {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}

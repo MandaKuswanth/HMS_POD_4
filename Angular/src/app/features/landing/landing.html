@@ -1,0 +1,57 @@
+<div class="landing-page">
+    <header class="header">
+        <div class="logo">
+            <mat-icon>local_hospital</mat-icon>
+            <span>HMS Portal</span>
+        </div>
+
+        <div class="header-actions">
+            <button mat-stroked-button color="primary" (click)="goToRegister()">
+                Register
+            </button>
+            <button mat-raised-button color="primary" (click)="goToLogin()">
+                Login
+            </button>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Hospital Management System</h1>
+
+            <p class="hero-subtitle">
+                Manage employees, departments, roles and hospital operations from a single platform.
+            </p>
+
+            <button mat-raised-button color="primary" class="hero-btn" (click)="goToLogin()">
+                Get Started
+            </button>
+        </div>
+
+        <div class="hero-card">
+            <mat-icon>health_and_safety</mat-icon>
+            <h2>Smart Healthcare Management</h2>
+            <p>Secure login, role-based access, and employee management in one place.</p>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="feature-card">
+            <mat-icon>groups</mat-icon>
+            <h3>Employee Management</h3>
+            <p>Create and manage hospital staff based on roles.</p>
+        </div>
+
+        <div class="feature-card">
+            <mat-icon>admin_panel_settings</mat-icon>
+            <h3>Role-Based Access</h3>
+            <p>ADMIN and TECHNICIAN can manage employee accounts securely.</p>
+        </div>
+
+        <div class="feature-card">
+            <mat-icon>lock_reset</mat-icon>
+            <h3>First Login Reset</h3>
+            <p>Employees must reset their temporary password during first login.</p>
+        </div>
+    </section>
+</div>

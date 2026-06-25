@@ -1,0 +1,110 @@
+<app-navbar></app-navbar>
+
+<div class="layout">
+  <app-sidebar></app-sidebar>
+
+  <main class="content">
+    <mat-card class="table-card">
+
+      <div class="page-header">
+        <div class="header-left">
+          <mat-icon>admin_panel_settings</mat-icon>
+
+          <div>
+            <h2>Role Management</h2>
+            <p>Manage system roles and permissions</p>
+          </div>
+        </div>
+
+        <button *appHasPermission="PERMISSIONS.ROLE_CREATE" mat-flat-button color="primary" class="add-role-btn"
+          matTooltip="Add Role" (click)="openAddDialog()">
+          <mat-icon>add</mat-icon>
+          Add Role
+        </button>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-container">
+          <input class="search-input" type="text" placeholder="Search by role ID, name or description..."
+            [(ngModel)]="searchText" (ngModelChange)="applyFilter()" />
+
+          @if (searchText) {
+          <button mat-icon-button type="button" (click)="clearSearch()">
+            <mat-icon>close</mat-icon>
+          </button>
+          }
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="dataSource" class="mat-elevation-z1">
+
+          <ng-container matColumnDef="roleId">
+            <th mat-header-cell *matHeaderCellDef>Role ID</th>
+            <td mat-cell *matCellDef="let role">
+              {{ role.roleId || '-' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Role Name</th>
+            <td mat-cell *matCellDef="let role">
+              <strong>{{ role.name || '-' }}</strong>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let role">
+              {{ role.description || '-' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="permissions">
+            <th mat-header-cell *matHeaderCellDef>Permissions</th>
+            <td mat-cell *matCellDef="let role">
+              {{ role.permissions?.length || 0 }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let role">
+              <span [class]="role.status ? 'badge active' : 'badge inactive'">
+                {{ role.status ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+
+            <td mat-cell *matCellDef="let role">
+
+              <button *appHasPermission="PERMISSIONS.ROLE_UPDATE" mat-icon-button matTooltip="Edit Role"
+                (click)="openEditDialog(role)">
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <button *appHasPermission="PERMISSIONS.ROLE_DELETE" mat-icon-button color="warn" matTooltip="Delete Role"
+                [disabled]="role.name === 'SUPER_ADMIN'" (click)="deleteRole(role)">
+                <mat-icon>delete</mat-icon>
+              </button>
+
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+        </table>
+
+        <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
+          [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
+        </mat-paginator>
+      </div>
+
+    </mat-card>
+  </main>
+</div>
