@@ -124,14 +124,22 @@ export function AuthProvider({ children }) {
     }, [restoreSession]);
 
     const login = useCallback(async ({ email, password }) => {
-        const data = normalizeLogin(
-            await loginPatient({
-                email: email.trim().toLowerCase(),
-                password,
-            })
-        );
+        const response = await loginPatient({
+            email: email.trim().toLowerCase(),
+            password,
+        });
 
-        console.log("LOGIN DATA:", data);
+        console.log("LOGIN RESPONSE:", response);
+
+        // ✅ NEW: Check if temporary password reset is required
+        if (response.requiresPasswordReset) {
+            const error = new Error("Temporary password reset required");
+            error.requiresPasswordReset = true;
+            error.email = response.email;
+            throw error;
+        }
+
+        const data = normalizeLogin(response);
 
         if (!data.token || !data.patient) {
             throw new Error("Invalid login response from server");

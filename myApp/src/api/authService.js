@@ -61,3 +61,13 @@ export const resendOTPApi = async (data) => {
 
     return unwrap(response);
 };
+
+// ✅ NEW: Reset Temporary Password (First Login)
+export const resetTemporaryPasswordApi = async (data) => {
+    const response = await api.post(
+        "/patient-auth/reset-temporary-password",
+        data
+    );
+
+    return unwrap(response);
+};

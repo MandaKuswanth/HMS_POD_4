@@ -97,6 +97,14 @@ export default function LoginScreen({ navigation }) {
                 password,
             });
         } catch (error) {
+            // ✅ NEW: Check if temporary password reset is required
+            if (error.requiresPasswordReset) {
+                navigation.navigate("ForceResetPassword", {
+                    email: error.email,
+                });
+                return;
+            }
+
             Alert.alert(
                 "Login Failed",
                 error?.response?.data?.message ||

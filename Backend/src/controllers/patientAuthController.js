@@ -193,6 +193,21 @@ exports.loginPatient = async (req, res) => {
             );
         }
 
+        // ✅ NEW: Check if temporary password reset is required
+        if (user.mustResetPassword) {
+            return res.status(200).json(
+                new ApiResponse(
+                    200,
+                    {
+                        requiresPasswordReset: true,
+                        email: user.email,
+                        message: "You must reset your temporary password before accessing the system"
+                    },
+                    "Temporary password requires reset"
+                )
+            );
+        }
+
         const patient = await Patient.findOne({
             UHID: user.UHID
         });
@@ -565,6 +580,114 @@ exports.resetPassword = async (req, res) => {
 
     } catch (err) {
         console.error("Reset Password Error:", err);
+
+        return res.status(500).json(
+            new ApiError(
+                500,
+                err.message || "Internal Server Error"
+            )
+        );
+    }
+};
+
+// ✅ NEW: Reset Temporary Password (First Login)
+exports.resetTemporaryPassword = async (req, res) => {
+    try {
+        const { email, newPassword, confirmPassword } = req.body;
+
+        if (!email || !newPassword || !confirmPassword) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "Email, new password, and confirm password are required"
+                )
+            );
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "New passwords do not match"
+                )
+            );
+        }
+
+        // Validate new password strength (at least 8 chars, 1 uppercase, 1 number)
+        if (newPassword.length < 8) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "Password must be at least 8 characters long"
+                )
+            );
+        }
+
+        if (!/[A-Z]/.test(newPassword)) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "Password must contain at least one uppercase letter"
+                )
+            );
+        }
+
+        if (!/\d/.test(newPassword)) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "Password must contain at least one number"
+                )
+            );
+        }
+
+        // Find user
+        const user = await User.findOne({
+            email: email.trim().toLowerCase(),
+            isEmployee: false,
+            isDeleted: false
+        });
+
+        if (!user) {
+            return res.status(404).json(
+                new ApiError(
+                    404,
+                    "User not found"
+                )
+            );
+        }
+
+        // Prevent password reuse
+        const isSamePassword = await bcrypt.compare(newPassword, user.passwordHash);
+        if (isSamePassword) {
+            return res.status(400).json(
+                new ApiError(
+                    400,
+                    "New password cannot be the same as current password"
+                )
+            );
+        }
+
+        // Hash new password
+        const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+        // Update password and clear temporary password flag
+        user.passwordHash = newPasswordHash;
+        user.mustResetPassword = false;
+        user.updatedBy = "SYSTEM";
+
+        await user.save();
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                { email: user.email },
+                "Temporary password reset successfully. You can now login with your new password."
+            )
+        );
+
+    } catch (err) {
+        console.error("Reset Temporary Password Error:", err);
 
         return res.status(500).json(
             new ApiError(
