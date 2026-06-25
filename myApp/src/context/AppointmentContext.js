@@ -23,9 +23,13 @@ const AppointmentContext = createContext(null);
 // };
 const normalizeList = (payload) => {
     console.log(payload);
-    return Array.isArray(payload)
-        ? payload
-        : [];
+    if (Array.isArray(payload)) {
+        return payload;
+    }
+    if (payload && Array.isArray(payload.data)) {
+        return payload.data;
+    }
+    return [];
 };
 
 const normalizeSlots = (payload, fallbackSlots = []) => {
@@ -55,10 +59,10 @@ export function AppointmentProvider({ children }) {
     const [appointmentsLoading, setAppointmentsLoading] = useState(false);
     const [slotsLoading, setSlotsLoading] = useState(false);
 
-    const loadDoctors = useCallback(async () => {
+    const loadDoctors = useCallback(async (search = "", specialization = "All") => {
         try {
             setDoctorsLoading(true);
-            const payload = await getDoctorsApi();
+            const payload = await getDoctorsApi(search, specialization);
             console.log(
     "DOCTORS RESPONSE:",
     JSON.stringify(payload, null, 2)

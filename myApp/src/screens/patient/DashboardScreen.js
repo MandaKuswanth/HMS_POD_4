@@ -36,6 +36,14 @@ export default function DashboardScreen({ navigation }) {
         }, [loadDoctors])
     );
 
+    React.useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            loadDoctors(search.trim(), activeFilter);
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [search, activeFilter, loadDoctors]);
+
     const specializations = useMemo(() => {
         return [
             "All",
@@ -47,22 +55,7 @@ export default function DashboardScreen({ navigation }) {
         ];
     }, [doctors]);
 
-    const filteredDoctors = useMemo(() => {
-        const searchText = search.trim().toLowerCase();
-
-        return doctors.filter((doctor) => {
-            const matchSearch =
-                !searchText ||
-                doctor.name?.toLowerCase().includes(searchText) ||
-                doctor.specialization?.toLowerCase().includes(searchText);
-
-            const matchFilter =
-                activeFilter === "All" ||
-                doctor.specialization === activeFilter;
-
-            return matchSearch && matchFilter;
-        });
-    }, [doctors, search, activeFilter]);
+    const filteredDoctors = doctors;
 
     const goToProfile = () => {
         navigation.navigate("Profile");

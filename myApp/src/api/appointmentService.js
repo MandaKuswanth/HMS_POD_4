@@ -4,11 +4,17 @@ import {
     unwrap,
 } from "./authService";
 
-export const getDoctorsApi = async () => {
+export const getDoctorsApi = async (search = "", specialization = "All") => {
     try {
 
         const response = await api.get(
-            "/patientAppointment-auth/doctors"
+            "/patientAppointment-auth/doctors",
+            {
+                params: {
+                    q: search,
+                    specialization: specialization === "All" ? undefined : specialization,
+                },
+            }
         );
 
         console.log(

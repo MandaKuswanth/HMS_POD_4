@@ -24,6 +24,8 @@ const getPatientId = (req) => {
 
 exports.getDoctors = async (req, res) => {
     try {
+        const { q = "", specialization } = req.query;
+
         const doctorRole = await Role.findOne({ name: "DOCTOR", status: true });
         if (!doctorRole) {
             return res.status(404).json(new ApiError(404, "DOCTOR role not found"));
@@ -38,11 +40,24 @@ exports.getDoctors = async (req, res) => {
 
         const doctorEmployeeIds = doctorUsers.map((d) => d.employeeId);
 
-        const doctors = await Employee.find({
+        let query = {
             employeeCode: { $in: doctorEmployeeIds },
             status: true,
             isDeleted: false
-        });
+        };
+
+        if (q) {
+            query.$or = [
+                { name: { $regex: q, $options: "i" } },
+                { specialization: { $regex: q, $options: "i" } }
+            ];
+        }
+
+        if (specialization && specialization !== "All") {
+            query.specialization = specialization;
+        }
+
+        const doctors = await Employee.find(query);
 
         return res.status(200).json(
             new ApiResponse(200, doctors, "Doctors fetched successfully")

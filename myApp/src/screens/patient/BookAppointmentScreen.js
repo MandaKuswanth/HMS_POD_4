@@ -77,8 +77,14 @@ export default function BookAppointmentScreen({ navigation, route }) {
     }, [selectedDoctor]);
 
     useEffect(() => {
-        loadDoctors();
-    }, [loadDoctors]);
+        const timeoutId = setTimeout(() => {
+            if (search.trim().length > 0) {
+                loadDoctors(search.trim());
+            }
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [search, loadDoctors]);
 
     useEffect(() => {
         if (preselectedDoctor) {
@@ -97,18 +103,7 @@ export default function BookAppointmentScreen({ navigation, route }) {
         }
     }, [selectedDoctor, date, fallbackSlots, loadDoctorSlots]);
 
-    const filteredDoctors = useMemo(() => {
-        const text = search.trim().toLowerCase();
-
-        if (!text) {
-            return [];
-        }
-
-        return doctors.filter((doctor) => (
-            doctor.name?.toLowerCase().includes(text) ||
-            doctor.specialization?.toLowerCase().includes(text)
-        ));
-    }, [doctors, search]);
+    const filteredDoctors = doctors;
 
     const allSlots = useMemo(() => {
         if (
