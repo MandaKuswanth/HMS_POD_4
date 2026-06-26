@@ -294,7 +294,7 @@ async function main() {
                 createdBy: "SYSTEM"
             });
 
-            console.log("✅ Super Admin user created");
+            console.log("  Super Admin user created");
         }
 
         // =====================================================

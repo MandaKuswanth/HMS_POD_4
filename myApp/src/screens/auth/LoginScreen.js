@@ -97,7 +97,7 @@ export default function LoginScreen({ navigation }) {
                 password,
             });
         } catch (error) {
-            // ✅ NEW: Check if temporary password reset is required
+            //   NEW: Check if temporary password reset is required
             if (error.requiresPasswordReset) {
                 navigation.navigate("ForceResetPassword", {
                     email: error.email,
@@ -154,7 +154,7 @@ export default function LoginScreen({ navigation }) {
                         disabled={loading}
                     />
 
-                    {/* ✅ NEW: Forgot Password Link */}
+                    {/*   NEW: Forgot Password Link */}
                     <TouchableOpacity
                         onPress={() =>
                             navigation.navigate("ForgotPassword")
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
         fontWeight: "800",
     },
 
-    // ✅ NEW: Forgot Password Link Style
+    //   NEW: Forgot Password Link Style
     forgotPasswordLink: {
         marginTop: 15,
         textAlign: "center",
