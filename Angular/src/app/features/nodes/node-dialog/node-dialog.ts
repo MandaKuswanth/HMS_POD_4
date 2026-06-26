@@ -98,8 +98,8 @@ export class NodeDialog implements OnInit {
         value
           .trim()
           .toUpperCase()
-          .replace(/\s+/g, '_')
-          .replace(/[^A-Z0-9_]/g, '') + '_READ';
+          .replaceAll(/\s+/g, "_")
+          .replaceAll(/[^A-Z0-9_]/g, "") + "_READ";
 
       this.formData.permissions = [generated];
     } else {
