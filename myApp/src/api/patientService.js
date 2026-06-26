@@ -9,7 +9,7 @@ export const updatePatientApi = async (
     data
 ) => {
     const response = await api.put(
-        `/patient-auth/patient-profile/${uhid}`,
+        `/patient-auth/profile/${uhid}`,
         data
     );
 

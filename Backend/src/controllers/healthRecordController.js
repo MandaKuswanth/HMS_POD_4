@@ -347,10 +347,23 @@ exports.getMyHealthRecords = async (req, res) => {
             );
         }
 
-        const healthRecords = await HealthRecord.find({
+        const page = Math.max(Number(req.query.page) || 1, 1);
+        const limit = Math.max(Number(req.query.limit) || 10, 1);
+        const skip = (page - 1) * limit;
+
+        const filter = {
             patientId,
             isDeleted: false
-        }).sort({ createdAt: -1 });
+        };
+
+        const totalRecords = await HealthRecord.countDocuments(filter);
+
+        const healthRecords = await HealthRecord.find({
+            ...filter
+        })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         // Batch fetch doctors and appointments
         const doctorIds = healthRecords.map((r) => r.doctorEmployeeId);
@@ -382,7 +395,19 @@ exports.getMyHealthRecords = async (req, res) => {
         });
 
         return res.status(200).json(
-            new ApiResponse(200, records, "Health records fetched successfully")
+            new ApiResponse(
+                200,
+                {
+                    records,
+                    pagination: {
+                        totalRecords,
+                        currentPage: page,
+                        totalPages: Math.ceil(totalRecords / limit),
+                        limit
+                    }
+                },
+                "Health records fetched successfully"
+            )
         );
     } catch (err) {
         console.error(err);

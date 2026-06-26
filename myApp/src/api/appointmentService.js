@@ -43,9 +43,18 @@ export const bookAppointmentApi = async (data) => {
     return unwrap(response);
 };
 
-export const getMyAppointmentsApi = async () => {
+export const getMyAppointmentsApi = async ({
+    page = 1,
+    limit = 10,
+} = {}) => {
     const response = await api.get(
-        "/patientAppointment-auth/my-appointments"
+        "/patientAppointment-auth/my-appointments",
+        {
+            params: {
+                page,
+                limit,
+            },
+        }
     );
 
     return unwrap(response);

@@ -256,10 +256,23 @@ exports.getMyAppointments = async (req, res) => {
             );
         }
 
-        const appointments = await Appointment.find({
+        const page = Math.max(Number(req.query.page) || 1, 1);
+        const limit = Math.max(Number(req.query.limit) || 10, 1);
+        const skip = (page - 1) * limit;
+
+        const filter = {
             patientId,
             isDeleted: false
-        }).sort({ createdAt: -1 });
+        };
+
+        const totalRecords = await Appointment.countDocuments(filter);
+
+        const appointments = await Appointment.find({
+            ...filter
+        })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         const doctorIds = appointments.map((a) => a.doctorEmployeeId);
         const doctors = await Employee.find({
@@ -278,7 +291,19 @@ exports.getMyAppointments = async (req, res) => {
         });
 
         return res.status(200).json(
-            new ApiResponse(200, appointmentList, "Appointments fetched successfully")
+            new ApiResponse(
+                200,
+                {
+                    appointments: appointmentList,
+                    pagination: {
+                        totalRecords,
+                        currentPage: page,
+                        totalPages: Math.ceil(totalRecords / limit),
+                        limit
+                    }
+                },
+                "Appointments fetched successfully"
+            )
         );
     } catch (err) {
         return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
