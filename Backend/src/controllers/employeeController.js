@@ -312,7 +312,7 @@ exports.login = async (req, res) => {
             isDeleted: false
         });
 
-        if (!employee || !employee.status) {
+        if (!employee?.status) {
             return res.status(403).json(
                 new ApiError(403, "Your employee profile is inactive or has been removed")
             );

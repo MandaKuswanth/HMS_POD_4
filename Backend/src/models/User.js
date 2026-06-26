@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("node:crypto");
 const { Schema } = mongoose;
 
 const userSchema = new Schema(
@@ -62,11 +63,12 @@ const userSchema = new Schema(
                 return this.isEmployee;
             }
         },
-        // OTP fields for password reset
+
+        // OTP fields
         resetOTP: {
             type: String,
             default: null,
-            select: false // Don't include in queries by default for security
+            select: false
         },
         resetOTPExpiry: {
             type: Date,
@@ -83,6 +85,7 @@ const userSchema = new Schema(
             default: null,
             select: false
         },
+
         createdBy: {
             type: String,
             default: null
@@ -91,7 +94,7 @@ const userSchema = new Schema(
             type: String,
             default: null
         },
-        // Soft delete fields
+
         isDeleted: {
             type: Boolean,
             default: false
@@ -122,7 +125,7 @@ userSchema.index({ isDeleted: 1 });
 userSchema.index({ resetOTPExpiry: 1 });
 
 userSchema.methods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(password, this.passwordHash);
+    return bcrypt.compare(password, this.passwordHash);
 };
 
 userSchema.methods.generateAccessToken = function () {
@@ -147,56 +150,66 @@ userSchema.methods.generateAccessToken = function () {
 
 // Generate 6-digit OTP with 10-minute expiry
 userSchema.methods.generatePasswordResetOTP = function () {
-    // Generate random 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // Hash OTP before storing (similar to password security)
-    const hashedOTP = require('crypto')
-        .createHash('sha256')
+    const otp = crypto.randomInt(100000, 1000000).toString();
+
+    const hashedOTP = crypto
+        .createHash("sha256")
         .update(otp)
-        .digest('hex');
-    
-    // Set OTP expiry to 10 minutes from now
+        .digest("hex");
+
     const otpExpiry = new Date();
     otpExpiry.setMinutes(otpExpiry.getMinutes() + 10);
-    
+
     this.resetOTP = hashedOTP;
     this.resetOTPExpiry = otpExpiry;
     this.resetOTPAttempts = 0;
     this.lastOTPRequestTime = new Date();
-    
-    // Return plain OTP to send via email (not the hashed one)
+
     return otp;
 };
 
 // Verify OTP
 userSchema.methods.verifyPasswordResetOTP = function (providedOTP) {
     if (!this.resetOTP || !this.resetOTPExpiry) {
-        return { valid: false, message: 'No OTP found' };
+        return {
+            valid: false,
+            message: "No OTP found"
+        };
     }
-    
+
     if (new Date() > this.resetOTPExpiry) {
-        return { valid: false, message: 'OTP has expired' };
+        return {
+            valid: false,
+            message: "OTP has expired"
+        };
     }
-    
-    const hashedProvidedOTP = require('crypto')
-        .createHash('sha256')
+
+    const hashedProvidedOTP = crypto
+        .createHash("sha256")
         .update(providedOTP)
-        .digest('hex');
-    
+        .digest("hex");
+
     if (this.resetOTP !== hashedProvidedOTP) {
         this.resetOTPAttempts += 1;
-        return { valid: false, message: 'Invalid OTP' };
+
+        return {
+            valid: false,
+            message: "Invalid OTP"
+        };
     }
-    
-    return { valid: true, message: 'OTP verified successfully' };
+
+    return {
+        valid: true,
+        message: "OTP verified successfully"
+    };
 };
 
-// Clear OTP after successful reset
+// Clear OTP
 userSchema.methods.clearPasswordResetOTP = function () {
     this.resetOTP = null;
     this.resetOTPExpiry = null;
     this.resetOTPAttempts = 0;
+    this.lastOTPRequestTime = null;
 };
 
 module.exports = mongoose.model("User", userSchema);

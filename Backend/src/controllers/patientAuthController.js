@@ -4,6 +4,7 @@ const User = require("../models/User");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const Role = require("../models/Role");
+const { validatePassword } = require("../utils/passwordValidator");
 
 exports.registerPatient = async (req, res) => {
     try {
@@ -287,7 +288,7 @@ exports.loginPatient = async (req, res) => {
     }
 };
 
-// ✅ NEW: Forgot Password - Send OTP to Email
+// Forgot Password - Send OTP to Email
 exports.forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -323,7 +324,7 @@ exports.forgotPassword = async (req, res) => {
         if (user.lastOTPRequestTime) {
             const timeSinceLastRequest = Date.now() - new Date(user.lastOTPRequestTime).getTime();
             const fifteenMinutesInMs = 15 * 60 * 1000;
-            
+
             if (timeSinceLastRequest < fifteenMinutesInMs) {
                 return res.status(429).json(
                     new ApiError(
@@ -336,7 +337,7 @@ exports.forgotPassword = async (req, res) => {
 
         // Generate OTP
         const otp = user.generatePasswordResetOTP();
-        
+
         // Save user with OTP
         await user.save();
 
@@ -381,7 +382,7 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-// ✅ NEW: Verify OTP
+// Verify OTP
 exports.verifyResetOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -416,7 +417,7 @@ exports.verifyResetOTP = async (req, res) => {
             // Clear the OTP to force new request
             user.clearPasswordResetOTP();
             await user.save();
-            
+
             return res.status(403).json(
                 new ApiError(
                     403,
@@ -430,7 +431,7 @@ exports.verifyResetOTP = async (req, res) => {
 
         if (!otpVerification.valid) {
             await user.save(); // Save updated attempts
-            
+
             return res.status(400).json(
                 new ApiError(
                     400,
@@ -470,7 +471,7 @@ exports.verifyResetOTP = async (req, res) => {
     }
 };
 
-// ✅ NEW: Reset Password
+// NEW: Reset Password
 exports.resetPassword = async (req, res) => {
     try {
         const { email, newPassword, confirmPassword } = req.body;
@@ -484,39 +485,16 @@ exports.resetPassword = async (req, res) => {
             );
         }
 
-        if (newPassword !== confirmPassword) {
-            return res.status(400).json(
-                new ApiError(
-                    400,
-                    "Passwords do not match"
-                )
-            );
-        }
+        const passwordError = validatePassword(
+            newPassword,
+            confirmPassword
+        );
 
-        // Validate password strength (at least 8 chars, 1 uppercase, 1 number)
-        if (newPassword.length < 8) {
+        if (passwordError) {
             return res.status(400).json(
                 new ApiError(
                     400,
-                    "Password must be at least 8 characters long"
-                )
-            );
-        }
-
-        if (!/[A-Z]/.test(newPassword)) {
-            return res.status(400).json(
-                new ApiError(
-                    400,
-                    "Password must contain at least one uppercase letter"
-                )
-            );
-        }
-
-        if (!/\d/.test(newPassword)) {
-            return res.status(400).json(
-                new ApiError(
-                    400,
-                    "Password must contain at least one number"
+                    passwordError
                 )
             );
         }
@@ -550,7 +528,7 @@ exports.resetPassword = async (req, res) => {
         if (new Date() > user.resetOTPExpiry) {
             user.clearPasswordResetOTP();
             await user.save();
-            
+
             return res.status(400).json(
                 new ApiError(
                     400,
@@ -590,7 +568,7 @@ exports.resetPassword = async (req, res) => {
     }
 };
 
-// ✅ NEW: Reset Temporary Password (First Login)
+// NEW: Reset Temporary Password (First Login)
 exports.resetTemporaryPassword = async (req, res) => {
     try {
         const { email, newPassword, confirmPassword } = req.body;
@@ -658,7 +636,7 @@ exports.resetTemporaryPassword = async (req, res) => {
         }
 
         // Prevent password reuse
-        const isSamePassword = await bcrypt.compare(newPassword, user.passwordHash);
+        const isSamePassword = Boolean(await bcrypt.compare(newPassword, user.passwordHash));
         if (isSamePassword) {
             return res.status(400).json(
                 new ApiError(

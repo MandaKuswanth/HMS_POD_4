@@ -20,8 +20,8 @@ import {
 
 const AuthContext = createContext(null);
 
-// JWT Timeout duration in milliseconds (15 minutes)
-const JWT_TIMEOUT_DURATION = 15 * 60 * 1000;
+// JWT Timeout duration in milliseconds (60 minutes)
+const JWT_TIMEOUT_DURATION = 60 * 60 * 1000;
 
 // Decode JWT to get expiration time
 const decodeJWT = (token) => {
