@@ -55,12 +55,15 @@ export default function ForceResetPasswordScreen({ navigation, route }) {
 
         setLoading(true);
         try {
-            await resetTemporaryPasswordApi({
+            const response = await resetTemporaryPasswordApi({
                 email: email.trim().toLowerCase(),
                 newPassword,
                 confirmPassword,
             });
 
+            console.log("Reset Password Response:", response);
+
+            // Show success alert and navigate after user dismisses it
             Alert.alert(
                 "Success",
                 "Password reset successfully! Please login with your new password.",
@@ -68,17 +71,20 @@ export default function ForceResetPasswordScreen({ navigation, route }) {
                     {
                         text: "OK",
                         onPress: () => {
-                            navigation.replace("Login");
+                            console.log("Navigating to Login...");
+                            // Use a timeout to ensure navigation happens after alert is fully dismissed
+                            setTimeout(() => {
+                                navigation.replace("Login");
+                            }, 100);
                         },
                     },
-                ]
+                ],
+                { cancelable: false }
             );
         } catch (error) {
             console.error("Reset Password Error:", error);
-            Alert.alert(
-                "Error",
-                error?.message || "Failed to reset password. Please try again."
-            );
+            const errorMessage = error?.response?.data?.message || error?.message || "Failed to reset password. Please try again.";
+            Alert.alert("Error", errorMessage);
         } finally {
             setLoading(false);
         }
