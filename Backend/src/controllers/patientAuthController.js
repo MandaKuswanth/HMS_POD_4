@@ -194,7 +194,7 @@ exports.loginPatient = async (req, res) => {
             );
         }
 
-        // ✅ NEW: Check if temporary password reset is required
+        //   NEW: Check if temporary password reset is required
         if (user.mustResetPassword) {
             return res.status(200).json(
                 new ApiResponse(

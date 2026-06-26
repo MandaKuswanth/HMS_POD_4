@@ -30,7 +30,7 @@ export default function AuthNavigator() {
                 component={RegisterScreen}
             />
 
-            {/* ✅ NEW: Password Reset Screens */}
+            {/*   NEW: Password Reset Screens */}
             <Stack.Screen
                 name="ForgotPassword"
                 component={ForgotPasswordScreen}
@@ -46,7 +46,7 @@ export default function AuthNavigator() {
                 component={ResetPasswordScreen}
             />
 
-            {/* ✅ NEW: Force Reset Temporary Password Screen */}
+            {/*   NEW: Force Reset Temporary Password Screen */}
             <Stack.Screen
                 name="ForceResetPassword"
                 component={ForceResetPasswordScreen}

@@ -43,7 +43,7 @@ const sendEmail = async ({ to, subject, html }) => {
     }
 };
 
-// ✅ NEW: Send password reset OTP email
+//   NEW: Send password reset OTP email
 const sendPasswordResetOTP = async (email, otp, patientName = "Patient") => {
     const subject = "Password Reset OTP - Hospital Management System";
     

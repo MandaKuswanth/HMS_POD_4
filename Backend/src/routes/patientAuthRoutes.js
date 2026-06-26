@@ -28,7 +28,7 @@ router.post("/register", registerPatient);
 
 router.post("/login", loginPatient);
 
-// ✅ NEW: Password Reset Endpoints
+//   NEW: Password Reset Endpoints
 router.post("/forgot-password", forgotPassword);
 
 router.post("/verify-otp", verifyResetOTP);

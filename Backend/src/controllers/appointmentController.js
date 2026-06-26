@@ -152,12 +152,12 @@ const getAllowedStatuses = (appointment, userPermissions, userEmployeeId) => {
         hasRead &&
         doctorEmployeeId === userEmployeeId;
 
-    // ✅ Admin / Receptionist → full transitions
+    //   Admin / Receptionist → full transitions
     if (hasApprove) {
         return STATUS_TRANSITIONS[status] || [];
     }
 
-    // ✅ Doctor → limited flow
+    //   Doctor → limited flow
     if (isDoctor) {
         if (status === "BOOKED") return ["IN-PROCESS"];
         if (status === "IN-PROCESS") return ["COMPLETED"];
@@ -757,7 +757,7 @@ exports.updateAppointment = async (req, res) => {
             );
         }
 
-        // ✅ Apply helpers (reduces complexity drastically)
+        //   Apply helpers (reduces complexity drastically)
         if (status) {
             validateStatusUpdate(appointment, status);
         }
@@ -780,7 +780,7 @@ exports.updateAppointment = async (req, res) => {
     } catch (err) {
         console.error(err);
 
-        // ✅ Centralized error handling for helper-thrown errors
+        //   Centralized error handling for helper-thrown errors
         if (err instanceof ApiError) {
             return res.status(err.statusCode || 400).json(err);
         }
