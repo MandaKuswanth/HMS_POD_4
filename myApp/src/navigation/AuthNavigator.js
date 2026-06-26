@@ -6,7 +6,6 @@ import {
 
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
-// ✅ NEW: Import password reset screens
 import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 import OTPVerificationScreen from "../screens/auth/OTPVerificationScreen";
 import ResetPasswordScreen from "../screens/auth/ResetPasswordScreen";

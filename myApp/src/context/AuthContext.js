@@ -131,7 +131,7 @@ export function AuthProvider({ children }) {
 
         console.log("LOGIN RESPONSE:", response);
 
-        // ✅ NEW: Check if temporary password reset is required
+        // NEW: Check if temporary password reset is required
         if (response.requiresPasswordReset) {
             const error = new Error("Temporary password reset required");
             error.requiresPasswordReset = true;

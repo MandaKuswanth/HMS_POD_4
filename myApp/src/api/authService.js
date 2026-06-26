@@ -22,7 +22,6 @@ export const loginPatient = async (data) => {
     return unwrap(response);
 };
 
-// ✅ NEW: Forgot Password - Send OTP to Email
 export const forgotPasswordApi = async (data) => {
     const response = await api.post(
         "/patient-auth/forgot-password",
@@ -32,7 +31,7 @@ export const forgotPasswordApi = async (data) => {
     return unwrap(response);
 };
 
-// ✅ NEW: Verify OTP
+
 export const verifyOTPApi = async (data) => {
     const response = await api.post(
         "/patient-auth/verify-otp",
@@ -42,7 +41,6 @@ export const verifyOTPApi = async (data) => {
     return unwrap(response);
 };
 
-// ✅ NEW: Reset Password
 export const resetPasswordApi = async (data) => {
     const response = await api.post(
         "/patient-auth/reset-password",
@@ -52,7 +50,6 @@ export const resetPasswordApi = async (data) => {
     return unwrap(response);
 };
 
-// ✅ NEW: Resend OTP (use same endpoint as forgot-password)
 export const resendOTPApi = async (data) => {
     const response = await api.post(
         "/patient-auth/forgot-password",
@@ -62,7 +59,6 @@ export const resendOTPApi = async (data) => {
     return unwrap(response);
 };
 
-// ✅ NEW: Reset Temporary Password (First Login)
 export const resetTemporaryPasswordApi = async (data) => {
     const response = await api.post(
         "/patient-auth/reset-temporary-password",
