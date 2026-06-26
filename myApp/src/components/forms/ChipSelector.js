@@ -8,6 +8,7 @@ import {
 } from "react-native";
 
 import COLORS from "../../utils/colors";
+import PropTypes from "prop-types";
 
 export default function ChipSelector({
     label,
@@ -109,3 +110,13 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
 });
+
+ChipSelector.propTypes = {
+    label: PropTypes.string,
+    options: PropTypes.array,
+    value: PropTypes.any,
+    onChange: PropTypes.func,
+    error: PropTypes.string,
+    required: PropTypes.bool,
+    formatLabel: PropTypes.func,
+};

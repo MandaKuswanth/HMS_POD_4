@@ -24,8 +24,9 @@ import { useAuth } from "../../context/AuthContext";
 
 import COLORS from "../../utils/colors";
 import { formatDateForApi } from "../../utils/dateUtils";
-
+import PropTypes from "prop-types";
 import {
+
     firstErrorMessage,
     isEmpty,
     isValidEmail,
@@ -431,3 +432,7 @@ const styles = StyleSheet.create({
         fontWeight: "900",
     },
 });
+
+RegisterScreen.propTypes = {
+    navigation: PropTypes.object.isRequired,
+};

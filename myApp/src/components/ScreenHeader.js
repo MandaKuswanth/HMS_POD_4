@@ -8,6 +8,7 @@ import {
 } from "react-native";
 
 import COLORS from "../utils/colors";
+import PropTypes from "prop-types";
 
 export default function ScreenHeader({
     title,
@@ -87,3 +88,10 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
 });
+
+ScreenHeader.propTypes = {
+    title: PropTypes.string,
+    subtitle: PropTypes.string,
+    goBack: PropTypes.func,
+    right: PropTypes.node,
+};

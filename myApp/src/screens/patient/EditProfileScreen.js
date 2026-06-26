@@ -29,6 +29,7 @@ import {
 } from "../../utils/validators";
 
 import { formatDateForApi } from "../../utils/dateUtils";
+import PropTypes from "prop-types";
 
 export default function EditProfileScreen({
     navigation,
@@ -354,3 +355,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
 });
+
+EditProfileScreen.propTypes = {
+    navigation: PropTypes.object.isRequired,
+};

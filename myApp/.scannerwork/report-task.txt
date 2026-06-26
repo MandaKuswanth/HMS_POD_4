@@ -1,6 +1,6 @@
-projectKey=hms_react
+projectKey=myApp
 serverUrl=http://localhost:9000
 serverVersion=26.1.0.118079
-dashboardUrl=http://localhost:9000/dashboard?id=hms_react
-ceTaskId=609fad44-c3e8-49b7-b950-f8eef11f0c18
-ceTaskUrl=http://localhost:9000/api/ce/task?id=609fad44-c3e8-49b7-b950-f8eef11f0c18
+dashboardUrl=http://localhost:9000/dashboard?id=myApp
+ceTaskId=e721f2da-b0d0-4279-bd76-469d2332d462
+ceTaskUrl=http://localhost:9000/api/ce/task?id=e721f2da-b0d0-4279-bd76-469d2332d462

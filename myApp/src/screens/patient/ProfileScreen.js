@@ -17,6 +17,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import COLORS from "../../utils/colors";
 import { formatDateDisplay } from "../../utils/dateUtils";
+import PropTypes from "prop-types";
 
 export default function ProfileScreen({ navigation }) {
     const { patient, logout } = useAuth();
@@ -285,3 +286,16 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
 });
+
+ProfileScreen.propTypes = {
+    navigation: PropTypes.object.isRequired,
+};
+
+InfoRow.propTypes = {
+    icon: PropTypes.node.isRequired,
+    label: PropTypes.string.isRequired,
+    value: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number,
+    ]).isRequired,
+};

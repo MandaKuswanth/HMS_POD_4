@@ -21,6 +21,7 @@ import { useAppointments } from "../../context/AppointmentContext";
 
 import COLORS from "../../utils/colors";
 import { formatDateDisplay } from "../../utils/dateUtils";
+import PropTypes from "prop-types";
 
 const canEdit = (status) => {
     return status === "PENDING";
@@ -58,21 +59,23 @@ export default function MyAppointmentsScreen({
                 {
                     text: "Yes",
                     style: "destructive",
-                    onPress: async () => {
-                        try {
-                            await cancelAppointment(appointmentId);
+                    onPress: () => {
+                        void (async () => {
+                            try {
+                                await cancelAppointment(appointmentId);
 
-                            Alert.alert(
-                                "Success",
-                                "Appointment cancelled"
-                            );
-                        } catch (err) {
-                            Alert.alert(
-                                "Error",
-                                err?.response?.data?.message ||
-                                "Unable to cancel appointment"
-                            );
-                        }
+                                Alert.alert(
+                                    "Success",
+                                    "Appointment cancelled"
+                                );
+                            } catch (err) {
+                                Alert.alert(
+                                    "Error",
+                                    err?.response?.data?.message ??
+                                    "Unable to cancel appointment"
+                                );
+                            }
+                        })();
                     },
                 },
             ]
@@ -389,3 +392,7 @@ const styles = StyleSheet.create({
         color: COLORS.subtitle,
     },
 });
+
+MyAppointmentsScreen.propTypes = {
+    navigation: PropTypes.object.isRequired,
+};

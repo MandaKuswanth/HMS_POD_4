@@ -8,6 +8,7 @@ import {
 } from "react-native";
 
 import COLORS from "../utils/colors";
+import PropTypes from "prop-types";
 
 export default function AppInput({
     value,
@@ -82,3 +83,16 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
 });
+
+AppInput.propTypes = {
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    onChangeText: PropTypes.func,
+    placeholder: PropTypes.string,
+    secureTextEntry: PropTypes.bool,
+    keyboardType: PropTypes.string,
+    autoCapitalize: PropTypes.string,
+    multiline: PropTypes.bool,
+    numberOfLines: PropTypes.number,
+    style: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+    error: PropTypes.string,
+};

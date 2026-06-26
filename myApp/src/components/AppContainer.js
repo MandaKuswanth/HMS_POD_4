@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import COLORS from "../utils/colors";
+import PropTypes from "prop-types";
 
 export default function AppContainer({ children, style }) {
     return (
@@ -16,3 +17,8 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
 });
+
+AppContainer.propTypes = {
+    children: PropTypes.node,
+    style: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+};

@@ -7,6 +7,7 @@ import {
 } from "react-native";
 
 import COLORS from "../utils/colors";
+import PropTypes from "prop-types";
 
 export default function AppAvatar({
     name = "",
@@ -59,3 +60,10 @@ const styles = StyleSheet.create({
         fontWeight: "900",
     },
 });
+
+AppAvatar.propTypes = {
+    name: PropTypes.string,
+    size: PropTypes.number,
+    backgroundColor: PropTypes.string,
+    textColor: PropTypes.string,
+};

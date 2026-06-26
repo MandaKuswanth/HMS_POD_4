@@ -14,6 +14,8 @@ import {
     registerPatient,
 } from "../api/authService";
 
+import PropTypes from "prop-types";
+
 import {
     updatePatientApi,
 } from "../api/patientService";
@@ -91,7 +93,7 @@ export function AuthProvider({ children }) {
 
             if (t && p && expiryTime) {
                 // Check if custom token timeout has expired
-                const expiryTimeNum = parseInt(expiryTime);
+                const expiryTimeNum = Number.parseInt(expiryTime);
                 if (isCustomTokenExpired(expiryTimeNum)) {
                     console.log("Token has timed out, clearing session");
                     await AsyncStorage.multiRemove([
@@ -289,4 +291,8 @@ export const useAuth = () => {
     }
 
     return v;
+};
+
+AuthProvider.propTypes = {
+    children: PropTypes.node.isRequired,
 };

@@ -22,7 +22,7 @@ export const loginPatient = async (data) => {
     return unwrap(response);
 };
 
-export const forgotPasswordApi = async (data) => {
+const sendForgotPasswordRequest = async (data) => {
     const response = await api.post(
         "/patient-auth/forgot-password",
         data
@@ -30,6 +30,8 @@ export const forgotPasswordApi = async (data) => {
 
     return unwrap(response);
 };
+
+export const forgotPasswordApi = sendForgotPasswordRequest;
 
 
 export const verifyOTPApi = async (data) => {
@@ -50,14 +52,7 @@ export const resetPasswordApi = async (data) => {
     return unwrap(response);
 };
 
-export const resendOTPApi = async (data) => {
-    const response = await api.post(
-        "/patient-auth/forgot-password",
-        data
-    );
-
-    return unwrap(response);
-};
+export const resendOTPApi = sendForgotPasswordRequest;
 
 export const resetTemporaryPasswordApi = async (data) => {
     const response = await api.post(

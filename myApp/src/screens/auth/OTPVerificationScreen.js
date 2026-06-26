@@ -16,9 +16,10 @@ import AppButton from "../../components/AppButton";
 
 import COLORS from "../../utils/colors";
 
-import { isEmpty, firstErrorMessage } from "../../utils/validators";
+import { isEmpty } from "../../utils/validators";
 
 import { verifyOTPApi, resendOTPApi } from "../../api/authService";
+import PropTypes from "prop-types";
 
 export default function OTPVerificationScreen({ navigation, route }) {
     const { email } = route.params || {};
@@ -63,7 +64,7 @@ export default function OTPVerificationScreen({ navigation, route }) {
 
     const handleOTPChange = (value) => {
         // Only allow numbers and max 6 digits
-        const numericValue = value.replace(/[^0-9]/g, "").slice(0, 6);
+        const numericValue = value.replaceAll(/\d/, "").slice(0, 6);
         setOtp(numericValue);
 
         if (isEmpty(numericValue)) {
@@ -414,3 +415,8 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 });
+
+OTPVerificationScreen.propTypes = {
+    navigation: PropTypes.object.isRequired,
+    route: PropTypes.object.isRequired,
+};

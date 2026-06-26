@@ -11,6 +11,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 
 import COLORS from "../../utils/colors";
 import { formatDateForApi } from "../../utils/dateUtils";
+import PropTypes from "prop-types";
 
 export default function DatePickerField({
     label,
@@ -111,3 +112,12 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
 });
+
+DatePickerField.propTypes = {
+    label: PropTypes.string,
+    value: PropTypes.any,
+    onChange: PropTypes.func,
+    error: PropTypes.string,
+    required: PropTypes.bool,
+    maximumDate: PropTypes.oneOfType([PropTypes.instanceOf(Date), PropTypes.string, PropTypes.object]),
+};

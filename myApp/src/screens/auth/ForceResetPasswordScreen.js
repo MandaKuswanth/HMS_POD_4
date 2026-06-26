@@ -13,6 +13,7 @@ import AppContainer from "../../components/AppContainer";
 import AppCard from "../../components/AppCard";
 import COLORS from "../../utils/colors";
 import { resetTemporaryPasswordApi } from "../../api/authService";
+import PropTypes from "prop-types";
 
 export default function ForceResetPasswordScreen({ navigation, route }) {
     const { email } = route.params;
@@ -392,3 +393,13 @@ const styles = StyleSheet.create({
         lineHeight: 16,
     },
 });
+
+ForceResetPasswordScreen.propTypes = {
+    navigation: PropTypes.object.isRequired,
+    route: PropTypes.object.isRequired,
+};
+
+RequirementItem.propTypes = {
+    met: PropTypes.bool.isRequired,
+    text: PropTypes.string.isRequired,
+};

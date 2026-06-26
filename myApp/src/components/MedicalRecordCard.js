@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import PropTypes from "prop-types";
 
 export default function MedicalRecordCard({
   doctorName,
@@ -164,3 +165,12 @@ dateFooter: {
     textAlign: "right",
 },
 });
+
+MedicalRecordCard.propTypes = {
+    doctorName: PropTypes.string,
+    specialization: PropTypes.string,
+    diagnosis: PropTypes.string,
+    symptoms: PropTypes.string,
+    prescription: PropTypes.string,
+    appointmentDate: PropTypes.string,
+};

@@ -12,13 +12,13 @@ import {
 } from "react-native";
 import MedicalRecordCard from "../../components/MedicalRecordCard";
 import AppContainer from "../../components/AppContainer";
-import AppCard from "../../components/AppCard";
 
 import {
     getMyHealthRecords,
 } from "../../api/healthRecordService";
 
 import COLORS from "../../utils/colors";
+import PropTypes from "prop-types";
 
 export default function HealthRecordsScreen({
     navigation,
@@ -143,3 +143,7 @@ const styles = StyleSheet.create({
         marginTop: 50,
     },
 });
+
+HealthRecordsScreen.propTypes = {
+    navigation: PropTypes.object.isRequired,
+};

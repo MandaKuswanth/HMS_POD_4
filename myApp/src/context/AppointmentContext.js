@@ -17,10 +17,7 @@ import {
 
 const AppointmentContext = createContext(null);
 
-// const normalizeList = (payload) => {
-//     const data = payload?.data || payload;
-//     return Array.isArray(data) ? data : [];
-// };
+
 const normalizeList = (payload) => {
     console.log(payload);
     return Array.isArray(payload)

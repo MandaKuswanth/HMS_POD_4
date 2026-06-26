@@ -17,6 +17,8 @@ import COLORS from "../../utils/colors";
 
 import { useAuth } from "../../context/AuthContext";
 
+import PropTypes from "prop-types";
+
 import {
     isEmpty,
     isValidEmail,
@@ -223,3 +225,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
 });
+
+LoginScreen.propTypes = {
+    navigation: PropTypes.object.isRequired,
+};

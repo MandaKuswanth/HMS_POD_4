@@ -1,3 +1,7 @@
+const FIELD_LABEL = "Password";
+const PASSWORD_REQUIRED = FIELD_LABEL + " is required";
+const PASSWORD_MIN_LENGTH = FIELD_LABEL + " must be at least 8 characters";
+
 import {
     getTomorrowDate,
     normalizeDateOnly,
@@ -73,9 +77,9 @@ export const validateLoginSubmit = ({
     }
 
     if (isEmpty(userInput)) {
-        errors.password = "Password is required";
+        errors.password = PASSWORD_REQUIRED;
     } else if (!isValidPassword(userInput)) {
-        errors.password = "Password must be at least 8 characters";
+        errors.password = PASSWORD_MIN_LENGTH;
     }
 
     return errors;
@@ -116,10 +120,10 @@ export const validateRegisterSubmit = ({
     }
 
     if (isEmpty(enteredPassword)) {
-        errors.password = "Password is required";
+        errors.password = PASSWORD_REQUIRED;
     } else if (!isValidPassword(enteredPassword)) {
         errors.password =
-            "Password must be at least 8 characters";
+            PASSWORD_MIN_LENGTH;
     }
 
     if (isEmpty(gender)) {

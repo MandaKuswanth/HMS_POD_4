@@ -7,6 +7,7 @@ import {
 } from "react-native";
 
 import COLORS from "../utils/colors";
+import PropTypes from "prop-types";
 
 export default function SectionLabel({ text }) {
     return (
@@ -43,3 +44,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.border,
     },
 });
+
+SectionLabel.propTypes = {
+    text: PropTypes.string,
+};

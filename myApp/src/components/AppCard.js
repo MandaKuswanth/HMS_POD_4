@@ -6,6 +6,7 @@ import {
 } from "react-native";
 
 import COLORS from "../utils/colors";
+import PropTypes from "prop-types";
 
 export default function AppCard({
     children,
@@ -29,3 +30,8 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
 });
+
+AppCard.propTypes = {
+    children: PropTypes.node,
+    style: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+};

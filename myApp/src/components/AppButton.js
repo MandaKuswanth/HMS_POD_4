@@ -8,6 +8,7 @@ import {
 } from "react-native";
 
 import COLORS from "../utils/colors";
+import PropTypes from "prop-types";
 
 export default function AppButton({
     title,
@@ -63,3 +64,13 @@ const styles = StyleSheet.create({
         fontWeight: "900",
     },
 });
+
+AppButton.propTypes = {
+    title: PropTypes.string,
+    onPress: PropTypes.func,
+    disabled: PropTypes.bool,
+    loading: PropTypes.bool,
+    color: PropTypes.string,
+    textColor: PropTypes.string,
+    style: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+};

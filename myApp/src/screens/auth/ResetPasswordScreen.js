@@ -18,13 +18,13 @@ import COLORS from "../../utils/colors";
 
 import {
     isEmpty,
-    firstErrorMessage,
 } from "../../utils/validators";
 
 import { resetPasswordApi } from "../../api/authService";
+import PropTypes from "prop-types";
 
 export default function ResetPasswordScreen({ navigation, route }) {
-    const { email, verificationToken } = route.params || {};
+    const { email } = route.params || {};
 
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -86,10 +86,10 @@ export default function ResetPasswordScreen({ navigation, route }) {
             return;
         }
 
-        if (value !== newPassword) {
-            updateError("confirmPassword", "Passwords do not match");
-        } else {
+        if (value === newPassword) {
             updateError("confirmPassword", "");
+        } else {
+            updateError("confirmPassword", "Passwords do not match");
         }
     };
 
@@ -463,3 +463,8 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 });
+
+ResetPasswordScreen.propTypes = {
+    navigation: PropTypes.object.isRequired,
+    route: PropTypes.object.isRequired,
+};

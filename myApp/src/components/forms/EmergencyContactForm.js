@@ -2,6 +2,7 @@ import React from "react";
 
 import AppInput from "../AppInput";
 import SectionLabel from "../SectionLabel";
+import PropTypes from "prop-types";
 
 export default function EmergencyContactForm({
     name,
@@ -38,3 +39,13 @@ export default function EmergencyContactForm({
         </>
     );
 }
+
+EmergencyContactForm.propTypes = {
+    name: PropTypes.string,
+    relation: PropTypes.string,
+    phone: PropTypes.string,
+    onNameChange: PropTypes.func,
+    onRelationChange: PropTypes.func,
+    onPhoneChange: PropTypes.func,
+    phoneError: PropTypes.string,
+};

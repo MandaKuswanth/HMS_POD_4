@@ -19,10 +19,10 @@ import COLORS from "../../utils/colors";
 import {
     isEmpty,
     isValidEmail,
-    firstErrorMessage,
 } from "../../utils/validators";
 
 import { forgotPasswordApi } from "../../api/authService";
+import PropTypes from "prop-types";
 
 export default function ForgotPasswordScreen({ navigation }) {
     const [email, setEmail] = useState("");
@@ -291,3 +291,7 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 });
+
+ForgotPasswordScreen.propTypes = {
+    navigation: PropTypes.object.isRequired,
+};

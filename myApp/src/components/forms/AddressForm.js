@@ -2,6 +2,7 @@ import React from "react";
 
 import AppInput from "../AppInput";
 import SectionLabel from "../SectionLabel";
+import PropTypes from "prop-types";
 
 export default function AddressForm({
     street,
@@ -46,3 +47,15 @@ export default function AddressForm({
         </>
     );
 }
+
+AddressForm.propTypes = {
+    street: PropTypes.string,
+    city: PropTypes.string,
+    stateName: PropTypes.string,
+    pincode: PropTypes.string,
+    onStreetChange: PropTypes.func,
+    onCityChange: PropTypes.func,
+    onStateChange: PropTypes.func,
+    onPincodeChange: PropTypes.func,
+    pincodeError: PropTypes.string,
+};
