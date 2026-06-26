@@ -48,7 +48,7 @@ export class AppointmentDialog implements OnInit {
   readonly data = inject<any>(MAT_DIALOG_DATA, { optional: true });
 
   availableSlots: string[] = [];
-  minDate: Date = new Date(new Date().setDate(new Date().getDate() + 1));
+  minDate: Date = new Date();
   loading = false;
 
   form = this.fb.group({
@@ -57,8 +57,12 @@ export class AppointmentDialog implements OnInit {
     date: ['', Validators.required],
     timeSlot: [{ value: '', disabled: true }, Validators.required]
   });
-
   ngOnInit(): void {
+    this.form.valueChanges.subscribe((values) => {
+      if (values.doctorEmployeeId && values.date) {
+        this.loadDoctorSlots(values.doctorEmployeeId, values.date);
+      }
+    });
     if (this.data?.mode === 'edit' && this.data?.appointment) {
       const appt = this.data.appointment;
       this.form.patchValue({
@@ -67,19 +71,8 @@ export class AppointmentDialog implements OnInit {
         date: appt.date ? new Date(appt.date) as any : '',
       });
 
-      if (appt.doctorEmployeeId) {
-        this.employeeService.searchDoctors(appt.doctorEmployeeId).subscribe({
-          next: (res) => {
-            const doctors = res?.data || [];
-            const doc = doctors.find((d: any) => d.employeeCode === appt.doctorEmployeeId);
-            if (doc) {
-              this.availableSlots = doc.availabilitySlots || [];
-              this.form.get('timeSlot')?.enable();
-              this.form.get('timeSlot')?.setValue(appt.timeSlot || '');
-              this.cdr.detectChanges();
-            }
-          }
-        });
+      if (appt.doctorEmployeeId && appt.date) {
+        this.loadDoctorSlots(appt.doctorEmployeeId, appt.date);
       }
     }
   }
@@ -89,14 +82,46 @@ export class AppointmentDialog implements OnInit {
   }
 
   onDoctorSelected(doctor: any): void {
-    this.availableSlots = doctor?.availabilitySlots || [];
     this.form.get('timeSlot')?.reset();
-    if (this.availableSlots.length > 0) {
-      this.form.get('timeSlot')?.enable();
-    } else {
-      this.form.get('timeSlot')?.disable();
-    }
+    this.form.get('timeSlot')?.disable();
     this.cdr.detectChanges();
+  }
+
+  loadDoctorSlots(doctorId: string, dateObj: any): void {
+    const formattedDate = formatDate(
+      new Date(dateObj),
+      'yyyy-MM-dd',
+      'en-US'
+    );
+    this.appointmentService.getDoctorSlots(doctorId, formattedDate).subscribe({
+      next: (res) => {
+        const data = res?.data || {};
+        const allSlots = data.allSlots || [];
+        const bookedSlots = data.bookedSlots || [];
+        const pastSlots = data.pastSlots || [];
+
+        this.availableSlots = allSlots.filter((slot: string) => {
+           // Allow currently selected slot in edit mode
+           if (this.data?.mode === 'edit' && this.data.appointment?.timeSlot === slot && 
+               formatDate(new Date(this.data.appointment.date), 'yyyy-MM-dd', 'en-US') === formattedDate) {
+               return true;
+           }
+           return !bookedSlots.includes(slot) && !pastSlots.includes(slot);
+        });
+
+        if (this.availableSlots.length > 0) {
+          this.form.get('timeSlot')?.enable();
+        } else {
+          this.form.get('timeSlot')?.disable();
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.availableSlots = [];
+        this.form.get('timeSlot')?.disable();
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   searchSlots = (query: string): Observable<any> => {
@@ -118,6 +143,7 @@ export class AppointmentDialog implements OnInit {
 
     const payload = {
       patientId: formValue.patientId || '',
+      doctorId: formValue.doctorEmployeeId || '',
       doctorEmployeeId: formValue.doctorEmployeeId || '',
       date: formatDate(
         new Date(formValue.date || ''),

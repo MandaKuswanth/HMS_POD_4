@@ -128,10 +128,10 @@
             <label>
               Role
               <select formControlName="role">
-                <option value="RECEPTIONIST">Receptionist</option>
-                <option value="DOCTOR">Doctor</option>
-                <option value="NURSE">Nurse</option>
-                <option value="TECHNICIAN">Technician</option>
+                <option value="" disabled>Select a role</option>
+                @for (role of publicRoles; track role.roleId) {
+                  <option [value]="role.name">{{ role.name }}</option>
+                }
               </select>
             </label>
 

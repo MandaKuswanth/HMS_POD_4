@@ -39,8 +39,6 @@ import { PERMISSIONS } from '../../../constants/permission';
     MatTooltipModule,
     MatFormFieldModule,
     MatInputModule,
-    Navbar,
-    Sidebar,
     HasPermissionDirective,
   ],
   templateUrl: './health-record-list.html',

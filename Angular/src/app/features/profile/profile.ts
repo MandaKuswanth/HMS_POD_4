@@ -17,9 +17,7 @@ import { EmployeeService } from '../../core/services/employee';
     CommonModule,
     MatCardModule,
     MatIconModule,
-    MatProgressSpinnerModule,
-    Navbar,
-    Sidebar
+    MatProgressSpinnerModule
   ],
   templateUrl: './profile.html',
   styleUrl: './profile.css'

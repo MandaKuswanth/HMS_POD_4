@@ -1,72 +1,45 @@
-<app-navbar></app-navbar>
 
-<div class="layout">
-  <app-sidebar></app-sidebar>
-
-  <main class="content">
 
     <div class="employee-page">
-
-      <div class="page-header">
-        <div>
-          <h2>Employee Directory</h2>
-          <div class="view-tabs">
-            <button mat-button [class.active]="statusSignal() === 'all'" (click)="setView('all')">
-              All Employees
-            </button>
-            <button mat-button [class.active]="statusSignal() === 'active'" (click)="setView('active')">
-              Active Only
-            </button>
-            <button mat-button [class.active]="statusSignal() === 'pending'" (click)="setView('pending')">
-              Pending Approval
-            </button>
-          </div>
+      <mat-card class="main-card">
+        <div class="card-header">
+          <h2 class="page-title">Employee Management</h2>
         </div>
 
-        <button *appHasPermission="PERMISSIONS.EMPLOYEE_CREATE" mat-raised-button color="primary"
-          (click)="openAddDialog()">
-          <mat-icon>person_add</mat-icon>
-          Add Employee
-        </button>
-      </div>
+        <div class="toolbar-row">
+          <div class="search-box">
+            <input type="text" [ngModel]="searchTextSignal()" (input)="onSearchInput($event)" placeholder="Search by code, name, email or phone...">
+          </div>
 
-      <div class="filter-card">
+          <div class="filter-box">
+            <select [value]="roleSignal()" (change)="onRoleChange($any($event.target).value)">
+              <option value="">ALL ROLES</option>
+              @for (r of rolesList; track r) { <option [value]="r">{{r}}</option> }
+            </select>
+          </div>
 
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Search</mat-label>
-          <input matInput [ngModel]="searchTextSignal()" (input)="onSearchInput($event)" placeholder="Search code, name, email, phone..." />
-        </mat-form-field>
+          <div class="filter-box dept-box">
+            <select [value]="departmentSignal()" (change)="onDepartmentChange($any($event.target).value)">
+              <option value="">ALL DEPARTMENTS</option>
+              @for (dept of departmentsList; track dept) { <option [value]="dept">{{dept}}</option> }
+            </select>
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Department</mat-label>
-          <mat-select [value]="departmentSignal()" (selectionChange)="onDepartmentChange($event.value)">
-            @for (dept of departmentsList; track dept) {
-              <mat-option [value]="dept">{{ dept }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+          <div class="status-pills">
+            <button class="pill-btn" [class.active]="statusSignal() === 'all'" (click)="setView('all')">
+              All <span class="badge">{{ totalSignal() }}</span>
+            </button>
+            <button class="pill-btn" [class.active]="statusSignal() === 'active'" (click)="setView('active')">
+              Active <span class="badge">0</span>
+            </button>
+            <button class="pill-btn" [class.active]="statusSignal() === 'pending'" (click)="setView('pending')">
+              Pending <span class="badge">0</span>
+            </button>
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Role</mat-label>
-          <mat-select [value]="roleSignal()" (selectionChange)="onRoleChange($event.value)">
-            @for (r of rolesList; track r) {
-              <mat-option [value]="r">{{ r }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <button mat-stroked-button color="warn" (click)="clearFilters()">
-          <mat-icon>refresh</mat-icon>
-          Clear
-        </button>
-
-      </div>
-
-      <div class="table-card">
-
-        <div class="table-header">
-          <h3>Employees</h3>
-          <span>{{ employeesSignal().length || 0 }} records</span>
+          <button mat-fab color="primary" class="add-fab" (click)="openAddDialog()" *appHasPermission="PERMISSIONS.EMPLOYEE_CREATE">
+            <mat-icon>add</mat-icon>
+          </button>
         </div>
 
         <div class="table-scroll">
@@ -86,9 +59,6 @@
               <th mat-header-cell *matHeaderCellDef>Name</th>
               <td mat-cell *matCellDef="let row">
                 <div class="employee-name">
-                  <div class="avatar">
-                    {{ row.name?.charAt(0) }}
-                  </div>
                   {{ row.name }}
                 </div>
               </td>
@@ -202,9 +172,5 @@
         <mat-paginator [length]="totalSignal()" [pageSize]="limitSignal()" [pageIndex]="pageSignal()"
           [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
         </mat-paginator>
-      </div>
-
+      </mat-card>
     </div>
-
-  </main>
-</div>

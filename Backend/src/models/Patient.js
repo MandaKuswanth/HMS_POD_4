@@ -68,7 +68,7 @@ const patientSchema = new mongoose.Schema(
     }
 );
 
-patientSchema.index({ phone: 1 });
+
 patientSchema.index({ name: 1 });
 
 patientSchema.pre("save", async function (next) {

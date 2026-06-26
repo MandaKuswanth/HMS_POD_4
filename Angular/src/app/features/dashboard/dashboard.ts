@@ -27,8 +27,6 @@ import { PERMISSIONS } from '../../constants/permission';
     CommonModule,
     MatCardModule,
     MatIconModule,
-    Navbar,
-    Sidebar,
     HasPermissionDirective,
   ],
   templateUrl: './dashboard.html',
@@ -102,12 +100,9 @@ export class Dashboard implements OnInit {
   private loadEmployeesCount(): void {
     this.employeeService.getEmployees(1, 1000).subscribe({
       next: (response: any) => {
-        const employees = Array.isArray(response?.data?.records)
-          ? response.data.records
-          : [];
+        const employees = Array.isArray(response?.data) ? response.data : [];
 
-        this.totalEmployees =
-          response?.data?.pagination?.totalRecords || employees.length;
+        this.totalEmployees = response?.pagination?.totalItems || employees.length;
 
         this.activeEmployees = employees.filter(
           (emp: any) => emp.status === true
@@ -132,12 +127,9 @@ export class Dashboard implements OnInit {
   private loadPatientsCount(): void {
     this.patientService.getPatients({ page: 1, limit: 1000 }).subscribe({
       next: (response: any) => {
-        const patients = Array.isArray(response?.data?.records)
-          ? response.data.records
-          : [];
+        const patients = Array.isArray(response?.data) ? response.data : [];
 
-        this.totalPatients =
-          response?.data?.pagination?.totalRecords || patients.length;
+        this.totalPatients = response?.pagination?.totalItems || patients.length;
 
         this.cdr.detectChanges();
       },
@@ -152,12 +144,9 @@ export class Dashboard implements OnInit {
   private loadAppointmentsCount(): void {
     this.appointmentService.getAppointments(1, 1000).subscribe({
       next: (response: any) => {
-        const appointments = Array.isArray(response?.data?.records)
-          ? response.data.records
-          : [];
+        const appointments = Array.isArray(response?.data) ? response.data : [];
 
-        this.appointmentsCount =
-          response?.data?.pagination?.totalRecords || appointments.length;
+        this.appointmentsCount = response?.pagination?.totalItems || appointments.length;
 
         this.cdr.detectChanges();
       },

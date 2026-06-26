@@ -27,6 +27,11 @@ const roleSchema = new Schema(
             default: []
         },
 
+        selfRegisterAllowed: {
+            type: Boolean,
+            default: false
+        },
+
         status: {
             type: Boolean,
             default: true

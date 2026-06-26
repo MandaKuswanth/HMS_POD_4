@@ -2,13 +2,15 @@ const express = require("express");
 const router = express.Router();
 
 const employeeController = require("../controllers/employeeController");
-const verifyJWT = require("../middleware/authMiddleware");
+const verifyToken = require("../middleware/authMiddleware");
 const allowPermission = require("../middleware/checkPermission");
-const validateRequest = require("../middleware/validate");
+const validateRequest = require("../middleware/validateRequest");
 
 const {
-    selfRegistrationValidation
-} = require("../middleware/employeeValidations");
+    createEmployeeValidation,
+    selfRegisterValidation,
+    updateEmployeeValidation
+} = require("../validators/employee");
 
 const {
     PERMISSIONS
@@ -21,14 +23,9 @@ const {
 */
 router.post(
     "/register",
-    selfRegistrationValidation,
+    selfRegisterValidation,
     validateRequest,
     employeeController.selfRegister
-);
-
-router.post(
-    "/login",
-    employeeController.login
 );
 
 /*
@@ -36,15 +33,10 @@ router.post(
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */
-router.post(
-    "/reset-password",
-    verifyJWT,
-    employeeController.resetPassword
-);
 
 router.get(
     "/profile",
-    verifyJWT,
+    verifyToken,
     employeeController.getProfile
 );
 
@@ -55,41 +47,45 @@ router.get(
 */
 router.get(
     "/search",
-    verifyJWT,
+    verifyToken,
     employeeController.getEmployeesSearch
 );
 
 router.post(
     "/admin/add-employee",
-    verifyJWT,
+    verifyToken,
     allowPermission(PERMISSIONS.EMPLOYEE_CREATE),
+    createEmployeeValidation,
+    validateRequest,
     employeeController.adminAddEmployee
 );
 
 router.get(
     "/employees",
-    verifyJWT,
+    verifyToken,
     allowPermission(PERMISSIONS.EMPLOYEE_READ),
     employeeController.getEmployees
 );
 
 router.put(
     "/employees/:employeeCode",
-    verifyJWT,
+    verifyToken,
     allowPermission(PERMISSIONS.EMPLOYEE_UPDATE),
+    updateEmployeeValidation,
+    validateRequest,
     employeeController.updateEmployee
 );
 
 router.delete(
     "/employees/:employeeCode",
-    verifyJWT,
+    verifyToken,
     allowPermission(PERMISSIONS.EMPLOYEE_DELETE),
     employeeController.deleteEmployee
 );
 
 router.put(
     "/employees/:employeeCode/toggle-status",
-    verifyJWT,
+    verifyToken,
     allowPermission(PERMISSIONS.EMPLOYEE_UPDATE),
     employeeController.toggleEmployeeStatus
 );
@@ -100,24 +96,35 @@ router.put(
 |--------------------------------------------------------------------------
 */
 router.get(
-    "/pending-employees",
-    verifyJWT,
+    "/pending-approvals",
+    verifyToken,
     allowPermission(PERMISSIONS.EMPLOYEE_READ),
     employeeController.getPendingEmployees
 );
 
 router.put(
-    "/approve-employee/:userId",
-    verifyJWT,
+    "/employees/:employeeCode/approve",
+    verifyToken,
     allowPermission(PERMISSIONS.EMPLOYEE_UPDATE),
     employeeController.approveEmployee
 );
 
-router.delete(
-    "/reject-employee/:userId",
-    verifyJWT,
-    allowPermission(PERMISSIONS.EMPLOYEE_DELETE),
+router.put(
+    "/employees/:employeeCode/reject",
+    verifyToken,
+    allowPermission(PERMISSIONS.EMPLOYEE_UPDATE),
     employeeController.rejectEmployee
+);
+
+/*
+|--------------------------------------------------------------------------
+| Doctors specific
+|--------------------------------------------------------------------------
+*/
+router.get(
+    "/doctors",
+    verifyToken,
+    employeeController.getDoctorsList
 );
 
 module.exports = router;

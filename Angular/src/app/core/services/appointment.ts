@@ -44,9 +44,13 @@ export class AppointmentService {
     doctorEmployeeId = 'ALL DOCTORS',
     date = ''
   ): Observable<any> {
-    return this.http.get(
-      `${this.baseUrl}/appointments?page=${page}&limit=${limit}&search=${search}&status=${status}&doctorEmployeeId=${doctorEmployeeId}&date=${date}`
-    );
+    let url = `${this.baseUrl}/appointments?page=${page}&limit=${limit}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (status && status !== 'ALL STATUS') url += `&status=${encodeURIComponent(status)}`;
+    if (doctorEmployeeId && doctorEmployeeId !== 'ALL DOCTORS') url += `&doctorEmployeeId=${encodeURIComponent(doctorEmployeeId)}`;
+    if (date) url += `&date=${encodeURIComponent(date)}`;
+
+    return this.http.get(url);
   }
 
   search = (query: string): Observable<any> => {
@@ -95,12 +99,24 @@ export class AppointmentService {
     }
     
     updateAppointmentStatus(
-    appointmentId: string,
-    status: string
-): Observable<any> {
-    return this.http.put(
-        `${this.baseUrl}/appointments/${appointmentId}/status`,
-        { status }
-    );
-}
+        appointmentId: string,
+        status: string
+    ): Observable<any> {
+        return this.http.put(
+            `${this.baseUrl}/appointments/${appointmentId}/status`,
+            { status }
+        );
+    }
+
+    getStandardSlots(): Observable<any> {
+        return this.http.get(
+            `${this.baseUrl}/appointments/standard-slots`
+        );
+    }
+
+    getDoctorSlots(doctorEmployeeId: string, date: string): Observable<any> {
+        return this.http.get(
+            `${this.baseUrl}/appointments/slots?doctorEmployeeId=${doctorEmployeeId}&date=${date}`
+        );
+    }
 }

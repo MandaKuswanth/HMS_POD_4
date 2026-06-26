@@ -68,7 +68,7 @@ consultationSchema.pre("save", async function (next) {
     }
 });
 
-consultationSchema.index({ consultationId: 1 }, { unique: true });
+
 consultationSchema.index({ appointmentId: 1 });
 consultationSchema.index({ patientId: 1 });
 consultationSchema.index({ doctorEmployeeId: 1 });

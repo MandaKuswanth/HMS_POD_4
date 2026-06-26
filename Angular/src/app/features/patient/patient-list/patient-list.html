@@ -1,61 +1,39 @@
-<app-navbar></app-navbar>
 
-<div class="layout">
-  <app-sidebar></app-sidebar>
-
-  <main class="content">
 
     <div class="patient-page">
-
-      <div class="page-header">
-        <div>
-          <h2>Patient List</h2>
+      <mat-card class="main-card">
+        <div class="card-header">
+          <h2 class="page-title">Patient Management</h2>
         </div>
 
-        <button *appHasPermission="PERMISSIONS.PATIENT_CREATE" mat-raised-button color="primary"
-          (click)="openAddDialog()">
-          <mat-icon>add</mat-icon>
-          Add Patient
-        </button>
-      </div>
+        <div class="toolbar-row">
+          <div class="search-box">
+            <input type="text" [ngModel]="searchTextSignal()" (input)="onSearchInput($event)" placeholder="Search UHID, name, email, phone...">
+          </div>
 
-      <div class="filter-card">
+          <div class="filter-box">
+            <select [value]="genderSignal()" (change)="onGenderChange($any($event.target).value)">
+              <option value="ALL">ALL GENDERS</option>
+              <option value="male">MALE</option>
+              <option value="female">FEMALE</option>
+            </select>
+          </div>
 
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Search</mat-label>
-          <input matInput [ngModel]="searchTextSignal()" (input)="onSearchInput($event)" placeholder="Search UHID, name, email, phone..." />
-        </mat-form-field>
+          <div class="status-pills">
+            <button class="pill-btn" [class.active]="statusSignal() === 'ALL'" (click)="onStatusChange('ALL')">
+              All <span class="badge">{{ totalSignal() }}</span>
+            </button>
+            <button class="pill-btn" [class.active]="statusSignal() === 'ACTIVE'" (click)="onStatusChange('ACTIVE')">
+              Active <span class="badge">0</span>
+            </button>
+            <button class="pill-btn" [class.active]="statusSignal() === 'INACTIVE'" (click)="onStatusChange('INACTIVE')">
+              Inactive <span class="badge">0</span>
+            </button>
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Gender</mat-label>
-          <mat-select [value]="genderSignal()" (selectionChange)="onGenderChange($event.value)">
-            <mat-option value="ALL">All</mat-option>
-            <mat-option value="male">Male</mat-option>
-            <mat-option value="female">Female</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Status</mat-label>
-          <mat-select [value]="statusSignal()" (selectionChange)="onStatusChange($event.value)">
-            <mat-option value="ALL">All</mat-option>
-            <mat-option value="ACTIVE">Active</mat-option>
-            <mat-option value="INACTIVE">Inactive</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <button mat-stroked-button color="warn" (click)="clearFilters()">
-          <mat-icon>refresh</mat-icon>
-          Clear
-        </button>
-
-      </div>
-
-      <div class="table-card">
-
-        <div class="table-header">
-          <h3>Patients</h3>
-          <span>{{ patientsSignal().length || 0 }} records</span>
+          <button mat-fab color="primary" class="add-fab" (click)="openAddDialog()" *appHasPermission="PERMISSIONS.PATIENT_CREATE">
+            <mat-icon>add</mat-icon>
+          </button>
         </div>
 
         <div class="table-scroll">
@@ -189,9 +167,6 @@
         <mat-paginator [length]="totalSignal()" [pageSize]="limitSignal()" [pageIndex]="pageSignal()"
           [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
         </mat-paginator>
-      </div>
+      </mat-card>
 
     </div>
-
-  </main>
-</div>

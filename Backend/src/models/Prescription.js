@@ -77,7 +77,7 @@ prescriptionSchema.pre("save", async function (next) {
     }
 });
 
-prescriptionSchema.index({ prescriptionId: 1 }, { unique: true });
+
 prescriptionSchema.index({ appointmentId: 1 });
 prescriptionSchema.index({ patientId: 1 });
 prescriptionSchema.index({ doctorEmployeeId: 1 });

@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit, HostBinding } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { MatListModule } from '@angular/material/list';
@@ -6,21 +6,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { filter } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth';
+import { NodeService, MenuNode } from '../../../core/services/node';
+import { LayoutService } from '../../../core/services/layout';
 import { HasPermissionDirective } from '../../directives/has-permission.directive';
-
-export interface MenuItem {
-  name: string;
-  path: string;
-  icon: string;
-  permission: string;
-}
-
-export interface MenuGroup {
-  name: string;
-  icon: string;
-  items: MenuItem[];
-  permission: string;
-}
 
 @Component({
   selector: 'app-sidebar',
@@ -35,19 +23,19 @@ export interface MenuGroup {
   ],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
+  host: {
+    '[class.collapsed]': '!layoutService.isSidebarOpen()'
+  }
 })
-export class Sidebar {
+export class Sidebar implements OnInit {
   private readonly router = inject(Router);
   readonly authService = inject(AuthService);
+  private readonly nodeService = inject(NodeService);
+  public readonly layoutService = inject(LayoutService);
 
-  // Group open/close states
-  readonly menuOpenState = signal<Record<string, boolean>>({
-    'User & Staff': true,
-    'Patient Care': true,
-    'System Setup': false
-  });
+  readonly menuNodes = signal<MenuNode[]>([]);
+  readonly menuOpenState = signal<Record<string, boolean>>({});
 
-  // Track active URL reactively using signals
   private readonly navEndEvent = toSignal(
     this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd)
@@ -58,37 +46,22 @@ export class Sidebar {
     return this.navEndEvent()?.urlAfterRedirects || this.router.url;
   });
 
-  // Static structure of role-based menu items
-  readonly menuGroups: MenuGroup[] = [
-    {
-      name: 'User & Staff',
-      icon: 'groups',
-      permission: 'EMPLOYEE_READ',
-      items: [
-        { name: 'All Employees', path: '/employees', icon: 'badge', permission: 'EMPLOYEE_READ' },
-        { name: 'Pending Approvals', path: '/pending-employees', icon: 'rule', permission: 'EMPLOYEE_APPROVE' }
-      ]
-    },
-    {
-      name: 'Patient Care',
-      icon: 'healing',
-      permission: 'PATIENT_READ',
-      items: [
-        { name: 'All Patients', path: '/patients', icon: 'person_search', permission: 'PATIENT_READ' },
-        { name: 'Appointments', path: '/appointments', icon: 'event', permission: 'APPOINTMENT_READ' },
-        { name: 'Health Records', path: '/health-records', icon: 'description', permission: 'HEALTH_RECORD_READ' }
-      ]
-    },
-    {
-      name: 'System Setup',
-      icon: 'settings',
-      permission: 'ROLE_READ',
-      items: [
-        { name: 'Roles & RBAC', path: '/roles', icon: 'admin_panel_settings', permission: 'ROLE_READ' },
-        { name: 'Menu Nodes', path: '/nodes', icon: 'account_tree', permission: 'NODE_READ' }
-      ]
-    }
-  ];
+  ngOnInit() {
+    this.nodeService.getMyMenu().subscribe({
+      next: (res) => {
+        const menu = res?.data?.menu || [];
+        this.menuNodes.set(menu);
+        
+        // Initialize open state for all parent nodes to true initially for better UX, or closed if preferred.
+        const state: Record<string, boolean> = {};
+        menu.forEach((node: MenuNode) => {
+           state[node.name] = true;
+        });
+        this.menuOpenState.set(state);
+      },
+      error: (err) => console.error('Failed to load menu nodes', err)
+    });
+  }
 
   toggleGroup(groupName: string): void {
     this.menuOpenState.update((state) => ({

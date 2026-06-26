@@ -1,8 +1,10 @@
-const User = require("../models/User");
-const Employee = require("../models/Employee");
-const Patient = require("../models/Patient");
-const Role = require("../models/Role");
-const jwt = require("jsonwebtoken");
+const authService = require('../services/authService');
+const userService = require('../services/userService');
+const emailService = require('../services/emailService');
+const User = require('../models/User');
+const Role = require('../models/Role');
+const Employee = require('../models/Employee');
+const Patient = require('../models/Patient');
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../middleware/asyncHandler");
@@ -30,90 +32,18 @@ const setRefreshTokenCookie = (res, token) => {
 };
 
 exports.login = asyncHandler(async (req, res) => {
-    const { email, password } = req.body || {};
-
-    if (!email || !password) {
-        throw new ApiError(400, "Email and password are required");
-    }
-
-    const user = await User.findOne({
-        email: email.trim().toLowerCase(),
-        isDeleted: false
-    });
-
-    if (!user) {
-        throw new ApiError(404, "Invalid email or password");
-    }
-
-    const isMatch = await user.isPasswordCorrect(password);
-    if (!isMatch) {
-        throw new ApiError(401, "Invalid email or password");
-    }
-
-    if (!user.status) {
-        throw new ApiError(403, "Your account has been deactivated or is pending approval");
-    }
-
-    let profile = null;
-    if (user.isEmployee) {
-        profile = await Employee.findOne({ employeeCode: user.employeeId, isDeleted: false });
-        if (!profile || !profile.status) {
-            throw new ApiError(403, "Employee profile is inactive or missing");
-        }
-    } else {
-        profile = await Patient.findOne({ UHID: user.UHID, isDeleted: false });
-        if (!profile || !profile.status) {
-            throw new ApiError(403, "Patient profile is inactive or missing");
-        }
-    }
-
-    // Resolve permissions from roles
-    const roles = await Role.find({
-        roleId: { $in: user.roleIds },
-        status: true
-    }).select("roleId name permissions");
-
-    const roleNames = roles.map((role) => role.name);
-    const permissions = [...new Set(roles.flatMap((role) => role.permissions || []))];
-
-    const accessToken = user.generateAccessToken(roleNames, permissions);
-    const refreshToken = user.generateRefreshToken();
-
-    // Save refresh token to user document
-    user.refreshToken = refreshToken;
-    user.lastLogin = new Date();
-    await user.save();
+    const { email, password } = req.body;
+    
+    const { accessToken, refreshToken, userData } = await authService.loginUser(email, password);
 
     setRefreshTokenCookie(res, refreshToken);
-
-    const userData = {
-        id: user._id,
-        email: user.email,
-        roleIds: user.roleIds,
-        roles: roles.map((role) => ({ roleId: role.roleId, name: role.name })),
-        permissions,
-        isEmployee: user.isEmployee,
-        status: user.status,
-        mustResetPassword: user.mustResetPassword
-    };
-
-    if (user.isEmployee) {
-        userData.employeeId = user.employeeId;
-        userData.name = profile.name;
-        userData.employee = profile;
-    } else {
-        userData.UHID = user.UHID;
-        userData.name = profile.name;
-        userData.patient = profile;
-    }
 
     return res.status(200).json(
         new ApiResponse(
             200,
             {
                 accessToken,
-                user: userData,
-                resetRequired: user.mustResetPassword
+                user: userData
             },
             "Login successful"
         )
@@ -122,21 +52,17 @@ exports.login = asyncHandler(async (req, res) => {
 
 exports.refresh = asyncHandler(async (req, res) => {
     const token = getCookie(req, "refreshToken");
-
     if (!token) {
-        throw new ApiError(401, "Refresh token is missing. Please re-login.");
+        throw new ApiError(401, "No refresh token found");
     }
 
-    let decoded;
-    try {
-        decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
-    } catch (err) {
-        throw new ApiError(401, "Expired or invalid refresh token. Please re-login.");
+    const user = await User.findOne({ refreshToken: token, isDeleted: false });
+    if (!user) {
+        throw new ApiError(403, "Invalid refresh token");
     }
 
-    const user = await User.findById(decoded.id);
-    if (!user || user.isDeleted || !user.status || user.refreshToken !== token) {
-        throw new ApiError(401, "Invalid refresh token session. Please re-login.");
+    if (!user.status) {
+        throw new ApiError(403, "Your account has been deactivated");
     }
 
     let profile = null;
@@ -221,5 +147,54 @@ exports.logout = asyncHandler(async (req, res) => {
 
     return res.status(200).json(
         new ApiResponse(200, null, "Logged out successfully")
+    );
+});
+
+exports.forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    
+    const { user, otp } = await userService.generateResetOTP(email);
+
+    let profileName = "User";
+    if (user.isEmployee) {
+        const profile = await Employee.findOne({ employeeCode: user.employeeId });
+        profileName = profile ? profile.name : "Employee";
+    } else {
+        const profile = await Patient.findOne({ UHID: user.UHID });
+        profileName = profile ? profile.name : "Patient";
+    }
+
+    await emailService.sendPasswordResetOTP(email, otp, profileName);
+
+    return res.status(200).json(
+        new ApiResponse(200, null, "Password reset OTP sent successfully")
+    );
+});
+
+exports.verifyResetOtp = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+    await authService.verifyResetOtp(email, otp);
+
+    return res.status(200).json(
+        new ApiResponse(200, null, "OTP verified successfully")
+    );
+});
+
+exports.resetPassword = asyncHandler(async (req, res) => {
+    const { email, newPassword } = req.body;
+    await authService.resetPassword(email, newPassword);
+
+    return res.status(200).json(
+        new ApiResponse(200, null, "Password reset successfully")
+    );
+});
+
+exports.changePassword = asyncHandler(async (req, res) => {
+    const { id } = req.user;
+    const { newPassword } = req.body;
+    await userService.changePassword(id, newPassword);
+
+    return res.status(200).json(
+        new ApiResponse(200, null, "Password updated successfully")
     );
 });

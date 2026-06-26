@@ -6,14 +6,13 @@
     overflow: hidden;
 }
 
-/* SIDEBAR LIGHT THEME */
+/* SIDEBAR BLUE THEME */
 .sidebar {
     width: 260px;
     height: 100%;
-    padding: 15px 12px 25px;
-    background-color: #ffffff;
-    border-right: 1px solid #e2e8f0;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.03);
+    padding: 24px 16px;
+    background-color: #1860B8;
+    border-right: none;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -24,30 +23,29 @@
 .sidebar-brand {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    margin-bottom: 12px;
+    gap: 12px;
+    padding: 0 12px 20px;
 }
 
 .brand-logo {
-    font-size: 26px;
-    width: 26px;
-    height: 26px;
-    color: #0d47a1;
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    color: #ffffff;
 }
 
 .brand-label {
     font-size: 18px;
-    font-weight: 800;
-    color: #0b2f6b;
-    letter-spacing: 0.5px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.3px;
 }
 
 /* DIVIDER */
 .sidebar-divider {
     height: 1px;
-    background-color: #e2e8f0;
-    margin: 8px 6px 12px;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin: 12px 8px 16px;
     flex-shrink: 0;
 }
 
@@ -56,9 +54,9 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     overflow-y: auto;
-    padding-bottom: 16px;
+    padding-bottom: 24px;
     scrollbar-width: none;
 }
 
@@ -69,25 +67,25 @@
 /* NAV ITEM & GROUP HEADER */
 .nav-item, .menu-group-header {
     width: 100%;
-    min-height: 48px;
+    min-height: 44px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     padding: 0 16px;
-    border-radius: 10px;
-    color: #475569;
+    border-radius: 8px;
+    color: #ffffff;
     text-decoration: none;
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
     white-space: nowrap;
     box-sizing: border-box;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-item:hover, .menu-group-header:hover {
-    background-color: #f1f5f9;
-    color: #0d47a1;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
 }
 
 .nav-item mat-icon, .group-title mat-icon {
@@ -95,23 +93,23 @@
     width: 20px;
     height: 20px;
     min-width: 20px;
-    color: #64748b;
+    color: rgba(255, 255, 255, 0.8);
     transition: color 0.2s ease;
 }
 
 .nav-item:hover mat-icon, .menu-group-header:hover mat-icon {
-    color: #0d47a1;
+    color: #ffffff;
 }
 
 /* ACTIVE NAV ITEM */
 .nav-item.active {
-    background-color: #eff6ff;
-    color: #0d47a1;
+    background-color: #ffffff;
+    color: #1860B8;
     font-weight: 700;
 }
 
 .nav-item.active mat-icon {
-    color: #0d47a1;
+    color: #1860B8;
 }
 
 /* COLLAPSIBLE GROUP CUSTOM */

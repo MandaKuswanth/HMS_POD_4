@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Observable, of } from 'rxjs';
-
+import { map } from 'rxjs/operators';
 import {
   FormArray,
   FormBuilder,
@@ -25,9 +25,10 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { ToastrService } from 'ngx-toastr';
 import { EmployeeService } from '../../../core/services/employee';
+import { AppointmentService } from '../../../core/services/appointment';
+import { RoleService, RoleData } from '../../../core/services/role.service';
 import { SearchDropdownComponent } from '../../../shared/components/search-dropdown/search-dropdown';
 import {
-  EMPLOYEE_ROLES,
   NAME_PATTERN,
   PHONE_PATTERN,
   getConsultationFeeValidators,
@@ -95,6 +96,8 @@ export interface EmployeeDialogData {
 export class EmployeeDialog implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly employeeService = inject(EmployeeService);
+  private readonly appointmentService = inject(AppointmentService);
+  private readonly roleService = inject(RoleService);
   private readonly toastr = inject(ToastrService);
   private readonly dialogRef = inject(MatDialogRef<EmployeeDialog>);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -102,13 +105,12 @@ export class EmployeeDialog implements OnInit {
   readonly data = inject<EmployeeDialogData>(MAT_DIALOG_DATA);
 
   loading = false;
-  readonly roles = EMPLOYEE_ROLES;
+  roles: RoleData[] = [];
 
   searchRoles = (query: string): Observable<any> => {
-    const list = this.roles
-      .filter(r => r.toLowerCase().includes(query.toLowerCase()))
-      .map(r => ({ _id: r, name: r }));
-    return of(list);
+    return this.roleService.getRoles().pipe(
+      map(roles => roles.filter(r => r.name.toLowerCase().includes((query || '').toLowerCase())))
+    );
   };
 
   searchStatus = (query: string): Observable<any> => {
@@ -118,25 +120,7 @@ export class EmployeeDialog implements OnInit {
     ];
     return of(list.filter(s => s.name.toLowerCase().includes(query.toLowerCase())));
   };
-  timeSlots: string[] = [
-    '09:00 AM - 09:30 AM',
-    '09:30 AM - 10:00 AM',
-    '10:00 AM - 10:30 AM',
-    '10:30 AM - 11:00 AM',
-    '11:00 AM - 11:30 AM',
-    '11:30 AM - 12:00 PM',
-    '12:00 PM - 12:30 PM',
-    '12:30 PM - 01:00 PM',
-    '01:00 PM - 01:30 PM',
-    '01:30 PM - 02:00 PM',
-    '02:00 PM - 02:30 PM',
-    '02:30 PM - 03:00 PM',
-    '03:00 PM - 03:30 PM',
-    '03:30 PM - 04:00 PM',
-    '04:00 PM - 04:30 PM',
-    '04:30 PM - 05:00 PM'
-  ];
-
+  timeSlots: string[] = [];
   form = this.fb.group({
     name: [
       '',
@@ -228,6 +212,20 @@ export class EmployeeDialog implements OnInit {
   }
 
   ngOnInit(): void {
+    this.roleService.getRoles().subscribe(roles => {
+      this.roles = roles;
+    });
+
+    this.appointmentService.getStandardSlots().subscribe({
+      next: (response) => {
+        this.timeSlots = response.data || [];
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to load standard slots', err);
+      }
+    });
+
     if (this.data.mode === 'edit' && this.data.employee) {
       this.patchEmployeeData(this.data.employee);
     }

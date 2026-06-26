@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const rateLimit = require("express-rate-limit");
 
 const roleController = require("../controllers/roleController");
 const auth = require("../middleware/authMiddleware");
@@ -20,10 +21,22 @@ router.get(
     roleController.getRoles
 );
 
+const publicSearchLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: "Too many search requests from this IP, please try again later"
+});
+
 router.get(
     "/search",
     auth,
     roleController.getRolesSearch
+);
+
+router.get(
+    "/public-search",
+    publicSearchLimiter,
+    roleController.getPublicRolesSearch
 );
 
 router.get(

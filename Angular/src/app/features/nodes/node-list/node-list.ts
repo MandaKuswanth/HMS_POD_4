@@ -36,8 +36,6 @@ import { NodeDialog } from '../node-dialog/node-dialog';
     MatTooltipModule,
     MatFormFieldModule,
     MatInputModule,
-    Navbar,
-    Sidebar,
   ],
   templateUrl: './node-list.html',
   styleUrl: './node-list.css',

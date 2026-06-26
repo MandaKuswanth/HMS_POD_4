@@ -1,7 +1,10 @@
 <nav class="navbar">
-  <!-- Left side brand -->
+  <!-- Left side brand and toggle -->
+  <button mat-icon-button class="menu-toggle-btn" (click)="toggleSidebar()">
+    <mat-icon>menu</mat-icon>
+  </button>
+  
   <button class="brand brand-btn" type="button" (click)="goDashboard()">
-    <mat-icon>local_hospital</mat-icon>
     <span>HMS Portal</span>
   </button>
 

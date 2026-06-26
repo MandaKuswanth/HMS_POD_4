@@ -222,9 +222,13 @@
 .table-wrapper {
     flex: 1;
     min-height: 0;
+    width: calc(100% - 48px);
+    margin: 0 24px;
     overflow-y: auto;
     overflow-x: auto;
-    border-radius: 18px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 table {

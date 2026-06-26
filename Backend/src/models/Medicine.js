@@ -40,7 +40,7 @@ const medicineSchema = new Schema(
 );
 
 medicineSchema.index({ name: 1 });
-medicineSchema.index({ sku: 1 }, { unique: true });
+
 medicineSchema.index({ isDeleted: 1 });
 
 module.exports = mongoose.model("Medicine", medicineSchema);

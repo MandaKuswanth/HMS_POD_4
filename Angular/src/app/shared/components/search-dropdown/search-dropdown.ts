@@ -141,7 +141,17 @@ export class SearchDropdownComponent implements ControlValueAccessor {
   @Input() displayField: string = 'name';
   @Input() valueField: string = '_id';
   @Input() placeholder: string = 'Search...';
-  @Input() initialDisplay: string = '';
+  
+  private _initialDisplay: string = '';
+  @Input() set initialDisplay(val: string) {
+    this._initialDisplay = val;
+    if (val !== undefined && val !== null) {
+      this.inputControl.setValue(val, { emitEvent: false });
+    }
+  }
+  get initialDisplay(): string {
+    return this._initialDisplay;
+  }
 
   readonly selectionChange = output<any>();
 

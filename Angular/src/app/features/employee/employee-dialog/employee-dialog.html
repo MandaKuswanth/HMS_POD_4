@@ -142,8 +142,8 @@
           <mat-error>Joining date is required</mat-error>
         }
 
-        @if (form.get('joiningDate')?.hasError('pastDate')) {
-          <mat-error>Joining date cannot be a previous date</mat-error>
+        @if (form.get('joiningDate')?.hasError('futureDate')) {
+          <mat-error>Joining date cannot be a future date</mat-error>
         }
       </mat-form-field>
 
@@ -153,7 +153,7 @@
         <app-search-dropdown
           [searchFn]="searchRoles"
           [displayField]="'name'"
-          [valueField]="'_id'"
+          [valueField]="'name'"
           [initialDisplay]="form.get('role')?.value || ''"
           formControlName="role"
           (selectionChange)="onRoleChange()"

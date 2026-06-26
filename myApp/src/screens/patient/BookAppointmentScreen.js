@@ -27,22 +27,13 @@ import COLORS from "../../utils/colors";
 import {
     formatDateDisplay,
     formatDateForApi,
-    getTomorrowDate,
+    formatDateDisplay,
+    formatDateForApi,
+    getTodayDate,
     normalizeDateOnly,
 } from "../../utils/dateUtils";
 
-import { isTomorrowOrFuture } from "../../utils/validators";
-
-const DEFAULT_TIME_SLOTS = [
-    "09:00 AM - 10:00 AM",
-    "10:00 AM - 11:00 AM",
-    "11:00 AM - 12:00 PM",
-    "12:00 PM - 01:00 PM",
-    "01:00 PM - 02:00 PM",
-    "02:00 PM - 03:00 PM",
-    "03:00 PM - 04:00 PM",
-    "04:00 PM - 05:00 PM",
-];
+import { isTodayOrFuture } from "../../utils/validators";
 
 export default function BookAppointmentScreen({ navigation, route }) {
     const preselectedDoctor = route?.params?.doctor || null;
@@ -58,23 +49,12 @@ export default function BookAppointmentScreen({ navigation, route }) {
 
     const [selectedDoctor, setSelectedDoctor] = useState(preselectedDoctor);
     const [search, setSearch] = useState("");
-    const [date, setDate] = useState(getTomorrowDate());
+    const [date, setDate] = useState(getTodayDate());
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [timeSlot, setTimeSlot] = useState("");
     const [reason, setReason] = useState("");
     const [slotError, setSlotError] = useState("");
     const [loading, setLoading] = useState(false);
-
-    const fallbackSlots = useMemo(() => {
-        if (
-            Array.isArray(selectedDoctor?.availabilitySlots) &&
-            selectedDoctor.availabilitySlots.length > 0
-        ) {
-            return selectedDoctor.availabilitySlots;
-        }
-
-        return DEFAULT_TIME_SLOTS;
-    }, [selectedDoctor]);
 
     useEffect(() => {
         const timeoutId = setTimeout(() => {
@@ -97,33 +77,32 @@ export default function BookAppointmentScreen({ navigation, route }) {
         if (selectedDoctor?.employeeCode && date) {
             loadDoctorSlots(
                 selectedDoctor.employeeCode,
-                formatDateForApi(date),
-                fallbackSlots
+                formatDateForApi(date)
             );
         }
-    }, [selectedDoctor, date, fallbackSlots, loadDoctorSlots]);
+    }, [selectedDoctor, date, loadDoctorSlots]);
 
     const filteredDoctors = doctors;
 
-    const allSlots = useMemo(() => {
-        if (
-            Array.isArray(doctorSlots.allSlots) &&
-            doctorSlots.allSlots.length > 0
-        ) {
-            return doctorSlots.allSlots;
-        }
+    const allSlots = doctorSlots.allSlots || [];
 
-        return fallbackSlots;
-    }, [doctorSlots, fallbackSlots]);
+    const isBookedSlot = (slot) => {
+        return Array.isArray(doctorSlots.bookedSlots) &&
+            doctorSlots.bookedSlots.some(
+                (bookedSlot) =>
+                    bookedSlot?.trim().toLowerCase() ===
+                    slot?.trim().toLowerCase()
+            );
+    };
 
-const isBookedSlot = (slot) => {
-    return Array.isArray(doctorSlots.bookedSlots) &&
-        doctorSlots.bookedSlots.some(
-            (bookedSlot) =>
-                bookedSlot?.trim().toLowerCase() ===
-                slot?.trim().toLowerCase()
-        );
-};
+    const isPastSlot = (slot) => {
+        return Array.isArray(doctorSlots.pastSlots) &&
+            doctorSlots.pastSlots.some(
+                (pastSlot) =>
+                    pastSlot?.trim().toLowerCase() ===
+                    slot?.trim().toLowerCase()
+            );
+    };
     console.log("DOCTOR SLOTS:", doctorSlots);
     console.log("BOOKED SLOTS:", doctorSlots.bookedSlots);
     console.log("ALL SLOTS:", allSlots);
@@ -181,10 +160,10 @@ const isBookedSlot = (slot) => {
             return;
         }
 
-        if (!isTomorrowOrFuture(date)) {
+        if (!isTodayOrFuture(date)) {
             Alert.alert(
                 "Invalid Date",
-                "Appointment date must be tomorrow or future date"
+                "Appointment date must be today or future date"
             );
             return;
         }
@@ -330,25 +309,27 @@ const isBookedSlot = (slot) => {
             <View style={styles.slotsGrid}>
                 {allSlots.map((slot) => {
                     const booked = isBookedSlot(slot);
+                    const past = isPastSlot(slot);
+                    const disabled = booked || past;
                     const selected = timeSlot === slot;
-                    const slotLabel = booked ? `${slot} (Booked)` : slot;
+                    const slotLabel = booked ? `${slot} (Booked)` : past ? `${slot} (Past)` : slot;
 
                     return (
                         <TouchableOpacity
                             key={slot}
-                            disabled={booked}
+                            disabled={disabled}
                             style={[
                                 styles.slotChip,
                                 selected && styles.slotChipActive,
-                                booked && styles.slotChipDisabled,
+                                disabled && styles.slotChipDisabled,
                             ]}
-                            onPress={() => handleSelectSlot(slot, booked)}
+                            onPress={() => handleSelectSlot(slot, disabled)}
                         >
                             <Text
                                 style={[
                                     styles.slotText,
                                     selected && styles.slotTextActive,
-                                    booked && styles.slotTextDisabled,
+                                    disabled && styles.slotTextDisabled,
                                 ]}
                             >
                                 {slotLabel}
@@ -391,14 +372,14 @@ const isBookedSlot = (slot) => {
                     </TouchableOpacity>
 
                     <Text style={styles.dateHint}>
-                        Appointments can be booked from tomorrow onwards
+                        Appointments can be booked from today onwards
                     </Text>
 
                     {showDatePicker && (
                         <DateTimePicker
                             value={date}
                             mode="date"
-                            minimumDate={getTomorrowDate()}
+                            minimumDate={getTodayDate()}
                             onChange={handleDateChange}
                         />
                     )}

@@ -1,15 +1,13 @@
 const express = require("express");
 const router = express.Router();
 
-const verifyJWT = require("../middleware/authMiddleware");
+const verifyToken = require("../middleware/authMiddleware");
 const allowPermission = require("../middleware/checkPermission");
+const validateRequest = require("../middleware/validateRequest");
+const { registerPatientValidation } = require("../validators/patient");
 
 const {
-    registerPatient,
-    loginPatient,
-    forgotPassword,
-    verifyResetOTP,
-    resetPassword
+    registerPatient
 } = require("../controllers/patientAuthController");
 
 const {
@@ -19,20 +17,11 @@ const {
 
 /*
 |--------------------------------------------------------------------------
-| Patient Authentication
+| Patient Registration
 |--------------------------------------------------------------------------
 */
 
-router.post("/register", registerPatient);
-
-router.post("/login", loginPatient);
-
-// ✅ NEW: Password Reset Endpoints
-router.post("/forgot-password", forgotPassword);
-
-router.post("/verify-otp", verifyResetOTP);
-
-router.post("/reset-password", resetPassword);
+router.post("/register", registerPatientValidation, validateRequest, registerPatient);
 
 /*
 |--------------------------------------------------------------------------
@@ -42,14 +31,14 @@ router.post("/reset-password", resetPassword);
 
 router.get(
     "/profile/:uhid",
-    verifyJWT,
+    verifyToken,
     allowPermission("PATIENT_PROFILE_READ"),
     getPatientById
 );
 
 router.put(
     "/profile/:uhid",
-    verifyJWT,
+    verifyToken,
     allowPermission("PATIENT_PROFILE_UPDATE"),
     updatePatient
 );

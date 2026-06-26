@@ -13,10 +13,10 @@
     display: flex;
     height: calc(100vh - 72px);
     overflow: hidden;
-    background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+    background: #f8fafc; /* Sleek, minimal background */
 }
 
-/* SIDEBAR - FIXED NO SCROLLBAR */
+/* SIDEBAR */
 app-sidebar {
     width: 260px;
     min-width: 260px;
@@ -24,6 +24,13 @@ app-sidebar {
     height: calc(100vh - 72px);
     flex-shrink: 0;
     overflow: hidden !important;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s, max-width 0.3s;
+}
+
+app-sidebar.collapsed {
+    width: 0px;
+    min-width: 0px;
+    max-width: 0px;
 }
 
 /* HIDE SIDEBAR SCROLLBAR */
@@ -40,23 +47,25 @@ app-sidebar *::-webkit-scrollbar {
     flex: 1;
     min-width: 0;
     height: calc(100vh - 72px);
-    padding: 24px;
+    padding: 32px 40px;
     overflow: hidden;
 }
 
 /* TABLE CARD */
 .table-card {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     padding: 0 !important;
     overflow: hidden;
-    border-radius: 0 !important;
-    background: #ffffff !important;
-    border: 1px solid #dbeafe;
-    box-shadow:
-        0 10px 28px rgba(13, 71, 161, 0.08),
-        0 4px 10px rgba(0, 0, 0, 0.04) !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.05),
+        0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
 }
 
 /* TABLE WRAPPER - ONLY TABLE SCROLLS */

@@ -13,7 +13,9 @@ const {
     normalizeAppointmentDate,
     getTomorrowDate,
     isBeforeDoctorJoiningDate,
-    findSlotConflict
+    findSlotConflict,
+    generateStandardSlots,
+    getPastSlots
 } = require("../utils/appointmentHelpers");
 
 const getPatientId = (req) => {
@@ -101,7 +103,7 @@ exports.getDoctorSlots = async (req, res) => {
         const allSlots =
             Array.isArray(doctor.availabilitySlots) && doctor.availabilitySlots.length > 0
                 ? doctor.availabilitySlots
-                : [];
+                : generateStandardSlots();
 
         const appointments = await Appointment.find({
             doctorEmployeeId,
@@ -115,13 +117,28 @@ exports.getDoctorSlots = async (req, res) => {
         return res.status(200).json(
             new ApiResponse(
                 200,
-                { allSlots, bookedSlots },
+                { allSlots, bookedSlots, pastSlots: getPastSlots(allSlots, new Date(), appointmentDate) },
                 "Doctor slots fetched successfully"
             )
         );
     } catch (err) {
         return res.status(500).json(
             new ApiError(500, err.message || "Failed to fetch doctor slots")
+        );
+    }
+};
+
+// ─── Get Standard Slots ────────────────────────────────────────────────────────
+
+exports.getStandardSlots = async (req, res) => {
+    try {
+        const slots = generateStandardSlots();
+        return res.status(200).json(
+            new ApiResponse(200, slots, "Standard slots fetched successfully")
+        );
+    } catch (err) {
+        return res.status(500).json(
+            new ApiError(500, err.message || "Failed to fetch standard slots")
         );
     }
 };
@@ -193,9 +210,9 @@ exports.bookAppointment = async (req, res) => {
             return res.status(400).json(new ApiError(400, "Invalid date format"));
         }
 
-        if (appointmentDate < getTomorrowDate()) {
+        if (appointmentDate < getTodayDate()) {
             return res.status(400).json(
-                new ApiError(400, "Appointments can be booked only from tomorrow onwards")
+                new ApiError(400, "Appointments cannot be booked for past dates")
             );
         }
 
@@ -343,9 +360,9 @@ exports.updateMyAppointment = async (req, res) => {
             return res.status(400).json(new ApiError(400, "Invalid date format"));
         }
 
-        if (appointmentDate < getTomorrowDate()) {
+        if (appointmentDate < getTodayDate()) {
             return res.status(400).json(
-                new ApiError(400, "Appointments can be rescheduled only from tomorrow onwards")
+                new ApiError(400, "Appointments cannot be rescheduled to past dates")
             );
         }
 

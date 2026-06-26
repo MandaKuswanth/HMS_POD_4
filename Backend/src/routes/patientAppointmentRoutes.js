@@ -10,6 +10,7 @@ const {
     getMyAppointments,
     updateMyAppointment,
     cancelMyAppointment,
+    getStandardSlots
 } = require("../controllers/patientAppointmentController");
 
 router.get(
@@ -24,6 +25,13 @@ router.get(
     auth,
     allowPermission(PERMISSIONS.APPOINTMENT_READ),
     getDoctorSlots
+);
+
+router.get(
+    "/standard-slots",
+    auth,
+    allowPermission(PERMISSIONS.APPOINTMENT_READ),
+    getStandardSlots
 );
 
 router.post(

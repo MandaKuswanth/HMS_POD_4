@@ -1,125 +1,18 @@
 const Employee = require("../models/Employee");
 const User = require("../models/User");
-const Appointment = require("../models/Appointment");
-const Patient = require("../models/Patient");
 const Role = require("../models/Role");
-const crypto = require("node:crypto");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
-const { sendEmail } = require("../utils/sendEmail");
 const asyncHandler = require("../middleware/asyncHandler");
 const { paginateQuery } = require("../utils/pagination");
 
-// Internal helper: cancel doctor appointments on deactivation/deletion
-const cancelDoctorAppointments = async (doctorEmployeeId, reason) => {
-    const appointments = await Appointment.find({
-        doctorEmployeeId,
-        isDeleted: false,
-        status: { $nin: ["CANCELLED", "COMPLETED"] }
-    });
-
-    let cancelledCount = 0;
-
-    for (const appointment of appointments) {
-        appointment.status = "CANCELLED";
-        appointment.cancellationReason = reason;
-        await appointment.save();
-
-        const patient = await Patient.findOne({
-            UHID: appointment.patientId,
-            isDeleted: false
-        });
-
-        if (patient?.email) {
-            await sendEmail({
-                to: patient.email,
-                subject: "HMS Appointment Cancelled",
-                html: `
-                    <h2>Appointment Cancelled</h2>
-                    <p>Hello ${patient.name},</p>
-                    <p>Your appointment has been cancelled because the assigned doctor is currently unavailable.</p>
-                    <p><strong>Appointment ID:</strong> ${appointment.appointmentId}</p>
-                    <p><strong>Date:</strong> ${appointment.date?.toDateString()}</p>
-                    <p><strong>Time Slot:</strong> ${appointment.timeSlot}</p>
-                    <p><strong>Reason:</strong> ${reason}</p>
-                    <p>Please contact hospital reception to book another appointment.</p>
-                    <p>Thank you,<br/>HMS Team</p>
-                `
-            });
-        }
-        cancelledCount++;
-    }
-    return cancelledCount;
-};
+const employeeService = require('../services/employeeService');
+const appointmentService = require('../services/appointmentService');
 
 // ─── Admin Add Employee ──────────────────────────────────────────────────────
 exports.adminAddEmployee = asyncHandler(async (req, res) => {
-    const {
-        name, phone, email, role, department, designation,
-        medicalRegistrationNo, joiningDate, specialization,
-        qualification, consultationFee, availabilitySlots
-    } = req.body;
-
-    if (!name || !phone || !email || !role || !department || !designation) {
-        throw new ApiError(400, "Required fields are missing");
-    }
-
-    const existingEmp = await Employee.findOne({
-        $or: [{ email }, { phone }],
-        isDeleted: false
-    });
-
-    if (existingEmp) {
-        throw new ApiError(409, "Employee already exists with this email or phone");
-    }
-
-    const existingUser = await User.findOne({ email, isDeleted: false });
-    if (existingUser) {
-        throw new ApiError(409, "User already exists with this email");
-    }
-
-    const roleDoc = await Role.findOne({ name: role.trim().toUpperCase(), status: true });
-    if (!roleDoc) {
-        throw new ApiError(404, "Role not found");
-    }
-
-    const tempPassword = crypto.randomBytes(8).toString("hex");
-    console.log(`Temporary Password for ${email}: ${tempPassword}`);
-
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
-    const employee = await Employee.create({
-        name, phone, email, department, designation,
-        joiningDate, medicalRegistrationNo, specialization,
-        qualification, consultationFee, availabilitySlots,
-        status: true
-    });
-
-    const user = await User.create({
-        email,
-        passwordHash: hashedPassword,
-        employeeId: employee.employeeCode,
-        roleIds: [roleDoc.roleId],
-        status: true,
-        mustResetPassword: true
-    });
-
-    await sendEmail({
-        to: email,
-        subject: "HMS Employee Account Created",
-        html: `
-            <h2>Welcome to HMS</h2>
-            <p>Your employee account has been created by admin.</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Role:</strong> ${roleDoc.name}</p>
-            <p><strong>Temporary Password:</strong> ${tempPassword}</p>
-            <p>Please login and reset your password immediately.</p>
-            <p><a href="http://localhost:4200/login" target="_blank">Login to HMS Portal</a></p>
-        `
-    });
+    const { employee, user } = await employeeService.createEmployee(req.body, { isAdmin: true });
 
     return res.status(201).json(
         new ApiResponse(
@@ -131,7 +24,6 @@ exports.adminAddEmployee = asyncHandler(async (req, res) => {
                     email: user.email,
                     employeeId: user.employeeId,
                     roleIds: user.roleIds,
-                    role: { roleId: roleDoc.roleId, name: roleDoc.name },
                     status: user.status,
                     mustResetPassword: user.mustResetPassword
                 }
@@ -143,78 +35,7 @@ exports.adminAddEmployee = asyncHandler(async (req, res) => {
 
 // ─── Self Registration ───────────────────────────────────────────────────────
 exports.selfRegister = asyncHandler(async (req, res) => {
-    const {
-        name, phone, email, role, department, designation,
-        medicalRegistrationNo, joiningDate, specialization,
-        qualification, consultationFee, availabilitySlots,
-        password, confirmPassword
-    } = req.body;
-
-    if (!name || !phone || !email || !role || !department || !designation || !password || !confirmPassword) {
-        throw new ApiError(400, "Required fields are missing");
-    }
-
-    const roleDoc = await Role.findOne({ name: role.trim().toUpperCase(), status: true });
-    if (!roleDoc) {
-        throw new ApiError(404, "Role not found");
-    }
-
-    const blockedRoles = new Set(["OWNER", "SUPER_ADMIN", "SUPER ADMIN", "ADMIN"]);
-    if (blockedRoles.has(roleDoc.name)) {
-        throw new ApiError(403, "You cannot register as OWNER, SUPER_ADMIN or ADMIN");
-    }
-
-    if (password !== confirmPassword) {
-        throw new ApiError(400, "Password and confirm password do not match");
-    }
-
-    if (password.length < 8) {
-        throw new ApiError(400, "Password must be at least 8 characters");
-    }
-
-    const existingEmp = await Employee.findOne({
-        $or: [{ email }, { phone }],
-        isDeleted: false
-    });
-
-    if (existingEmp) {
-        throw new ApiError(409, "Employee already exists");
-    }
-
-    const existingUser = await User.findOne({ email, isDeleted: false });
-    if (existingUser) {
-        throw new ApiError(409, "User already exists");
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const employee = await Employee.create({
-        name, phone, email, department, designation,
-        joiningDate, medicalRegistrationNo, specialization,
-        qualification, consultationFee, availabilitySlots,
-        status: false
-    });
-
-    const user = await User.create({
-        email,
-        passwordHash: hashedPassword,
-        employeeId: employee.employeeCode,
-        roleIds: [roleDoc.roleId],
-        status: false,
-        mustResetPassword: false
-    });
-
-    await sendEmail({
-        to: email,
-        subject: "HMS Registration Submitted",
-        html: `
-            <h2>Registration Submitted</h2>
-            <p>Hello ${name},</p>
-            <p>Your HMS employee registration has been submitted successfully.</p>
-            <p>Your account is currently <strong>pending admin approval</strong>.</p>
-            <p>You will be able to login once admin approves your account.</p>
-        `
-    });
+    const { employee, user } = await employeeService.createEmployee(req.body, { isAdmin: false });
 
     return res.status(201).json(
         new ApiResponse(
@@ -226,7 +47,6 @@ exports.selfRegister = asyncHandler(async (req, res) => {
                     email: user.email,
                     employeeId: user.employeeId,
                     roleIds: user.roleIds,
-                    role: { roleId: roleDoc.roleId, name: roleDoc.name },
                     status: user.status,
                     mustResetPassword: user.mustResetPassword
                 }
@@ -236,123 +56,8 @@ exports.selfRegister = asyncHandler(async (req, res) => {
     );
 });
 
-// ─── Login ───────────────────────────────────────────────────────────────────
-exports.login = asyncHandler(async (req, res) => {
-    const { email, password } = req.body || {};
 
-    if (!email || !password) {
-        throw new ApiError(400, "Email and password are required");
-    }
 
-    const user = await User.findOne({
-        email: email.trim().toLowerCase(),
-        isDeleted: false
-    });
-
-    if (!user) {
-        throw new ApiError(404, `No user found with email: ${email}`);
-    }
-
-    if (!user.isEmployee) {
-        throw new ApiError(409, "Patient accounts cannot login through the employee portal");
-    }
-
-    const passCheck = await user.isPasswordCorrect(password);
-    if (!passCheck) {
-        throw new ApiError(401, "Invalid email or password");
-    }
-
-    if (!user.status) {
-        throw new ApiError(403, "Your account is pending admin approval or has been deactivated");
-    }
-
-    const employee = await Employee.findOne({
-        employeeCode: user.employeeId,
-        isDeleted: false
-    });
-
-    if (!employee || !employee.status) {
-        throw new ApiError(403, "Your employee profile is inactive or has been removed");
-    }
-
-    const roles = await Role.find({
-        roleId: { $in: user.roleIds },
-        status: true
-    }).select("roleId name permissions");
-
-    const roleNames = roles.map((role) => role.name);
-    const permissions = [...new Set(roles.flatMap((role) => role.permissions || []))];
-
-    const accessToken = user.generateAccessToken(roleNames, permissions);
-    const refreshToken = user.generateRefreshToken();
-
-    user.refreshToken = refreshToken;
-    user.lastLogin = new Date();
-    await user.save();
-
-    res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000
-    });
-
-    const userData = {
-        id: user._id,
-        employeeId: user.employeeId,
-        name: employee.name,
-        email: user.email,
-        roleIds: user.roleIds,
-        roles: roles.map((role) => ({ roleId: role.roleId, name: role.name })),
-        permissions,
-        status: user.status,
-        mustResetPassword: user.mustResetPassword
-    };
-
-    return res.status(200).json(
-        new ApiResponse(
-            200,
-            { resetRequired: user.mustResetPassword, token: accessToken, user: userData },
-            "User is successfully logged-in."
-        )
-    );
-});
-
-// ─── Reset Password ───────────────────────────────────────────────────────────
-exports.resetPassword = asyncHandler(async (req, res) => {
-    const { id } = req.user;
-    const { newPassword, confirmPassword } = req.body;
-
-    if (!newPassword || !confirmPassword) {
-        throw new ApiError(400, "New password and confirm password are required");
-    }
-
-    if (newPassword !== confirmPassword) {
-        throw new ApiError(400, "Passwords do not match");
-    }
-
-    if (newPassword.length < 8) {
-        throw new ApiError(400, "Password must be at least 8 characters");
-    }
-
-    const user = await User.findById(id);
-    if (!user || user.isDeleted) {
-        throw new ApiError(404, "User not found");
-    }
-
-    const isSamePassword = await user.isPasswordCorrect(newPassword);
-    if (isSamePassword) {
-        throw new ApiError(400, "New password cannot be the same as current password");
-    }
-
-    user.passwordHash = await bcrypt.hash(newPassword, 10);
-    user.mustResetPassword = false;
-    await user.save();
-
-    return res.status(200).json(
-        new ApiResponse(200, null, "Password updated successfully")
-    );
-});
 
 // ─── Get Profile ─────────────────────────────────────────────────────────────
 exports.getProfile = asyncHandler(async (req, res) => {
@@ -392,8 +97,29 @@ exports.getEmployees = asyncHandler(async (req, res) => {
         defaultSortField: "createdAt"
     });
 
+    // Fetch corresponding users to get their roles
+    const employeeCodes = result.data.map(emp => emp.employeeCode);
+    const users = await User.find({ employeeId: { $in: employeeCodes }, isDeleted: false }).lean();
+    
+    // Fetch role details
+    const roleIds = [...new Set(users.flatMap(user => user.roleIds || []))];
+    const roles = await Role.find({ roleId: { $in: roleIds } }).lean();
+    
+    const roleMap = new Map(roles.map(r => [r.roleId, r.name]));
+    const userMap = new Map(users.map(u => [u.employeeId, u]));
+
+    const enrichedEmployees = result.data.map(emp => {
+        const empObj = emp.toObject ? emp.toObject() : emp;
+        const user = userMap.get(empObj.employeeCode);
+        if (user && user.roleIds && user.roleIds.length > 0) {
+            empObj.role = roleMap.get(user.roleIds[0]);
+            empObj.roles = user.roleIds.map(rId => roleMap.get(rId)).filter(Boolean);
+        }
+        return empObj;
+    });
+
     return res.status(200).json(
-        new ApiResponse(200, result.data, "Employees fetched successfully", result.pagination)
+        new ApiResponse(200, enrichedEmployees, "Employees fetched successfully", result.pagination)
     );
 });
 
@@ -512,13 +238,53 @@ exports.updateEmployee = asyncHandler(async (req, res) => {
         "consultationFee", "availabilitySlots"
     ];
 
+    let joiningDateChanged = false;
+    let oldJoiningDate = null;
+    let newJoiningDate = null;
+
     allowedUpdates.forEach((update) => {
         if (req.body[update] !== undefined) {
+            if (update === "joiningDate") {
+                const newDate = new Date(req.body.joiningDate);
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                if (newDate > today) {
+                    throw new ApiError(400, "Joining date cannot be in the future");
+                }
+
+                // Check if joining date changed
+                const existingDateStr = employee.joiningDate ? new Date(employee.joiningDate).toISOString().split('T')[0] : null;
+                const newDateStr = newDate.toISOString().split('T')[0];
+
+                if (existingDateStr !== newDateStr) {
+                    joiningDateChanged = true;
+                    oldJoiningDate = existingDateStr;
+                    newJoiningDate = newDateStr;
+                }
+            }
             employee[update] = req.body[update];
         }
     });
 
     await employee.save();
+
+    if (joiningDateChanged) {
+        const auditDetails = JSON.stringify({
+            action: "UPDATE_JOINING_DATE",
+            entityType: "EMPLOYEE",
+            entityId: employeeCode,
+            oldValue: oldJoiningDate,
+            newValue: newJoiningDate,
+            modifiedBy: req.user?.roles?.[0] || req.user?.employeeId || req.user?.id
+        });
+
+        await AuditEvent.create({
+            userId: req.user?.employeeId || req.user?.id || "SYSTEM",
+            action: "UPDATE_JOINING_DATE",
+            details: auditDetails,
+            ipAddress: req.ip || ""
+        });
+    }
 
     return res.status(200).json(
         new ApiResponse(200, employee, "Employee details updated successfully")
@@ -551,7 +317,7 @@ exports.toggleEmployeeStatus = asyncHandler(async (req, res) => {
         const isDoctor = doctorRole && user.roleIds?.includes(doctorRole.roleId);
 
         if (isDoctor) {
-            cancelledAppointments = await cancelDoctorAppointments(
+            cancelledAppointments = await appointmentService.cancelDoctorAppointments(
                 employeeCode,
                 "Doctor account has been deactivated"
             );
@@ -596,7 +362,7 @@ exports.deleteEmployee = asyncHandler(async (req, res) => {
         const isDoctor = doctorRole && user.roleIds?.includes(doctorRole.roleId);
 
         if (isDoctor) {
-            cancelledAppointments = await cancelDoctorAppointments(
+            cancelledAppointments = await appointmentService.cancelDoctorAppointments(
                 employeeCode,
                 "Doctor has been removed from the hospital system"
             );

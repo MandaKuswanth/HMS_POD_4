@@ -47,8 +47,6 @@ import { SearchDropdownComponent } from '../../../shared/components/search-dropd
     MatDatepickerModule,
     MatNativeDateModule,
     MatPaginatorModule,
-    Navbar,
-    Sidebar,
     HasPermissionDirective,
     SearchDropdownComponent
   ],
@@ -78,6 +76,7 @@ export class AppointmentList implements OnInit {
   readonly doctorSignal = signal('ALL DOCTORS');
   readonly dateSignal = signal<Date | null>(null);
   readonly expandedAppointmentSignal = signal<any | null>(null);
+  readonly refreshSignal = signal(0);
 
   private readonly searchSubject = new Subject<string>();
 
@@ -109,6 +108,7 @@ export class AppointmentList implements OnInit {
       const doctor = this.doctorSignal();
       const dateVal = this.dateSignal();
       const dateStr = dateVal ? dateVal.toISOString().split('T')[0] : '';
+      const refresh = this.refreshSignal();
 
       this.loadAppointments(page, limit, search, status, doctor, dateStr);
     });
@@ -196,6 +196,7 @@ export class AppointmentList implements OnInit {
 
     ref.afterClosed().subscribe((result) => {
       if (result) {
+        this.refreshSignal.update(v => v + 1);
         this.pageSignal.set(0);
       }
     });
@@ -213,7 +214,7 @@ export class AppointmentList implements OnInit {
 
     ref.afterClosed().subscribe((result) => {
       if (result) {
-        this.pageSignal.set(this.pageSignal());
+        this.refreshSignal.update(v => v + 1);
       }
     });
   }
@@ -234,7 +235,7 @@ export class AppointmentList implements OnInit {
         this.appointmentService.updateAppointmentStatus(appointment.appointmentId, result).subscribe({
           next: () => {
             this.toastr.success('Status updated successfully');
-            this.pageSignal.set(this.pageSignal());
+            this.refreshSignal.update(v => v + 1);
           },
           error: (err) => {
             this.toastr.error(err?.error?.message || 'Failed to update status');

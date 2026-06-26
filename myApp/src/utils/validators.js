@@ -1,5 +1,5 @@
 import {
-    getTomorrowDate,
+    getTodayDate,
     normalizeDateOnly,
 } from "./dateUtils";
 
@@ -49,10 +49,10 @@ export const isFutureDate = (date) => {
     );
 };
 
-export const isTomorrowOrFuture = (date) => {
+export const isTodayOrFuture = (date) => {
     if (!date) return false;
 
-    return normalizeDateOnly(date) >= getTomorrowDate();
+    return normalizeDateOnly(date) >= getTodayDate();
 };
 
 export const firstErrorMessage = (errors) => {

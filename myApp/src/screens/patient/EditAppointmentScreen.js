@@ -25,21 +25,10 @@ import COLORS from "../../utils/colors";
 import {
     formatDateDisplay,
     formatDateForApi,
-    getTomorrowDate,
+    getTodayDate,
 } from "../../utils/dateUtils";
 
-import { isTomorrowOrFuture } from "../../utils/validators";
-
-const DEFAULT_TIME_SLOTS = [
-    "09:00 AM - 10:00 AM",
-    "10:00 AM - 11:00 AM",
-    "11:00 AM - 12:00 PM",
-    "12:00 PM - 01:00 PM",
-    "01:00 PM - 02:00 PM",
-    "02:00 PM - 03:00 PM",
-    "03:00 PM - 04:00 PM",
-    "04:00 PM - 05:00 PM",
-];
+import { isTodayOrFuture } from "../../utils/validators";
 
 export default function EditAppointmentScreen({ navigation, route }) {
     const appointment = route?.params?.appointment;
@@ -54,7 +43,7 @@ export default function EditAppointmentScreen({ navigation, route }) {
     } = useAppointments();
 
     const [date, setDate] = useState(
-        appointment?.date ? new Date(appointment.date) : getTomorrowDate()
+        appointment?.date ? new Date(appointment.date) : getTodayDate()
     );
     const [timeSlot, setTimeSlot] = useState(appointment?.timeSlot || "");
     const [showPicker, setShowPicker] = useState(false);
@@ -74,35 +63,15 @@ export default function EditAppointmentScreen({ navigation, route }) {
         });
     }, [doctors, appointment]);
 
-    const fallbackSlots = useMemo(() => {
-        if (
-            Array.isArray(doctor?.availabilitySlots) &&
-            doctor.availabilitySlots.length > 0
-        ) {
-            return doctor.availabilitySlots;
-        }
-
-        return DEFAULT_TIME_SLOTS;
-    }, [doctor]);
-
     useEffect(() => {
         const doctorId = appointment?.doctorEmployeeId || doctor?.employeeCode;
 
         if (doctorId && date) {
-            loadDoctorSlots(doctorId, formatDateForApi(date), fallbackSlots);
+            loadDoctorSlots(doctorId, formatDateForApi(date));
         }
-    }, [appointment, doctor, date, fallbackSlots, loadDoctorSlots]);
+    }, [appointment, doctor, date, loadDoctorSlots]);
 
-    const allSlots = useMemo(() => {
-        if (
-            Array.isArray(doctorSlots.allSlots) &&
-            doctorSlots.allSlots.length > 0
-        ) {
-            return doctorSlots.allSlots;
-        }
-
-        return fallbackSlots;
-    }, [doctorSlots, fallbackSlots]);
+    const allSlots = doctorSlots.allSlots || [];
 
     const isBookedSlot = (slot) => {
         const sameSlot = slot === appointment?.timeSlot;
@@ -113,7 +82,21 @@ export default function EditAppointmentScreen({ navigation, route }) {
             return false;
         }
 
-        return doctorSlots.bookedSlots?.includes(slot);
+        return Array.isArray(doctorSlots.bookedSlots) &&
+            doctorSlots.bookedSlots.some(
+                (bookedSlot) =>
+                    bookedSlot?.trim().toLowerCase() ===
+                    slot?.trim().toLowerCase()
+            );
+    };
+
+    const isPastSlot = (slot) => {
+        return Array.isArray(doctorSlots.pastSlots) &&
+            doctorSlots.pastSlots.some(
+                (pastSlot) =>
+                    pastSlot?.trim().toLowerCase() ===
+                    slot?.trim().toLowerCase()
+            );
     };
 
     const handleDateChange = (event, selectedDate) => {
@@ -164,10 +147,10 @@ export default function EditAppointmentScreen({ navigation, route }) {
             return;
         }
 
-        if (!isTomorrowOrFuture(date)) {
+        if (!isTodayOrFuture(date)) {
             Alert.alert(
                 "Invalid Date",
-                "Appointment date must be tomorrow or future date"
+                "Appointment date must be today or future date"
             );
             return;
         }
@@ -222,25 +205,27 @@ export default function EditAppointmentScreen({ navigation, route }) {
             <View style={styles.slotsGrid}>
                 {allSlots.map((slot) => {
                     const booked = isBookedSlot(slot);
+                    const past = isPastSlot(slot);
+                    const disabled = booked || past;
                     const selected = timeSlot === slot;
-                    const slotLabel = booked ? `${slot} (Booked)` : slot;
+                    const slotLabel = booked ? `${slot} (Booked)` : past ? `${slot} (Past)` : slot;
 
                     return (
                         <TouchableOpacity
                             key={slot}
-                            disabled={booked}
+                            disabled={disabled}
                             style={[
                                 styles.slotChip,
                                 selected && styles.slotChipActive,
-                                booked && styles.slotChipDisabled,
+                                disabled && styles.slotChipDisabled,
                             ]}
-                            onPress={() => handleSelectSlot(slot, booked)}
+                            onPress={() => handleSelectSlot(slot, disabled)}
                         >
                             <Text
                                 style={[
                                     styles.slotText,
                                     selected && styles.slotTextActive,
-                                    booked && styles.slotTextDisabled,
+                                    disabled && styles.slotTextDisabled,
                                 ]}
                             >
                                 {slotLabel}
@@ -273,11 +258,15 @@ export default function EditAppointmentScreen({ navigation, route }) {
                     </Text>
                 </TouchableOpacity>
 
+                <Text style={styles.dateHint}>
+                    Appointments can be rescheduled from today onwards
+                </Text>
+
                 {showPicker && (
                     <DateTimePicker
                         value={date}
                         mode="date"
-                        minimumDate={getTomorrowDate()}
+                        minimumDate={getTodayDate()}
                         onChange={handleDateChange}
                     />
                 )}

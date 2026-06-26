@@ -51,14 +51,26 @@ exports.getRoles = asyncHandler(async (req, res) => {
     );
 });
 
-// ─── Autocomplete Role Search ────────────────────────────────────────────────
+// ─── Autocomplete Role Search (Authenticated) ──────────────────────────────────
 exports.getRolesSearch = asyncHandler(async (req, res) => {
     const q = req.query.q || "";
     const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100);
 
     const filter = { status: true };
     if (q.trim()) {
+        if (q.trim().length < 2) {
+            return res.status(200).json(
+                new ApiResponse(200, [], "Search term must be at least 2 characters")
+            );
+        }
         filter.name = { $regex: q.trim(), $options: "i" };
+    }
+
+    // Role Visibility Logic
+    const userRoles = req.user?.roles || [];
+    if (!userRoles.includes("SUPER_ADMIN")) {
+        // If not SUPER_ADMIN, cannot see SUPER_ADMIN or ADMIN
+        filter.name = { ...filter.name, $nin: [/SUPER_ADMIN/i, /ADMIN/i] };
     }
 
     const roles = await Role.find(filter)
@@ -68,6 +80,40 @@ exports.getRolesSearch = asyncHandler(async (req, res) => {
 
     return res.status(200).json(
         new ApiResponse(200, roles, "Roles autocomplete fetched successfully")
+    );
+});
+
+// ─── Public Role Search (Self Registration) ──────────────────────────────────
+exports.getPublicRolesSearch = asyncHandler(async (req, res) => {
+    const q = req.query.q || "";
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100);
+
+    const filter = { status: true, selfRegisterAllowed: true };
+    
+    // Safety check to absolutely prevent ADMIN/SUPER_ADMIN from leaking publicly
+    filter.name = { $nin: [/SUPER_ADMIN/i, /ADMIN/i] };
+
+    if (q.trim()) {
+        if (q.trim().length < 2) {
+            return res.status(200).json(
+                new ApiResponse(200, [], "Search term must be at least 2 characters")
+            );
+        }
+        // Merge regex with $nin by using $and
+        filter.$and = [
+            { name: { $regex: q.trim(), $options: "i" } },
+            { name: { $nin: [/SUPER_ADMIN/i, /ADMIN/i] } }
+        ];
+        delete filter.name;
+    }
+
+    const roles = await Role.find(filter)
+        .select("_id roleId name description status")
+        .limit(limit)
+        .lean();
+
+    return res.status(200).json(
+        new ApiResponse(200, roles, "Public roles fetched successfully")
     );
 });
 

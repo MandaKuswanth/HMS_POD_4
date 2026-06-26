@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../../core/services/auth';
+import { LayoutService } from '../../../core/services/layout';
 
 @Component({
   selector: 'app-navbar',
@@ -61,5 +62,11 @@ export class Navbar {
 
   goDashboard(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  readonly layoutService = inject(LayoutService);
+
+  toggleSidebar(): void {
+    this.layoutService.toggleSidebar();
   }
 }

@@ -1,52 +1,46 @@
 <div class="sidebar">
-  <div class="sidebar-brand">
-    <mat-icon class="brand-logo">local_hospital</mat-icon>
-    <span class="brand-label">HMS Portal</span>
-  </div>
-
   <nav class="sidebar-nav">
-    <!-- Dashboard Link (accessible to all who have DASHBOARD_READ) -->
-    <a
-      *appHasPermission="'DASHBOARD_READ'"
-      class="nav-item"
-      routerLink="/dashboard"
-      routerLinkActive="active"
-      [routerLinkActiveOptions]="{ exact: true }"
-    >
-      <mat-icon>dashboard</mat-icon>
-      <span class="nav-label">Dashboard</span>
-    </a>
-
-    <div class="sidebar-divider"></div>
-
-    <!-- Groups -->
-    @for (group of menuGroups; track group.name) {
-      <ng-container *appHasPermission="group.permission">
-        <div class="menu-group-header" (click)="toggleGroup(group.name)">
-          <div class="group-title">
-            <mat-icon>{{ group.icon }}</mat-icon>
-            <span class="nav-label">{{ group.name }}</span>
+    <!-- Dynamic Menu Nodes -->
+    @for (node of menuNodes(); track node.name) {
+      <ng-container>
+        @if (node.children && node.children.length > 0) {
+          <!-- Parent group with children -->
+          <div class="menu-group-header" (click)="toggleGroup(node.name)">
+            <div class="group-title">
+              <mat-icon>{{ node.icon || 'folder' }}</mat-icon>
+              <span class="nav-label">{{ node.name }}</span>
+            </div>
+            <mat-icon class="expand-icon" [class.expanded]="menuOpenState()[node.name]">
+              keyboard_arrow_down
+            </mat-icon>
           </div>
-          <mat-icon class="expand-icon" [class.expanded]="menuOpenState()[group.name]">
-            keyboard_arrow_down
-          </mat-icon>
-        </div>
 
-        <!-- Group items -->
-        <div class="menu-group-items" [class.open]="menuOpenState()[group.name]">
-          @for (item of group.items; track item.name) {
-            <a
-              *appHasPermission="item.permission"
-              class="nav-item sub-item"
-              [routerLink]="item.path"
-              routerLinkActive="active"
-              [routerLinkActiveOptions]="{ exact: true }"
-            >
-              <mat-icon>{{ item.icon }}</mat-icon>
-              <span class="nav-label">{{ item.name }}</span>
-            </a>
-          }
-        </div>
+          <!-- Child items -->
+          <div class="menu-group-items" [class.open]="menuOpenState()[node.name]">
+            @for (child of node.children; track child.name) {
+              <a
+                class="nav-item sub-item"
+                [routerLink]="child.path ? (child.path.startsWith('/') ? child.path : '/' + child.path) : null"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+              >
+                <mat-icon>{{ child.icon || 'subdirectory_arrow_right' }}</mat-icon>
+                <span class="nav-label">{{ child.name }}</span>
+              </a>
+            }
+          </div>
+        } @else {
+          <!-- Top-level standalone item (like Dashboard) -->
+          <a
+            class="nav-item"
+            [routerLink]="node.path ? (node.path.startsWith('/') ? node.path : '/' + node.path) : null"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <mat-icon>{{ node.icon || 'dashboard' }}</mat-icon>
+            <span class="nav-label">{{ node.name }}</span>
+          </a>
+        }
       </ng-container>
     }
 

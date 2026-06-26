@@ -44,8 +44,6 @@ import { PERMISSIONS } from '../../../constants/permission';
     MatInputModule,
     MatSelectModule,
     HasPermissionDirective,
-    Navbar,
-    Sidebar,
   ],
   templateUrl: './employee-list.html',
   styleUrl: './employee-list.css',
@@ -73,6 +71,7 @@ export class EmployeeList implements OnInit {
   readonly departmentSignal = signal('ALL DEPARTMENTS');
   readonly statusSignal = signal<'all' | 'active' | 'pending'>('all'); // all, active, pending
   readonly expandedEmployeeSignal = signal<any | null>(null);
+  readonly refreshSignal = signal(0);
 
   private readonly searchSubject = new Subject<string>();
 
@@ -126,6 +125,7 @@ export class EmployeeList implements OnInit {
       const role = this.roleSignal();
       const department = this.departmentSignal();
       const status = this.statusSignal();
+      const refresh = this.refreshSignal();
 
       this.loadEmployees(page, limit, search, role, department, status);
     });
@@ -206,6 +206,7 @@ export class EmployeeList implements OnInit {
 
     ref.afterClosed().subscribe((result) => {
       if (result) {
+        this.refreshSignal.update(v => v + 1);
         this.pageSignal.set(0);
       }
     });
@@ -223,8 +224,8 @@ export class EmployeeList implements OnInit {
 
     ref.afterClosed().subscribe((result) => {
       if (result) {
-        // Force reload by re-setting page
-        this.pageSignal.set(this.pageSignal());
+        // Force reload
+        this.refreshSignal.update(v => v + 1);
       }
     });
   }
@@ -294,7 +295,7 @@ export class EmployeeList implements OnInit {
           response?.message || `Employee ${action}d successfully`
         );
         this.expandedEmployeeSignal.set(null);
-        this.pageSignal.set(this.pageSignal());
+        this.refreshSignal.update(v => v + 1);
       },
       error: (err) => {
         this.toastr.error(

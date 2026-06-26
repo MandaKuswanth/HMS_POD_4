@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
 
@@ -37,8 +38,7 @@ import { PERMISSIONS } from '../../../constants/permission';
     MatSelectModule,
     MatIconModule,
     MatButtonModule,
-    Navbar,
-    Sidebar,
+    MatCardModule,
     HasPermissionDirective,
   ],
   templateUrl: './patient-list.html',
@@ -74,6 +74,7 @@ export class PatientList implements OnInit {
   readonly genderSignal = signal('ALL');
   readonly statusSignal = signal('ALL');
   readonly expandedPatientSignal = signal<PatientRequest | null>(null);
+  readonly refreshSignal = signal(0);
 
   private readonly searchSubject = new Subject<string>();
 
@@ -94,6 +95,7 @@ export class PatientList implements OnInit {
       const search = this.searchTextSignal();
       const gender = this.genderSignal();
       const status = this.statusSignal();
+      const refresh = this.refreshSignal();
 
       this.loadPatients(page, limit, search, gender, status);
     });
@@ -177,6 +179,7 @@ export class PatientList implements OnInit {
 
     ref.afterClosed().subscribe((result: boolean) => {
       if (result) {
+        this.refreshSignal.update(v => v + 1);
         this.pageSignal.set(0);
       }
     });
@@ -194,7 +197,7 @@ export class PatientList implements OnInit {
 
     ref.afterClosed().subscribe((result: boolean) => {
       if (result) {
-        this.pageSignal.set(this.pageSignal());
+        this.refreshSignal.update(v => v + 1);
       }
     });
   }
@@ -227,7 +230,7 @@ export class PatientList implements OnInit {
       next: () => {
         this.toastr.success('Patient deleted successfully');
         this.expandedPatientSignal.set(null);
-        this.pageSignal.set(0);
+        this.refreshSignal.update(v => v + 1);
       },
       error: (err) => {
         this.toastr.error(
@@ -245,7 +248,7 @@ export class PatientList implements OnInit {
     this.patientService.toggleStatus(patient.UHID).subscribe({
       next: () => {
         this.toastr.success('Status updated successfully');
-        this.pageSignal.set(this.pageSignal());
+        this.refreshSignal.update(v => v + 1);
       },
       error: (err) => {
         this.toastr.error(

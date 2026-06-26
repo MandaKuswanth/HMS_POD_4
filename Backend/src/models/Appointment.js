@@ -70,7 +70,13 @@ const appointmentSchema = new mongoose.Schema(
     }
 );
 
-appointmentSchema.index({ doctorEmployeeId: 1, scheduledAt: 1 });
+appointmentSchema.index(
+    { doctorEmployeeId: 1, date: 1, timeSlot: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { status: { $in: ["PENDING", "BOOKED", "IN-PROCESS"] }, isDeleted: false }
+    }
+);
 appointmentSchema.index({ status: 1 });
 
 appointmentSchema.pre("save", async function (next) {

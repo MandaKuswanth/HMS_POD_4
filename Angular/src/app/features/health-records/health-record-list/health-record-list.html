@@ -1,35 +1,27 @@
-<app-navbar></app-navbar>
+<div class="employee-page">
+    <mat-card class="main-card">
+        <div class="card-header">
+            <h2 class="page-title">Health Records</h2>
+        </div>
 
-<div class="layout">
-    <app-sidebar></app-sidebar>
-
-    <main class="content">
-        <mat-card class="table-card">
-
-            <div class="page-header">
-                <h2 class="page-title">Health Records</h2>
-
-                <div class="toolbar-row">
-                    <div class="search-container">
-                        <input class="search-input" type="text"
-                            placeholder="Search by record, appointment, patient, doctor..." [ngModel]="searchTextSignal()"
-                            (input)="onSearchInput($event)" />
-                    </div>
-
-                    <div class="header-actions">
-                        @if (searchTextSignal()) {
-                        <button mat-stroked-button type="button" (click)="clearSearch()">
-                            Clear
-                        </button>
-                        }
-
-                        <button *appHasPermission="PERMISSIONS.HEALTH_RECORD_CREATE" mat-fab color="primary"
-                            matTooltip="Add Health Record" (click)="openAddDialog()">
-                            <mat-icon>add</mat-icon>
-                        </button>
-                    </div>
-                </div>
+        <div class="toolbar-row">
+            <div class="search-box">
+                <input type="text"
+                    placeholder="Search by record, appointment, patient, doctor..." [ngModel]="searchTextSignal()"
+                    (input)="onSearchInput($event)" />
             </div>
+
+            @if (searchTextSignal()) {
+            <button mat-stroked-button type="button" (click)="clearSearch()">
+                Clear
+            </button>
+            }
+
+            <button *appHasPermission="PERMISSIONS.HEALTH_RECORD_CREATE" mat-fab color="primary" class="add-fab"
+                matTooltip="Add Health Record" (click)="openAddDialog()">
+                <mat-icon>add</mat-icon>
+            </button>
+        </div>
 
             @if (loadingSignal()) {
             <div class="no-data">
@@ -147,5 +139,4 @@
             }
 
         </mat-card>
-    </main>
 </div>

@@ -55,22 +55,7 @@ export function addDoctorPayloadFields(
     payload.consultationFee = Number(formValue.consultationFee);
 }
 
-export const EMPLOYEE_ROLES = [
-    'SUPER_ADMIN',
-    'ADMIN',
-    'DOCTOR',
-    'RECEPTIONIST'
-];
 
-export const REGISTER_ROLES = [
-    'DOCTOR',
-    'RECEPTIONIST',
-    'CASHIER',
-    'NURSE',
-    'LAB_TECH',
-    'PHARMACIST',
-    'TECHNICIAN'
-];
 
 
 export const MEDICAL_STAFF_ROLES = ['DOCTOR', 'NURSE', 'LAB_TECH'];
@@ -94,7 +79,7 @@ export function trimInputValue(value: unknown): string {
 
 export function getRolePayloadValue(role: unknown): string {
     return typeof role === 'string'
-        ? role.trim().replaceAll('_', ' ')
+        ? role.trim()
         : '';
 }
 
@@ -110,8 +95,8 @@ export function noFutureDateValidator(control: any) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    return selectedDate < today
-        ? { pastDate: true }
+    return selectedDate > today
+        ? { futureDate: true }
         : null;
 }
 

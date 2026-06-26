@@ -9,6 +9,8 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { EmployeeService } from '../../../core/services/employee';
+import { AppointmentService } from '../../../core/services/appointment';
+import { RoleService, RoleData } from '../../../core/services/role.service';
 
 @Component({
   selector: 'app-register',
@@ -20,7 +22,11 @@ import { EmployeeService } from '../../../core/services/employee';
 export class Register {
   private readonly fb = inject(FormBuilder);
   private readonly employeeService = inject(EmployeeService);
+  private readonly appointmentService = inject(AppointmentService);
+  private readonly roleService = inject(RoleService);
   private readonly router = inject(Router);
+
+  publicRoles: RoleData[] = [];
 
   readonly registerForm = this.fb.nonNullable.group(
     {
@@ -46,24 +52,7 @@ export class Register {
     }
   );
 
-  readonly availabilitySlotOptions = [
-    '09:00 AM - 09:30 AM',
-    '09:30 AM - 10:00 AM',
-    '10:00 AM - 10:30 AM',
-    '10:30 AM - 11:00 AM',
-    '11:00 AM - 11:30 AM',
-    '11:30 AM - 12:00 PM',
-    '12:00 PM - 12:30 PM',
-    '12:30 PM - 01:00 PM',
-    '01:00 PM - 01:30 PM',
-    '01:30 PM - 02:00 PM',
-    '02:00 PM - 02:30 PM',
-    '02:30 PM - 03:00 PM',
-    '03:00 PM - 03:30 PM',
-    '03:30 PM - 04:00 PM',
-    '04:00 PM - 04:30 PM',
-    '04:30 PM - 05:00 PM',
-  ];
+  availabilitySlotOptions: string[] = [];
 
   isSubmitting = false;
   statusMessage = '';
@@ -73,6 +62,17 @@ export class Register {
 
     this.registerForm.get('role')?.valueChanges.subscribe(() => {
       this.updateRoleSpecificValidators();
+    });
+
+    this.loadRoles();
+
+    this.appointmentService.getStandardSlots().subscribe({
+      next: (response) => {
+        this.availabilitySlotOptions = response.data || [];
+      },
+      error: (err) => {
+        console.error('Failed to load standard slots', err);
+      }
     });
   }
 
@@ -197,6 +197,12 @@ export class Register {
 
   isAvailabilitySlotSelected(slot: string): boolean {
     return this.availabilitySlotsControl.value?.includes(slot) ?? false;
+  }
+
+  loadRoles() {
+    this.roleService.getPublicRoles().subscribe((roles) => {
+      this.publicRoles = roles;
+    });
   }
 
   private updateRoleSpecificValidators(): void {

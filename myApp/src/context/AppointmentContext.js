@@ -32,16 +32,17 @@ const normalizeList = (payload) => {
     return [];
 };
 
-const normalizeSlots = (payload, fallbackSlots = []) => {
+const normalizeSlots = (payload) => {
     console.log(payload);
     const data = payload?.data || payload || {};
 
     return {
-        allSlots: Array.isArray(data.allSlots) ? data.allSlots : fallbackSlots,
+        allSlots: Array.isArray(data.allSlots) ? data.allSlots : [],
         bookedSlots: Array.isArray(data.bookedSlots) ? data.bookedSlots : [],
+        pastSlots: Array.isArray(data.pastSlots) ? data.pastSlots : [],
         availableSlots: Array.isArray(data.availableSlots)
             ? data.availableSlots
-            : fallbackSlots,
+            : [],
     };
 };
 
@@ -52,6 +53,7 @@ export function AppointmentProvider({ children }) {
     const [doctorSlots, setDoctorSlots] = useState({
         allSlots: [],
         bookedSlots: [],
+        pastSlots: [],
         availableSlots: [],
     });
 
@@ -91,14 +93,14 @@ export function AppointmentProvider({ children }) {
 
     const loadDoctorSlots = useCallback(async (
         doctorEmployeeId,
-        date,
-        fallbackSlots = []
+        date
     ) => {
         if (!doctorEmployeeId || !date) {
             setDoctorSlots({
-                allSlots: fallbackSlots,
+                allSlots: [],
                 bookedSlots: [],
-                availableSlots: fallbackSlots,
+                pastSlots: [],
+                availableSlots: [],
             });
             return;
         }
@@ -111,14 +113,15 @@ export function AppointmentProvider({ children }) {
                 date
             );
 
-            setDoctorSlots(normalizeSlots(payload, fallbackSlots));
+            setDoctorSlots(normalizeSlots(payload));
         } catch (err) {
             console.log("LOAD DOCTOR SLOTS ERROR:", err?.response?.data || err.message);
 
             setDoctorSlots({
-                allSlots: fallbackSlots,
+                allSlots: [],
                 bookedSlots: [],
-                availableSlots: fallbackSlots,
+                pastSlots: [],
+                availableSlots: [],
             });
         } finally {
             setSlotsLoading(false);

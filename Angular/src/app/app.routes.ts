@@ -34,63 +34,43 @@ export const routes: Routes = [
             ),
     },
     {
-        path: 'dashboard',
-        loadComponent: () =>
-            import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+        path: '',
+        loadComponent: () => import('./shared/layouts/main-layout/main-layout').then(m => m.MainLayout),
         canActivate: [authGuard],
-    },
-    {
-        path: 'employees',
-        loadComponent: () =>
-            import('./features/employee/employee-list/employee-list').then(
-                (m) => m.EmployeeList
-            ),
-        canActivate: [authGuard],
-    },
-    {
-        path: 'patients',
-        loadComponent: () =>
-            import('./features/patient/patient-list/patient-list').then(
-                (m) => m.PatientList
-            ),
-        canActivate: [authGuard],
-    },
-    {
-        path: 'appointments',
-        loadComponent: () =>
-            import(
-                './features/appointments/appointment-list/appointment-list'
-            ).then((m) => m.AppointmentList),
-        canActivate: [authGuard],
-    },
-    {
-        path: 'profile',
-        loadComponent: () =>
-            import('./features/profile/profile').then((m) => m.Profile),
-        canActivate: [authGuard],
-    },
-    {
-        path: 'roles',
-        loadComponent: () =>
-            import('./features/roles/role-list/role-list').then(
-                (m) => m.RoleList
-            ),
-        canActivate: [authGuard],
-    },
-    {
-        path: 'nodes',
-        loadComponent: () =>
-            import('./features/nodes/node-list/node-list').then(
-                (m) => m.NodeList
-            ),
-        canActivate: [authGuard],
-    },
-    {
-        path: 'health-records',
-        loadComponent: () =>
-            import('./features/health-records/health-record-list/health-record-list')
-                .then((m) => m.HealthRecordList),
-        canActivate: [authGuard],
+        children: [
+            {
+                path: 'dashboard',
+                loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+            },
+            {
+                path: 'employees',
+                loadComponent: () => import('./features/employee/employee-list/employee-list').then((m) => m.EmployeeList),
+            },
+            {
+                path: 'patients',
+                loadComponent: () => import('./features/patient/patient-list/patient-list').then((m) => m.PatientList),
+            },
+            {
+                path: 'appointments',
+                loadComponent: () => import('./features/appointments/appointment-list/appointment-list').then((m) => m.AppointmentList),
+            },
+            {
+                path: 'profile',
+                loadComponent: () => import('./features/profile/profile').then((m) => m.Profile),
+            },
+            {
+                path: 'roles',
+                loadComponent: () => import('./features/roles/role-list/role-list').then((m) => m.RoleList),
+            },
+            {
+                path: 'nodes',
+                loadComponent: () => import('./features/nodes/node-list/node-list').then((m) => m.NodeList),
+            },
+            {
+                path: 'health-records',
+                loadComponent: () => import('./features/health-records/health-record-list/health-record-list').then((m) => m.HealthRecordList),
+            }
+        ]
     },
     {
         path: '**',

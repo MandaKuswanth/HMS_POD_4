@@ -87,7 +87,7 @@ healthRecordSchema.pre("save", async function (next) {
     }
 });
 
-healthRecordSchema.index({ healthRecordId: 1 }, { unique: true });
+
 healthRecordSchema.index({ appointmentId: 1 }, { unique: true });
 healthRecordSchema.index({ patientId: 1 });
 healthRecordSchema.index({ doctorEmployeeId: 1 });

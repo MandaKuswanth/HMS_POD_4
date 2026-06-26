@@ -12,7 +12,7 @@ const doctorRoutes = require("./src/routes/doctorRoutes");
 const patientRoutes = require("./src/routes/patientRoute");
 const appointmentRoutes = require("./src/routes/appointmentRoutes");
 const patientAuthRoutes = require("./src/routes/patientAuthRoutes");
-const patientAppointmentRoutes=require("./src/routes/patientAppointmentRoutes");
+const patientAppointmentRoutes = require("./src/routes/patientAppointmentRoutes");
 const roleRoutes = require("./src/routes/roleRoutes");
 const nodeRoutes = require("./src/routes/nodeRoutes");
 const healthRecordRoutes = require("./src/routes/healthRecordRoutes");
@@ -28,10 +28,12 @@ const app = express();
 // Security middleware
 app.use(helmet());
 
-app.use(cors({
-  origin: "http://localhost:4200",
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:4200", "http://localhost:4201"],
+    credentials: true,
+  }),
+);
 
 // Logs requests
 app.use(morgan("dev"));
@@ -43,7 +45,7 @@ app.use(express.urlencoded({ extended: true }));
 // Test route
 app.get("/", (req, res) => {
   return res.status(200).json({
-    message: "API running"
+    message: "API running",
   });
 });
 

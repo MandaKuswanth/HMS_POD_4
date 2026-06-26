@@ -2,22 +2,46 @@ const express = require("express");
 const router = express.Router();
 
 const appointmentController = require("../controllers/appointmentController");
-const auth = require("../middleware/authMiddleware");
+const verifyToken = require("../middleware/authMiddleware");
 const allowPermission = require("../middleware/checkPermission");
+const validateRequest = require("../middleware/validateRequest");
 const { PERMISSIONS } = require("../constants/permission");
+
+const {
+  bookAppointmentValidation,
+  updateAppointmentStatusValidation
+} = require("../validators/appointment");
+
+// GET STANDARD SLOTS
+router.get(
+  "/standard-slots",
+  verifyToken,
+  allowPermission(PERMISSIONS.APPOINTMENT_READ),
+  appointmentController.getStandardSlots
+);
+
+// GET DOCTOR SLOTS
+router.get(
+  "/slots",
+  verifyToken,
+  allowPermission(PERMISSIONS.APPOINTMENT_READ),
+  appointmentController.getDoctorSlots
+);
 
 // CREATE APPOINTMENT
 router.post(
   "/",
-  auth,
+  verifyToken,
   allowPermission(PERMISSIONS.APPOINTMENT_CREATE),
+  bookAppointmentValidation,
+  validateRequest,
   appointmentController.createAppointment
 );
 
 // GET ALL APPOINTMENTS
 router.get(
   "/",
-  auth,
+  verifyToken,
   allowPermission(PERMISSIONS.APPOINTMENT_READ),
   appointmentController.getAppointments
 );
@@ -25,54 +49,32 @@ router.get(
 // AUTOCOMPLETE APPOINTMENT SEARCH
 router.get(
   "/search",
-  auth,
+  verifyToken,
   appointmentController.getAppointmentsSearch
-);
-
-// APPROVE APPOINTMENT
-router.put(
-  "/:appointmentId/approve",
-  auth,
-  allowPermission(PERMISSIONS.APPOINTMENT_UPDATE),
-  appointmentController.approveAppointment
-);
-
-// REJECT APPOINTMENT
-router.put(
-  "/:appointmentId/reject",
-  auth,
-  allowPermission(PERMISSIONS.APPOINTMENT_UPDATE),
-  appointmentController.rejectAppointment
 );
 
 // UPDATE APPOINTMENT STATUS
 router.put(
   "/:appointmentId/status",
-  auth,
+  verifyToken,
   allowPermission(PERMISSIONS.APPOINTMENT_UPDATE),
+  updateAppointmentStatusValidation,
+  validateRequest,
   appointmentController.updateAppointmentStatus
 );
 
 // GET SINGLE APPOINTMENT
 router.get(
   "/:appointmentId",
-  auth,
+  verifyToken,
   allowPermission(PERMISSIONS.APPOINTMENT_READ),
   appointmentController.getAppointmentById
-);
-
-// UPDATE APPOINTMENT
-router.put(
-  "/:appointmentId",
-  auth,
-  allowPermission(PERMISSIONS.APPOINTMENT_UPDATE),
-  appointmentController.updateAppointment
 );
 
 // DELETE APPOINTMENT
 router.delete(
   "/:appointmentId",
-  auth,
+  verifyToken,
   allowPermission(PERMISSIONS.APPOINTMENT_DELETE),
   appointmentController.deleteAppointment
 );
