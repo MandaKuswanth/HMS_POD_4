@@ -148,13 +148,23 @@ export class PatientDialog implements OnInit {
 
             const patient = this.data.patient;
 
+            let addressStr = '';
+            if (patient.address) {
+                if (typeof patient.address === 'string') {
+                    addressStr = patient.address;
+                } else {
+                    const { street, city, state, pincode } = patient.address;
+                    addressStr = [street, city, state, pincode].filter(p => !!p).join(', ');
+                }
+            }
+
             this.form.patchValue({
                 name: patient.name || '',
                 email: patient.email || '',
                 phone: patient.phone || '',
                 gender: patient.gender || '',
                 dob: patient.dob || '',
-                address: patient.address || '',
+                address: addressStr,
                 emergencyName: patient.emergencyContact?.name || '',
                 emergencyRelation: patient.emergencyContact?.relation || '',
                 emergencyPhone: patient.emergencyContact?.phone || ''
@@ -220,6 +230,17 @@ export class PatientDialog implements OnInit {
 
         const formValue = this.form.getRawValue();
 
+        let addressObj = {};
+        if (formValue.address) {
+            const parts = formValue.address.split(',').map((s: string) => s.trim());
+            addressObj = {
+                street: parts[0] || '',
+                city: parts[1] || '',
+                state: parts[2] || '',
+                pincode: parts[3] || ''
+            };
+        }
+
         const payload = {
             name: formValue.name ?? '',
             email: formValue.email ?? '',
@@ -232,7 +253,7 @@ export class PatientDialog implements OnInit {
                     'en-US'
                 )
                 : '',
-            address: formValue.address ?? '',
+            address: addressObj,
             emergencyContact: {
                 name: formValue.emergencyName ?? '',
                 relation: formValue.emergencyRelation ?? '',

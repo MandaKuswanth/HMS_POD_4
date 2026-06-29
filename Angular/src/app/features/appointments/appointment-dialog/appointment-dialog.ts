@@ -69,6 +69,7 @@ export class AppointmentDialog implements OnInit {
         patientId: appt.patientId || '',
         doctorEmployeeId: appt.doctorEmployeeId || '',
         date: appt.date ? new Date(appt.date) as any : '',
+        timeSlot: appt.timeSlot || ''
       });
 
       if (appt.doctorEmployeeId && appt.date) {

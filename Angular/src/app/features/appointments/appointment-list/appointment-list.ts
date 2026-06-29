@@ -192,6 +192,7 @@ export class AppointmentList implements OnInit {
     const ref = this.dialog.open(AppointmentDialog, {
       width: '660px',
       disableClose: true,
+      autoFocus: false,
     });
 
     ref.afterClosed().subscribe((result) => {
@@ -210,6 +211,7 @@ export class AppointmentList implements OnInit {
       },
       width: '660px',
       disableClose: true,
+      autoFocus: false,
     });
 
     ref.afterClosed().subscribe((result) => {
@@ -228,11 +230,12 @@ export class AppointmentList implements OnInit {
       },
       width: '450px',
       disableClose: true,
+      autoFocus: false,
     });
 
     ref.afterClosed().subscribe((result) => {
-      if (result) {
-        this.appointmentService.updateAppointmentStatus(appointment.appointmentId, result).subscribe({
+      if (result && result.status) {
+        this.appointmentService.updateAppointmentStatus(appointment.appointmentId, result.status, result.cancellationReason).subscribe({
           next: () => {
             this.toastr.success('Status updated successfully');
             this.refreshSignal.update(v => v + 1);

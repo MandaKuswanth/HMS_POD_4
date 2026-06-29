@@ -29,7 +29,7 @@
                 <p>Loading health records...</p>
             </div>
             } @else if (recordsSignal().length > 0){
-            <div class="table-wrapper">
+            <div class="table-scroll">
                 <table mat-table [dataSource]="recordsSignal()" class="mat-elevation-z1" multiTemplateDataRows>
 
                     <ng-container matColumnDef="healthRecordId">
@@ -49,20 +49,32 @@
                     <ng-container matColumnDef="patient">
                         <th mat-header-cell *matHeaderCellDef>Patient</th>
                         <td mat-cell *matCellDef="let record">
-                            <strong>{{ record.patientName || 'N/A' }}</strong>
-                            <br />
-                            <small>{{ record.patientId || '-' }}</small>
+                            <div class="name-with-avatar">
+                                <div class="avatar">
+                                    {{ record.patientName?.charAt(0) }}
+                                </div>
+                                <div>
+                                    <strong>{{ (record.patientName | titlecase) || 'N/A' }}</strong>
+                                    <br />
+                                    <small>{{ record.patientId || '-' }}</small>
+                                </div>
+                            </div>
                         </td>
                     </ng-container>
 
                     <ng-container matColumnDef="doctor">
                         <th mat-header-cell *matHeaderCellDef>Doctor</th>
                         <td mat-cell *matCellDef="let record">
-                            <strong>
-                                {{ record.doctorName ? ('Dr. ' + record.doctorName) : 'N/A' }}
-                            </strong>
-                            <br />
-                            <small>{{ record.doctorEmployeeId || '-' }}</small>
+                            <div class="name-with-avatar">
+                                <div class="avatar">
+                                    {{ record.doctorName?.charAt(0) }}
+                                </div>
+                                <div>
+                                    <strong>{{ (record.doctorName | titlecase) || 'N/A' }}</strong>
+                                    <br />
+                                    <small>{{ record.doctorEmployeeId || '-' }}</small>
+                                </div>
+                            </div>
                         </td>
                     </ng-container>
 
@@ -126,11 +138,11 @@
                     </tr>
 
                 </table>
-
-                <mat-paginator [length]="totalSignal()" [pageSize]="limitSignal()" [pageIndex]="pageSignal()"
-                    [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
-                </mat-paginator>
             </div>
+
+            <mat-paginator [length]="totalSignal()" [pageSize]="limitSignal()" [pageIndex]="pageSignal()"
+                [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
+            </mat-paginator>
             } @else {
             <div class="no-data">
                 <mat-icon>medical_information</mat-icon>

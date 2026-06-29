@@ -21,13 +21,13 @@
 
           <div class="status-pills">
             <button class="pill-btn" [class.active]="statusSignal() === 'ALL'" (click)="onStatusChange('ALL')">
-              All <span class="badge">{{ totalSignal() }}</span>
+              All <span class="badge">{{ countsSignal().all }}</span>
             </button>
             <button class="pill-btn" [class.active]="statusSignal() === 'ACTIVE'" (click)="onStatusChange('ACTIVE')">
-              Active <span class="badge">0</span>
+              Active <span class="badge">{{ countsSignal().active }}</span>
             </button>
             <button class="pill-btn" [class.active]="statusSignal() === 'INACTIVE'" (click)="onStatusChange('INACTIVE')">
-              Inactive <span class="badge">0</span>
+              Inactive <span class="badge">{{ countsSignal().inactive }}</span>
             </button>
           </div>
 
@@ -52,11 +52,13 @@
             <ng-container matColumnDef="name">
               <th mat-header-cell *matHeaderCellDef>Name</th>
               <td mat-cell *matCellDef="let row">
-                <div class="patient-name">
+                <div class="name-with-avatar">
                   <div class="avatar">
                     {{ row.name?.charAt(0) }}
                   </div>
-                  {{ row.name }}
+                  <div class="text-truncate" style="flex: 1; min-width: 0;">
+                    {{ row.name | titlecase }}
+                  </div>
                 </div>
               </td>
             </ng-container>
@@ -81,9 +83,10 @@
             <ng-container matColumnDef="gender">
               <th mat-header-cell *matHeaderCellDef>Gender</th>
               <td mat-cell *matCellDef="let row">
-                <span class="gender-badge">
-                  {{ row.gender }}
+                <span class="badge-status badge-blue" *ngIf="row.gender">
+                  {{ row.gender | titlecase }}
                 </span>
+                <span *ngIf="!row.gender" class="text-muted">N/A</span>
               </td>
             </ng-container>
 
@@ -99,7 +102,7 @@
             <ng-container matColumnDef="status">
               <th mat-header-cell *matHeaderCellDef>Status</th>
               <td mat-cell *matCellDef="let row">
-                <span class="status-badge" [ngClass]="row.status ? 'active' : 'inactive'">
+                <span class="badge-status" [ngClass]="row.status ? 'badge-green' : 'badge-red'">
                   {{ row.status ? 'Active' : 'Inactive' }}
                 </span>
               </td>

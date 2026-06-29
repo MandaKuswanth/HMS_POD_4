@@ -294,7 +294,7 @@ exports.updateHealthRecord = asyncHandler(async (req, res) => {
     const { healthRecordId } = req.params;
     const { symptoms, diagnosis, prescription, notes } = req.body;
 
-    const record = await HealthRecord.findOne({ _id: healthRecordId, isDeleted: false });
+    const record = await HealthRecord.findOne({ healthRecordId: healthRecordId, isDeleted: false });
     if (!record) {
         throw new ApiError(404, "Health record not found");
     }
@@ -321,7 +321,7 @@ exports.updateHealthRecord = asyncHandler(async (req, res) => {
 exports.deleteHealthRecord = asyncHandler(async (req, res) => {
     const { healthRecordId } = req.params;
 
-    const record = await HealthRecord.findOne({ _id: healthRecordId, isDeleted: false });
+    const record = await HealthRecord.findOne({ healthRecordId: healthRecordId, isDeleted: false });
     if (!record) {
         throw new ApiError(404, "Health record not found");
     }

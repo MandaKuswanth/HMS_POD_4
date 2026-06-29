@@ -220,6 +220,8 @@ export class SearchDropdownComponent implements ControlValueAccessor {
     // If closed without selection, restore previous label
     if (this.selectedValue) {
       this.inputControl.setValue(this.selectedValue[this.displayField], { emitEvent: false });
+    } else if (this.initialDisplay) {
+      this.inputControl.setValue(this.initialDisplay, { emitEvent: false });
     } else {
       this.inputControl.setValue('', { emitEvent: false });
     }

@@ -149,6 +149,7 @@ export class HealthRecordList implements OnInit {
       maxWidth: '95vw',
       maxHeight: '90vh',
       disableClose: true,
+      autoFocus: false,
       data: { mode: 'add' },
     });
 
@@ -165,6 +166,7 @@ export class HealthRecordList implements OnInit {
       maxWidth: '95vw',
       maxHeight: '90vh',
       disableClose: true,
+      autoFocus: false,
       data: {
         mode: 'edit',
         record,

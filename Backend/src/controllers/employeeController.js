@@ -1,7 +1,7 @@
 const Employee = require("../models/Employee");
 const User = require("../models/User");
 const Role = require("../models/Role");
-
+const AuditEvent = require("../models/AuditEvent");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../middleware/asyncHandler");
@@ -89,6 +89,25 @@ exports.getEmployees = asyncHandler(async (req, res) => {
     const filter = { isDeleted: false };
     const searchFields = ["name", "email", "phone", "employeeCode", "department", "designation"];
 
+    if (req.query.department && req.query.department !== "ALL DEPARTMENTS") {
+        filter.department = req.query.department;
+    }
+
+    if (req.query.status && req.query.status !== "all") {
+        filter.status = req.query.status === "active";
+    }
+
+    if (req.query.role && req.query.role !== "ALL ROLES") {
+        const roleDoc = await Role.findOne({ name: req.query.role.toUpperCase() }).lean();
+        if (roleDoc) {
+            const usersWithRole = await User.find({ roleIds: roleDoc.roleId, isDeleted: false }).lean();
+            const employeeIds = usersWithRole.map(u => u.employeeId);
+            filter.employeeCode = { $in: employeeIds };
+        } else {
+            filter.employeeCode = { $in: [] };
+        }
+    }
+
     const result = await paginateQuery({
         model: Employee,
         query: req.query,
@@ -118,8 +137,15 @@ exports.getEmployees = asyncHandler(async (req, res) => {
         return empObj;
     });
 
+    const activeCount = await Employee.countDocuments({ isDeleted: false, status: true });
+    const pendingCount = await Employee.countDocuments({ isDeleted: false, status: false });
+    const allCount = activeCount + pendingCount;
+
     return res.status(200).json(
-        new ApiResponse(200, enrichedEmployees, "Employees fetched successfully", result.pagination)
+        new ApiResponse(200, enrichedEmployees, "Employees fetched successfully", {
+            ...result.pagination,
+            counts: { all: allCount, active: activeCount, pending: pendingCount }
+        })
     );
 });
 

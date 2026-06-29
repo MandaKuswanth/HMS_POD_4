@@ -100,11 +100,12 @@ export class AppointmentService {
     
     updateAppointmentStatus(
         appointmentId: string,
-        status: string
+        status: string,
+        cancellationReason?: string
     ): Observable<any> {
         return this.http.put(
             `${this.baseUrl}/appointments/${appointmentId}/status`,
-            { status }
+            { status, cancellationReason }
         );
     }
 

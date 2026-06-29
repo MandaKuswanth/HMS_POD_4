@@ -69,7 +69,8 @@ export class EmployeeList implements OnInit {
   readonly searchTextSignal = signal('');
   readonly roleSignal = signal('ALL ROLES');
   readonly departmentSignal = signal('ALL DEPARTMENTS');
-  readonly statusSignal = signal<'all' | 'active' | 'pending'>('all'); // all, active, pending
+  readonly statusSignal = signal<'all' | 'active' | 'pending'>('all');
+  readonly countsSignal = signal({ all: 0, active: 0, pending: 0 });
   readonly expandedEmployeeSignal = signal<any | null>(null);
   readonly refreshSignal = signal(0);
 
@@ -164,6 +165,10 @@ export class EmployeeList implements OnInit {
 
         this.employeesSignal.set(records);
         this.totalSignal.set(response?.pagination?.totalItems || response?.data?.pagination?.totalRecords || 0);
+        
+        if (response?.pagination?.counts || response?.data?.pagination?.counts) {
+          this.countsSignal.set(response?.pagination?.counts || response?.data?.pagination?.counts);
+        }
         this.expandedEmployeeSignal.set(null);
       },
       error: (error) => {

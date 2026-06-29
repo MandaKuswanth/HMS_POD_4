@@ -186,3 +186,26 @@ mat-dialog-actions button {
         padding: 14px;
     }
 }
+
+/* FIELD WRAPPER */
+.form-field-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.field-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    margin-left: 2px;
+}
+
+.field-error {
+    font-size: 11px;
+    font-weight: 600;
+    color: #d32f2f;
+    margin-top: 4px;
+    margin-left: 4px;
+}

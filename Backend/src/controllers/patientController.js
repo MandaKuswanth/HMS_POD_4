@@ -97,6 +97,14 @@ exports.getPatients = asyncHandler(async (req, res) => {
     const filter = { isDeleted: false };
     const searchFields = ["name", "email", "phone", "UHID"];
 
+    if (req.query.status && req.query.status !== "ALL") {
+        filter.status = req.query.status === "ACTIVE";
+    }
+
+    if (req.query.gender && req.query.gender !== "ALL") {
+        filter.gender = req.query.gender.toLowerCase();
+    }
+
     const result = await paginateQuery({
         model: Patient,
         query: req.query,
@@ -105,8 +113,15 @@ exports.getPatients = asyncHandler(async (req, res) => {
         defaultSortField: "createdAt"
     });
 
+    const activeCount = await Patient.countDocuments({ isDeleted: false, status: true });
+    const inactiveCount = await Patient.countDocuments({ isDeleted: false, status: false });
+    const allCount = activeCount + inactiveCount;
+
     return res.status(200).json(
-        new ApiResponse(200, result.data, "Patients fetched successfully", result.pagination)
+        new ApiResponse(200, result.data, "Patients fetched successfully", {
+            ...result.pagination,
+            counts: { all: allCount, active: activeCount, inactive: inactiveCount }
+        })
     );
 });
 

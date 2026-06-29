@@ -215,7 +215,7 @@
 /* TABLE */
 table {
     width: 100%;
-    min-width: 980px;
+    min-width: 1150px;
     border-collapse: collapse;
     table-layout: fixed;
 }
@@ -223,17 +223,17 @@ table {
 /* COLUMN WIDTHS */
 th:nth-child(1),
 td:nth-child(1) {
-    width: 120px;
+    width: 90px;
 }
 
 th:nth-child(2),
 td:nth-child(2) {
-    width: 140px;
+    width: 220px;
 }
 
 th:nth-child(3),
 td:nth-child(3) {
-    width: 250px;
+    width: 220px;
 }
 
 th:nth-child(4),
@@ -243,22 +243,22 @@ td:nth-child(4) {
 
 th:nth-child(5),
 td:nth-child(5) {
-    width: 150px;
+    width: 140px;
 }
 
 th:nth-child(6),
 td:nth-child(6) {
-    width: 150px;
+    width: 140px;
 }
 
 th:nth-child(7),
 td:nth-child(7) {
-    width: 120px;
+    width: 110px;
 }
 
 th:nth-child(8),
 td:nth-child(8) {
-    width: 100px;
+    width: 90px;
 }
 
 /* TABLE HEADER */

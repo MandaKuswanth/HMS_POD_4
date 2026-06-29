@@ -29,6 +29,38 @@ mat-dialog-content {
     width: 100%;
 }
 
+.row {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+}
+
+.row > mat-form-field {
+    flex: 1;
+}
+
+.form-field-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.field-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    margin-left: 2px;
+}
+
+.field-error {
+    font-size: 11px;
+    font-weight: 600;
+    color: #d32f2f;
+    margin-top: 4px;
+    margin-left: 4px;
+}
+
 /* MATERIAL FIELDS */
 .mat-mdc-form-field {
     width: 100%;

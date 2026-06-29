@@ -146,25 +146,42 @@ exports.getDoctorSlots = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, slotsData, "Doctor slots fetched successfully"));
 });
 
-// ─── Create Appointment ──────────────────────────────────────────────────────
+// ─── Create Appointment ────────────────────────────────────────────────────────
 exports.createAppointment = asyncHandler(async (req, res) => {
-  const { patientId, doctorEmployeeId, date, timeSlot, reason } = req.body;
-  const createdByEmployeeId = req.user.employeeId || null;
+  const { user } = await getUserPermissions(req.user.id);
 
-  const appointment = await appointmentService.createAppointment({
-    patientId,
-    doctorEmployeeId,
-    date,
-    timeSlot,
-    reason,
-    createdByEmployeeId,
-  });
+  const payload = {
+    ...req.body,
+    createdByEmployeeId: user?.isEmployee ? user.employeeId : null,
+  };
+
+  const appointment = await appointmentService.createAppointment(payload);
 
   return res
     .status(201)
-    .json(
-      new ApiResponse(201, appointment, "Appointment created successfully"),
-    );
+    .json(new ApiResponse(201, appointment, "Appointment created successfully"));
+});
+
+// ─── Reschedule Appointment ───────────────────────────────────────────────────
+exports.updateAppointment = asyncHandler(async (req, res) => {
+  const { appointmentId } = req.params;
+  const { user, userPermissions } = await getUserPermissions(req.user.id);
+  
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const payload = {
+    ...req.body,
+    userEmployeeId: user.employeeId,
+    userPermissions,
+  };
+
+  const appointment = await appointmentService.updateAppointment(appointmentId, payload);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, appointment, "Appointment rescheduled successfully"));
 });
 
 // ─── Get Appointments List ───────────────────────────────────────────────────

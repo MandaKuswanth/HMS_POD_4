@@ -46,6 +46,16 @@ router.get(
   appointmentController.getAppointments
 );
 
+// RESCHEDULE APPOINTMENT
+router.put(
+  "/:appointmentId",
+  verifyToken,
+  allowPermission(PERMISSIONS.APPOINTMENT_UPDATE),
+  bookAppointmentValidation,
+  validateRequest,
+  appointmentController.updateAppointment
+);
+
 // AUTOCOMPLETE APPOINTMENT SEARCH
 router.get(
   "/search",

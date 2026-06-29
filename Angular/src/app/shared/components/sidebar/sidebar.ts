@@ -8,7 +8,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth';
 import { NodeService, MenuNode } from '../../../core/services/node';
 import { LayoutService } from '../../../core/services/layout';
-import { HasPermissionDirective } from '../../directives/has-permission.directive';
 
 @Component({
   selector: 'app-sidebar',
@@ -18,8 +17,7 @@ import { HasPermissionDirective } from '../../directives/has-permission.directiv
     CommonModule,
     RouterModule,
     MatListModule,
-    MatIconModule,
-    HasPermissionDirective
+    MatIconModule
   ],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',

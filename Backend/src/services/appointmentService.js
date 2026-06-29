@@ -94,11 +94,12 @@ class AppointmentService {
         return appointmentDate;
     }
 
-    async validateSlotConflicts({ patientId, doctorEmployeeId, date, timeSlot }) {
+    async validateSlotConflicts({ patientId, doctorEmployeeId, date, timeSlot, excludeAppointmentId }) {
         const doctorConflict = await findSlotConflict({
             doctorEmployeeId,
             date,
-            timeSlot
+            timeSlot,
+            excludeAppointmentId
         });
 
         if (doctorConflict) {
@@ -108,7 +109,8 @@ class AppointmentService {
         const patientConflict = await findSlotConflict({
             patientId,
             date,
-            timeSlot
+            timeSlot,
+            excludeAppointmentId
         });
 
         if (patientConflict) {
@@ -170,6 +172,50 @@ class AppointmentService {
         });
 
         if (initialStatus === "BOOKED" && patient.email) {
+            await emailService.sendAppointmentConfirmed(patient.email, patient.name, appointmentDate.toDateString(), timeSlot);
+        }
+
+        return appointment;
+    }
+
+    async updateAppointment(appointmentId, { patientId, doctorEmployeeId, date, timeSlot, reason, userEmployeeId, userPermissions }) {
+        const appointment = await Appointment.findOne({ appointmentId, isDeleted: false });
+        if (!appointment) throw new ApiError(404, "Appointment not found");
+
+        if (["COMPLETED", "CANCELLED"].includes(appointment.status)) {
+            throw new ApiError(400, `Cannot reschedule a ${appointment.status.toLowerCase()} appointment`);
+        }
+
+        const hasApprove = userPermissions.has("APPOINTMENT_APPROVE");
+        const hasRead = userPermissions.has("APPOINTMENT_READ");
+        const isDoctor = !hasApprove && hasRead && appointment.doctorEmployeeId === userEmployeeId;
+
+        if (!hasApprove && !isDoctor) {
+            throw new ApiError(403, "You do not have permission to reschedule this appointment");
+        }
+
+        const appointmentDate = normalizeAppointmentDate(date);
+        
+        const { patient, doctor } = await this.validatePatientAndDoctor(patientId, doctorEmployeeId);
+        this.validateAppointmentDate(appointmentDate, doctor);
+
+        await this.validateSlotConflicts({ 
+            patientId, 
+            doctorEmployeeId, 
+            date: appointmentDate, 
+            timeSlot, 
+            excludeAppointmentId: appointment._id 
+        });
+
+        appointment.patientId = patientId;
+        appointment.doctorEmployeeId = doctorEmployeeId;
+        appointment.date = appointmentDate;
+        appointment.timeSlot = timeSlot;
+        if (reason !== undefined) appointment.reason = reason;
+
+        await appointment.save();
+
+        if (patient.email && appointment.status === "BOOKED") {
             await emailService.sendAppointmentConfirmed(patient.email, patient.name, appointmentDate.toDateString(), timeSlot);
         }
 

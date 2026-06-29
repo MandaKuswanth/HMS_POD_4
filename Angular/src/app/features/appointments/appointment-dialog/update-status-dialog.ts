@@ -61,6 +61,19 @@ export interface UpdateStatusDialogData {
           ></app-search-dropdown>
         </div>
       </div>
+
+      <div class="row full-width-row" *ngIf="selectedStatus === 'CANCELLED'">
+        <mat-form-field appearance="outline">
+          <mat-label>Cancellation Reason</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="cancellationReason"
+            placeholder="Enter reason for cancellation..."
+            rows="3"
+            required>
+          </textarea>
+        </mat-form-field>
+      </div>
     </mat-dialog-content>
 
     <mat-dialog-actions align="end">
@@ -70,11 +83,7 @@ export interface UpdateStatusDialogData {
         Cancel
       </button>
 
-      <button
-        mat-raised-button
-        color="primary"
-        [disabled]="!selectedStatus"
-        (click)="onConfirm()">
+      <button mat-raised-button color="primary" [disabled]="!selectedStatus || (selectedStatus === 'CANCELLED' && !cancellationReason.trim())" (click)="onConfirm()">
         Update Status
       </button>
     </mat-dialog-actions>
@@ -125,13 +134,13 @@ export interface UpdateStatusDialogData {
   `]
 })
 export class UpdateStatusDialog {
-  selectedStatus!: string;
+  selectedStatus: string = '';
+  cancellationReason: string = '';
 
   constructor(
     public dialogRef: MatDialogRef<UpdateStatusDialog>,
     @Inject(MAT_DIALOG_DATA) public data: UpdateStatusDialogData
   ) {
-    this.selectedStatus = data.currentStatus;
   }
 
   searchNextStatuses = (query: string): Observable<any> => {
@@ -142,7 +151,10 @@ export class UpdateStatusDialog {
   };
 
   onConfirm(): void {
-    this.dialogRef.close(this.selectedStatus);
+    this.dialogRef.close({
+      status: this.selectedStatus,
+      cancellationReason: this.selectedStatus === 'CANCELLED' ? this.cancellationReason : undefined
+    });
   }
 
   onCancel(): void {

@@ -25,6 +25,8 @@ export interface PaginationParams {
   search?: string;
   sortBy?: string;
   sortOrder?: string;
+  gender?: string;
+  status?: string;
 }
 
 @Injectable({
@@ -53,12 +55,15 @@ export class PatientService {
 
   getPatients(params: PaginationParams): Observable<any> {
     this._loading.set(true);
-    const httpParams = new HttpParams()
+    let httpParams = new HttpParams()
       .set('page', params.page.toString())
       .set('limit', params.limit.toString())
       .set('search', params.search ?? '')
       .set('sortBy', params.sortBy ?? 'createdAt')
       .set('sortOrder', params.sortOrder ?? 'desc');
+
+    if (params.gender) httpParams = httpParams.set('gender', params.gender);
+    if (params.status) httpParams = httpParams.set('status', params.status);
 
     return this.http.get<any>(this.baseUrl, { params: httpParams }).pipe(
       tap({

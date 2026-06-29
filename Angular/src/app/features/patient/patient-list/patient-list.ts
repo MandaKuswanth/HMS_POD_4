@@ -69,6 +69,7 @@ export class PatientList implements OnInit {
   readonly limitSignal = signal(5);
   readonly loadingSignal = signal(false);
   readonly errorSignal = signal<string | null>(null);
+  readonly countsSignal = signal({ all: 0, active: 0, inactive: 0 });
 
   readonly searchTextSignal = signal('');
   readonly genderSignal = signal('ALL');
@@ -106,7 +107,7 @@ export class PatientList implements OnInit {
   loadPatients(page: number, limit: number, search: string, gender: string, status: string): void {
     this.loadingSignal.set(true);
     this.patientService
-      .getPatients({ page, limit, search, sortBy: 'createdAt', sortOrder: 'desc' })
+      .getPatients({ page, limit, search, gender, status, sortBy: 'createdAt', sortOrder: 'desc' })
       .subscribe({
         next: (response: any) => {
           this.loadingSignal.set(false);
@@ -116,6 +117,10 @@ export class PatientList implements OnInit {
 
           this.patientsSignal.set(records);
           this.totalSignal.set(response?.pagination?.totalItems || response?.data?.pagination?.totalRecords || 0);
+          
+          if (response?.pagination?.counts || response?.data?.pagination?.counts) {
+            this.countsSignal.set(response?.pagination?.counts || response?.data?.pagination?.counts);
+          }
           this.errorSignal.set(null);
         },
         error: (err) => {
