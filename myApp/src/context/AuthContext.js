@@ -12,6 +12,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
     loginPatient,
     registerPatient,
+    refreshTokenApi,
+    logoutApi,
 } from "../api/authService";
 
 import PropTypes from "prop-types";
@@ -22,30 +24,20 @@ import {
 
 const AuthContext = createContext(null);
 
-// JWT Timeout duration in milliseconds (60 minutes)
-const JWT_TIMEOUT_DURATION = 60 * 60 * 1000;
-
-// Decode JWT to get expiration time
 const decodeJWT = (token) => {
     try {
         const parts = token.split(".");
         if (parts.length !== 3) return null;
-        
-        const decoded = JSON.parse(
-            Buffer.from(parts[1], "base64").toString()
-        );
-        return decoded;
+        return JSON.parse(Buffer.from(parts[1], "base64").toString());
     } catch (err) {
         console.log("JWT decode error:", err);
         return null;
     }
 };
 
-// Check if token is expired based on custom timeout
-const isCustomTokenExpired = (expiryTime) => {
-    if (!expiryTime) return false;
-    const currentTime = Date.now();
-    return currentTime > expiryTime;
+const getTokenExpiry = (token) => {
+    const decoded = decodeJWT(token);
+    return decoded?.exp ? decoded.exp * 1000 : null;
 };
 
 const normalizePatient = (p) => {
@@ -72,6 +64,7 @@ const normalizeLogin = (payload) => {
 
     return {
         token: d?.token || null,
+        refreshToken: d?.refreshToken || null,
         user: d?.user || null,
         patient: normalizePatient(d?.patient),
     };
@@ -84,34 +77,64 @@ export function AuthProvider({ children }) {
     const [authLoading, setAuthLoading] = useState(true);
     const [tokenExpiry, setTokenExpiry] = useState(null);
 
+    const clearSession = useCallback(async () => {
+        await AsyncStorage.multiRemove(["token", "refreshToken", "user", "patient", "tokenExpiry"]);
+        setToken(null);
+        setUser(null);
+        setPatient(null);
+        setTokenExpiry(null);
+    }, []);
+
     const restoreSession = useCallback(async () => {
         try {
-            const t = await AsyncStorage.getItem("token");
-            const u = await AsyncStorage.getItem("user");
-            const p = await AsyncStorage.getItem("patient");
-            const expiryTime = await AsyncStorage.getItem("tokenExpiry");
+            const [t, rt, u, p, expiryStr] = await AsyncStorage.multiGet([
+                "token", "refreshToken", "user", "patient", "tokenExpiry"
+            ]);
 
-            if (t && p && expiryTime) {
-                // Check if custom token timeout has expired
-                const expiryTimeNum = Number.parseInt(expiryTime);
-                if (isCustomTokenExpired(expiryTimeNum)) {
-                    console.log("Token has timed out, clearing session");
-                    await AsyncStorage.multiRemove([
-                        "token",
-                        "user",
-                        "patient",
-                        "tokenExpiry",
+            const storedToken = t[1];
+            const storedRefreshToken = rt[1];
+            const storedUser = u[1];
+            const storedPatient = p[1];
+            const storedExpiry = expiryStr[1];
+
+            if (!storedToken || !storedRefreshToken || !storedPatient) {
+                return;
+            }
+
+            const expiryTime = storedExpiry ? Number.parseInt(storedExpiry) : getTokenExpiry(storedToken);
+            const now = Date.now();
+
+            if (expiryTime && now < expiryTime) {
+                // Access token still valid
+                setToken(storedToken);
+                setUser(storedUser ? JSON.parse(storedUser) : null);
+                setPatient(normalizePatient(JSON.parse(storedPatient)));
+                setTokenExpiry(expiryTime);
+            } else {
+                // Access token expired — attempt silent refresh
+                console.log("Access token expired on restore, trying refresh...");
+                try {
+                    const refreshed = await refreshTokenApi(storedRefreshToken);
+                    const newToken = refreshed?.token;
+                    const newRefreshToken = refreshed?.refreshToken;
+
+                    if (!newToken || !newRefreshToken) throw new Error("Empty refresh response");
+
+                    const newExpiry = getTokenExpiry(newToken) ?? (Date.now() + 15 * 60 * 1000);
+
+                    await AsyncStorage.multiSet([
+                        ["token", newToken],
+                        ["refreshToken", newRefreshToken],
+                        ["tokenExpiry", newExpiry.toString()],
                     ]);
-                    setToken(null);
-                    setUser(null);
-                    setPatient(null);
-                    setTokenExpiry(null);
-                } else {
-                    console.log("Token is still valid, restoring session");
-                    setToken(t);
-                    setUser(u ? JSON.parse(u) : null);
-                    setPatient(normalizePatient(JSON.parse(p)));
-                    setTokenExpiry(expiryTimeNum);
+
+                    setToken(newToken);
+                    setTokenExpiry(newExpiry);
+                    setUser(storedUser ? JSON.parse(storedUser) : null);
+                    setPatient(normalizePatient(JSON.parse(storedPatient)));
+                } catch (refreshErr) {
+                    console.log("Silent refresh failed, clearing session:", refreshErr?.message);
+                    await clearSession();
                 }
             }
         } catch (err) {
@@ -119,7 +142,7 @@ export function AuthProvider({ children }) {
         } finally {
             setAuthLoading(false);
         }
-    }, []);
+    }, [clearSession]);
 
     useEffect(() => {
         restoreSession();
@@ -133,7 +156,6 @@ export function AuthProvider({ children }) {
 
         console.log("LOGIN RESPONSE:", response);
 
-        // NEW: Check if temporary password reset is required
         if (response.requiresPasswordReset) {
             const error = new Error("Temporary password reset required");
             error.requiresPasswordReset = true;
@@ -147,28 +169,22 @@ export function AuthProvider({ children }) {
             throw new Error("Invalid login response from server");
         }
 
-        // Calculate token expiry time
-        const expiryTime = Date.now() + JWT_TIMEOUT_DURATION;
+        const expiry = getTokenExpiry(data.token) ?? (Date.now() + 15 * 60 * 1000);
 
-        await AsyncStorage.setItem("token", data.token);
-        await AsyncStorage.setItem("tokenExpiry", expiryTime.toString());
+        await AsyncStorage.multiSet([
+            ["token", data.token],
+            ["refreshToken", data.refreshToken ?? ""],
+            ["tokenExpiry", expiry.toString()],
+            ["patient", JSON.stringify(data.patient)],
+            ...(data.user ? [["user", JSON.stringify(data.user)]] : []),
+        ]);
 
-        if (data.user) {
-            await AsyncStorage.setItem(
-                "user",
-                JSON.stringify(data.user)
-            );
-        } else {
+        if (!data.user) {
             await AsyncStorage.removeItem("user");
         }
 
-        await AsyncStorage.setItem(
-            "patient",
-            JSON.stringify(data.patient)
-        );
-
         setToken(data.token);
-        setTokenExpiry(expiryTime);
+        setTokenExpiry(expiry);
         setUser(data.user || null);
         setPatient(data.patient);
 
@@ -180,37 +196,66 @@ export function AuthProvider({ children }) {
     }, []);
 
     const logout = useCallback(async () => {
-        await AsyncStorage.multiRemove([
-            "token",
-            "user",
-            "patient",
-            "tokenExpiry",
-        ]);
+        const storedRefreshToken = await AsyncStorage.getItem("refreshToken");
+        await logoutApi(storedRefreshToken);
+        await clearSession();
+    }, [clearSession]);
 
-        setToken(null);
-        setUser(null);
-        setPatient(null);
-        setTokenExpiry(null);
-    }, []);
-
-    // Monitor token expiration and auto-logout
+    // Proactively refresh the access token 1 minute before it expires
     useEffect(() => {
         if (!token || !tokenExpiry) return;
 
         const now = Date.now();
-        const timeUntilExpiry = tokenExpiry - now;
+        const timeUntilRefresh = tokenExpiry - now - 60 * 1000; // 1 min before expiry
 
-        if (timeUntilExpiry <= 0) {
-            // Token already expired
-            logout();
+        if (timeUntilRefresh <= 0) {
+            // Already at or past the refresh window — refresh immediately
+            AsyncStorage.getItem("refreshToken").then(async (rt) => {
+                if (!rt) { logout(); return; }
+                try {
+                    const refreshed = await refreshTokenApi(rt);
+                    const newToken = refreshed?.token;
+                    const newRefreshToken = refreshed?.refreshToken;
+                    if (!newToken || !newRefreshToken) throw new Error("Empty refresh");
+
+                    const newExpiry = getTokenExpiry(newToken) ?? (Date.now() + 15 * 60 * 1000);
+                    await AsyncStorage.multiSet([
+                        ["token", newToken],
+                        ["refreshToken", newRefreshToken],
+                        ["tokenExpiry", newExpiry.toString()],
+                    ]);
+                    setToken(newToken);
+                    setTokenExpiry(newExpiry);
+                } catch (err) {
+                    console.log("Proactive refresh failed:", err?.message);
+                    logout();
+                }
+            });
             return;
         }
 
-        // Set timeout to logout when token expires
-        const timeoutId = setTimeout(() => {
-            console.log("Token expired, logging out...");
-            logout();
-        }, timeUntilExpiry);
+        const timeoutId = setTimeout(async () => {
+            const rt = await AsyncStorage.getItem("refreshToken");
+            if (!rt) { logout(); return; }
+            try {
+                const refreshed = await refreshTokenApi(rt);
+                const newToken = refreshed?.token;
+                const newRefreshToken = refreshed?.refreshToken;
+                if (!newToken || !newRefreshToken) throw new Error("Empty refresh");
+
+                const newExpiry = getTokenExpiry(newToken) ?? (Date.now() + 15 * 60 * 1000);
+                await AsyncStorage.multiSet([
+                    ["token", newToken],
+                    ["refreshToken", newRefreshToken],
+                    ["tokenExpiry", newExpiry.toString()],
+                ]);
+                setToken(newToken);
+                setTokenExpiry(newExpiry);
+            } catch (err) {
+                console.log("Proactive refresh failed:", err?.message);
+                logout();
+            }
+        }, timeUntilRefresh);
 
         return () => clearTimeout(timeoutId);
     }, [token, tokenExpiry, logout]);

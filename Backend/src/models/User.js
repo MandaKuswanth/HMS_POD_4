@@ -95,6 +95,12 @@ const userSchema = new Schema(
             default: null
         },
 
+        refreshToken: {
+            type: String,
+            default: null,
+            select: false
+        },
+
         isDeleted: {
             type: Boolean,
             default: false
@@ -144,8 +150,16 @@ userSchema.methods.generateAccessToken = function () {
     }
 
     return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN || "1h"
+        expiresIn: process.env.JWT_EXPIRES_IN || "15m"
     });
+};
+
+userSchema.methods.generateRefreshToken = function () {
+    return jwt.sign(
+        { id: this._id },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || "7d" }
+    );
 };
 
 // Generate 6-digit OTP with 10-minute expiry

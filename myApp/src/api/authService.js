@@ -62,3 +62,20 @@ export const resetTemporaryPasswordApi = async (data) => {
 
     return unwrap(response);
 };
+
+export const refreshTokenApi = async (refreshToken) => {
+    const response = await api.post(
+        "/patient-auth/refresh-token",
+        { refreshToken }
+    );
+
+    return unwrap(response);
+};
+
+export const logoutApi = async (refreshToken) => {
+    try {
+        await api.post("/patient-auth/logout", { refreshToken });
+    } catch (err) {
+        console.warn("Logout request failed (best-effort):", err?.message);
+    }
+};

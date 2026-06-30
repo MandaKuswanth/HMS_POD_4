@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 
 export interface LoginRequest {
   email: string;
@@ -36,8 +36,19 @@ export interface LoginResponse {
   message: string;
   data: {
     token: string;
+    refreshToken: string;
     resetRequired: boolean;
     user: User;
+  };
+}
+
+export interface RefreshTokenResponse {
+  statusCode: number;
+  success: boolean;
+  message: string;
+  data: {
+    token: string;
+    refreshToken: string;
   };
 }
 
@@ -51,6 +62,7 @@ export class AuthService {
   private readonly API_URL = 'http://localhost:3000/api/employees';
 
   private readonly TOKEN_KEY = 'token';
+  private readonly REFRESH_TOKEN_KEY = 'refreshToken';
   private readonly USER_KEY = 'user';
   private readonly PERMISSIONS_KEY = 'permissions';
 
@@ -70,28 +82,50 @@ export class AuthService {
 
   saveLoginData(response: LoginResponse): void {
     const token = response?.data?.token;
+    const refreshToken = response?.data?.refreshToken;
     const user = response?.data?.user;
 
     if (token) {
       localStorage.setItem(this.TOKEN_KEY, token);
     }
 
-    if (user) {
-      localStorage.setItem(
-        this.USER_KEY,
-        JSON.stringify(user)
-      );
+    if (refreshToken) {
+      localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+    }
 
+    if (user) {
+      localStorage.setItem(this.USER_KEY, JSON.stringify(user));
       this.savePermissions(user.permissions || []);
     }
   }
 
   logout(): void {
+    const refreshToken = this.getRefreshToken();
+
+    if (refreshToken) {
+      this.http.post(`${this.API_URL}/logout`, { refreshToken }).subscribe({ error: () => {} });
+    }
+
     localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     localStorage.removeItem(this.PERMISSIONS_KEY);
 
     this.router.navigate(['/login']);
+  }
+
+  refreshToken(): Observable<RefreshTokenResponse> {
+    const refreshToken = this.getRefreshToken();
+    return this.http.post<RefreshTokenResponse>(`${this.API_URL}/refresh-token`, { refreshToken }).pipe(
+      tap((res) => {
+        localStorage.setItem(this.TOKEN_KEY, res.data.token);
+        localStorage.setItem(this.REFRESH_TOKEN_KEY, res.data.refreshToken);
+      })
+    );
+  }
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
   }
 
   isLoggedIn(): boolean {

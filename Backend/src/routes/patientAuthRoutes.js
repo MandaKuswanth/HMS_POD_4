@@ -10,7 +10,9 @@ const {
     forgotPassword,
     verifyResetOTP,
     resetPassword,
-    resetTemporaryPassword
+    resetTemporaryPassword,
+    refreshPatientToken,
+    logoutPatient
 } = require("../controllers/patientAuthController");
 
 const {
@@ -36,6 +38,10 @@ router.post("/verify-otp", verifyResetOTP);
 router.post("/reset-password", resetPassword);
 
 router.post("/reset-temporary-password", resetTemporaryPassword);
+
+router.post("/refresh-token", refreshPatientToken);
+
+router.post("/logout", logoutPatient);
 
 /*
 |--------------------------------------------------------------------------

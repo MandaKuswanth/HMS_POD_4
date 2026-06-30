@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const employeeController = require("../controllers/employeeController");
+const { refreshEmployeeToken, logoutEmployee } = require("../controllers/employeeController");
 
 const verifyJWT = require("../middleware/authMiddleware");
 const allowPermission = require("../middleware/checkPermission");
@@ -33,6 +34,10 @@ router.post(
     "/login",
     employeeController.login
 );
+
+router.post("/refresh-token", refreshEmployeeToken);
+
+router.post("/logout", logoutEmployee);
 
 /*
 |--------------------------------------------------------------------------

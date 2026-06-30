@@ -228,10 +228,11 @@ exports.loginPatient = async (req, res) => {
             )
         ];
 
-        const token =
-            user.generateAccessToken();
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
 
         user.lastLogin = new Date();
+        user.refreshToken = refreshToken;
 
         await user.save();
 
@@ -239,7 +240,8 @@ exports.loginPatient = async (req, res) => {
             new ApiResponse(
                 200,
                 {
-                    token,
+                    token: accessToken,
+                    refreshToken,
 
                     patient,
 
@@ -565,6 +567,70 @@ exports.resetPassword = async (req, res) => {
                 err.message || "Internal Server Error"
             )
         );
+    }
+};
+
+exports.refreshPatientToken = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(401).json(new ApiError(401, "Refresh token required"));
+        }
+
+        const jwt = require("jsonwebtoken");
+        let decoded;
+        try {
+            decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        } catch (err) {
+            return res.status(403).json(new ApiError(403, "Invalid or expired refresh token"));
+        }
+
+        const user = await User.findOne({
+            _id: decoded.id,
+            isEmployee: false,
+            isDeleted: false
+        }).select("+refreshToken");
+
+        if (!user || user.refreshToken !== refreshToken) {
+            return res.status(403).json(new ApiError(403, "Refresh token revoked"));
+        }
+
+        if (!user.status) {
+            return res.status(403).json(new ApiError(403, "Account is inactive"));
+        }
+
+        const newAccessToken = user.generateAccessToken();
+        const newRefreshToken = user.generateRefreshToken();
+
+        user.refreshToken = newRefreshToken;
+        await user.save();
+
+        return res.status(200).json(
+            new ApiResponse(200, { token: newAccessToken, refreshToken: newRefreshToken }, "Token refreshed")
+        );
+    } catch (err) {
+        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+    }
+};
+
+exports.logoutPatient = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (refreshToken) {
+            const jwt = require("jsonwebtoken");
+            try {
+                const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+                await User.findByIdAndUpdate(decoded.id, { refreshToken: null });
+            } catch (_) {
+                // token invalid — nothing to revoke
+            }
+        }
+
+        return res.status(200).json(new ApiResponse(200, {}, "Logged out successfully"));
+    } catch (err) {
+        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
     }
 };
 
