@@ -1,20 +1,22 @@
 .navbar {
     height: 72px;
-    padding: 0 28px;
-
     display: flex;
     align-items: center;
+
+    padding: 0 28px;
 
     position: sticky;
     top: 0;
     z-index: 1000;
 
+    flex-shrink: 0;
+
     background: linear-gradient(135deg, #ffffff 0%, #f3f8ff 100%);
     border-bottom: 1px solid #bfdbfe;
 
     box-shadow:
-        0 6px 22px rgba(13, 71, 161, 0.1),
-        0 2px 8px rgba(0, 0, 0, 0.04);
+        0 4px 12px rgba(13, 71, 161, 0.08),
+        0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 /* BRAND LEFT */

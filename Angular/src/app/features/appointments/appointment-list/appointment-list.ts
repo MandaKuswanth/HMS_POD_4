@@ -24,8 +24,6 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 import { ToastrService } from 'ngx-toastr';
 
-import { Navbar } from '../../../shared/components/navbar/navbar';
-import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 import { AppointmentService } from '../../../core/services/appointment';
 import { AppointmentDialog } from '../appointment-dialog/appointment-dialog';
 import { AuthService } from '../../../core/services/auth';
@@ -52,8 +50,6 @@ import { UpdateStatusDialog } from '../appointment-dialog/update-status-dialog';
     MatDatepickerModule,
     MatNativeDateModule,
     MatPaginatorModule,
-    Navbar,
-    Sidebar,
     HasPermissionDirective,
   ],
   templateUrl: './appointment-list.html',
@@ -99,8 +95,8 @@ export class AppointmentList implements OnInit {
   }
 
   get paginatedAppointments(): any[] {
-   
-   return this.filteredAppointments;
+
+    return this.filteredAppointments;
   }
 
   get statuses(): string[] {
@@ -123,47 +119,47 @@ export class AppointmentList implements OnInit {
   }
 
   loadAppointments(): void {
-  this.isLoading = true;
-  this.expandedAppointment = null;
-  this.cdr.markForCheck();
+    this.isLoading = true;
+    this.expandedAppointment = null;
+    this.cdr.markForCheck();
 
-  this.appointmentService
-    .getAppointments(this.pageIndex + 1, this.pageSize)
-    .subscribe({
-      next: (response: any) => {
+    this.appointmentService
+      .getAppointments(this.pageIndex + 1, this.pageSize)
+      .subscribe({
+        next: (response: any) => {
 
-        this.appointments = Array.isArray(response?.data?.records)
-          ? response.data.records
-          : [];
+          this.appointments = Array.isArray(response?.data?.records)
+            ? response.data.records
+            : [];
 
-        this.filteredAppointments = [...this.appointments];
+          this.filteredAppointments = [...this.appointments];
 
-        this.totalRecords =
-          response?.data?.pagination?.totalRecords || 0;
+          this.totalRecords =
+            response?.data?.pagination?.totalRecords || 0;
 
-        this.isLoading = false;
-        this.expandedAppointment = null;
+          this.isLoading = false;
+          this.expandedAppointment = null;
 
-        this.cdr.markForCheck();
-      },
+          this.cdr.markForCheck();
+        },
 
-      error: (error) => {
-        console.error('APPOINTMENT LIST ERROR:', error);
+        error: (error) => {
+          console.error('APPOINTMENT LIST ERROR:', error);
 
-        this.isLoading = false;
-        this.appointments = [];
-        this.filteredAppointments = [];
-        this.totalRecords = 0;
-        this.expandedAppointment = null;
+          this.isLoading = false;
+          this.appointments = [];
+          this.filteredAppointments = [];
+          this.totalRecords = 0;
+          this.expandedAppointment = null;
 
-        this.toastr.error(
-          error?.error?.message || 'Failed to load appointments'
-        );
+          this.toastr.error(
+            error?.error?.message || 'Failed to load appointments'
+          );
 
-        this.cdr.markForCheck();
-      },
-    });
-}
+          this.cdr.markForCheck();
+        },
+      });
+  }
   applySearch(): void {
     this.applyFilters();
   }
@@ -364,56 +360,56 @@ export class AppointmentList implements OnInit {
 
 
 
-openUpdateStatusDialog(appointment: any): void {
-  const ref = this.dialog.open(UpdateStatusDialog, {
-    width: '900px',
-    maxWidth: '95vw',
-    disableClose: true,
-    data: {
-      appointmentId: appointment.appointmentId,
-      currentStatus: appointment.status,
-      nextStatuses: appointment.allowedStatuses || []
-    }
-  });
+  openUpdateStatusDialog(appointment: any): void {
+    const ref = this.dialog.open(UpdateStatusDialog, {
+      width: '900px',
+      maxWidth: '95vw',
+      disableClose: true,
+      data: {
+        appointmentId: appointment.appointmentId,
+        currentStatus: appointment.status,
+        nextStatuses: appointment.allowedStatuses || []
+      }
+    });
 
-  ref.afterClosed().subscribe((selectedStatus: string) => {
+    ref.afterClosed().subscribe((selectedStatus: string) => {
 
-    if (!selectedStatus ||
+      if (!selectedStatus ||
         selectedStatus === appointment.status) {
-      return;
-    }
+        return;
+      }
 
-    this.appointmentService
-      .updateAppointmentStatus(
-        appointment.appointmentId,
-        selectedStatus
-      )
-      .subscribe({
-        next: (response: any) => {
+      this.appointmentService
+        .updateAppointmentStatus(
+          appointment.appointmentId,
+          selectedStatus
+        )
+        .subscribe({
+          next: (response: any) => {
 
-          this.toastr.success(
-            response?.message ||
-            'Status updated successfully'
-          );
+            this.toastr.success(
+              response?.message ||
+              'Status updated successfully'
+            );
 
-          this.expandedAppointment = null;
+            this.expandedAppointment = null;
 
-          this.loadAppointments();
-        },
+            this.loadAppointments();
+          },
 
-        error: (error: any) => {
+          error: (error: any) => {
 
-          this.toastr.error(
-            error?.error?.message ||
-            'Failed to update appointment status'
-          );
+            this.toastr.error(
+              error?.error?.message ||
+              'Failed to update appointment status'
+            );
 
-        }
-      });
+          }
+        });
 
-  });
+    });
 
-}
+  }
 
   getPatientDisplayName(appointment: any): string {
     return appointment?.patientName || 'N/A';

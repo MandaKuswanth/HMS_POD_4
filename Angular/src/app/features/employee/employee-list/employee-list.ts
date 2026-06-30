@@ -22,8 +22,6 @@ import { HasPermissionDirective } from '../../../shared/directives/has-permissio
 import { PERMISSIONS } from '../../../constants/permission';
 import { ToastrService } from 'ngx-toastr';
 
-import { Navbar } from '../../../shared/components/navbar/navbar';
-import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 import { EmployeeService } from '../../../core/services/employee';
 import { AuthService } from '../../../core/services/auth';
 import { EmployeeDialog } from '../employee-dialog/employee-dialog';
@@ -45,8 +43,7 @@ import { EmployeeDialog } from '../employee-dialog/employee-dialog';
     MatPaginatorModule,
     HasPermissionDirective,
 
-    Navbar,
-    Sidebar,
+
   ],
   templateUrl: './employee-list.html',
   styleUrl: './employee-list.css',

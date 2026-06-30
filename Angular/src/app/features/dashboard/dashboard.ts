@@ -27,8 +27,6 @@ import { PERMISSIONS } from '../../constants/permission';
     CommonModule,
     MatCardModule,
     MatIconModule,
-    Navbar,
-    Sidebar,
     HasPermissionDirective,
   ],
   templateUrl: './dashboard.html',
