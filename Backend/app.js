@@ -4,6 +4,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
@@ -33,6 +34,7 @@ app.use(morgan("dev"));
 // Body parser middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Test route
 app.get("/", (req, res) => {

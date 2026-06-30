@@ -342,13 +342,21 @@ exports.login = async (req, res) => {
             mustResetPassword: user.mustResetPassword
         };
 
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        };
+
         if (user.mustResetPassword) {
             user.refreshToken = refreshToken;
             await user.save();
+            res.cookie("refreshToken", refreshToken, cookieOptions);
             return res.status(200).json(
                 new ApiResponse(
                     200,
-                    { resetRequired: true, token: accessToken, refreshToken, user: userData },
+                    { resetRequired: true, token: accessToken, user: userData },
                     "Password reset required"
                 )
             );
@@ -358,10 +366,11 @@ exports.login = async (req, res) => {
         user.refreshToken = refreshToken;
         await user.save();
 
+        res.cookie("refreshToken", refreshToken, cookieOptions);
         return res.status(200).json(
             new ApiResponse(
                 200,
-                { resetRequired: false, token: accessToken, refreshToken, user: userData },
+                { resetRequired: false, token: accessToken, user: userData },
                 "User is successfully logged-in."
             )
         );
@@ -830,7 +839,7 @@ exports.toggleEmployeeStatus = async (req, res) => {
 
 exports.refreshEmployeeToken = async (req, res) => {
     try {
-        const { refreshToken } = req.body;
+        const refreshToken = req.cookies.refreshToken;
 
         if (!refreshToken) {
             return res.status(401).json(new ApiError(401, "Refresh token required"));
@@ -863,8 +872,15 @@ exports.refreshEmployeeToken = async (req, res) => {
         user.refreshToken = newRefreshToken;
         await user.save();
 
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
         return res.status(200).json(
-            new ApiResponse(200, { token: newAccessToken, refreshToken: newRefreshToken }, "Token refreshed")
+            new ApiResponse(200, { token: newAccessToken }, "Token refreshed")
         );
     } catch (err) {
         console.error(err);
@@ -876,7 +892,7 @@ exports.refreshEmployeeToken = async (req, res) => {
 
 exports.logoutEmployee = async (req, res) => {
     try {
-        const { refreshToken } = req.body;
+        const refreshToken = req.cookies.refreshToken;
 
         if (refreshToken) {
             try {
@@ -886,6 +902,12 @@ exports.logoutEmployee = async (req, res) => {
                 // token invalid — nothing to revoke
             }
         }
+
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax"
+        });
 
         return res.status(200).json(new ApiResponse(200, {}, "Logged out successfully"));
     } catch (err) {

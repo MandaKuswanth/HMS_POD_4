@@ -62,7 +62,6 @@ export class AuthService {
   private readonly API_URL = 'http://localhost:3000/api/employees';
 
   private readonly TOKEN_KEY = 'token';
-  private readonly REFRESH_TOKEN_KEY = 'refreshToken';
   private readonly USER_KEY = 'user';
   private readonly PERMISSIONS_KEY = 'permissions';
 
@@ -82,15 +81,10 @@ export class AuthService {
 
   saveLoginData(response: LoginResponse): void {
     const token = response?.data?.token;
-    const refreshToken = response?.data?.refreshToken;
     const user = response?.data?.user;
 
     if (token) {
       localStorage.setItem(this.TOKEN_KEY, token);
-    }
-
-    if (refreshToken) {
-      localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
     }
 
     if (user) {
@@ -100,14 +94,9 @@ export class AuthService {
   }
 
   logout(): void {
-    const refreshToken = this.getRefreshToken();
-
-    if (refreshToken) {
-      this.http.post(`${this.API_URL}/logout`, { refreshToken }).subscribe({ error: () => {} });
-    }
+    this.http.post(`${this.API_URL}/logout`, {}, { withCredentials: true }).subscribe({ error: () => {} });
 
     localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     localStorage.removeItem(this.PERMISSIONS_KEY);
 
@@ -115,17 +104,11 @@ export class AuthService {
   }
 
   refreshToken(): Observable<RefreshTokenResponse> {
-    const refreshToken = this.getRefreshToken();
-    return this.http.post<RefreshTokenResponse>(`${this.API_URL}/refresh-token`, { refreshToken }).pipe(
+    return this.http.post<RefreshTokenResponse>(`${this.API_URL}/refresh-token`, {}, { withCredentials: true }).pipe(
       tap((res) => {
         localStorage.setItem(this.TOKEN_KEY, res.data.token);
-        localStorage.setItem(this.REFRESH_TOKEN_KEY, res.data.refreshToken);
       })
     );
-  }
-
-  getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
   }
 
   isLoggedIn(): boolean {
