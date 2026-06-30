@@ -22,8 +22,7 @@ export default function ProfileScreen({ navigation }) {
     const { patient, logout } = useAuth();
 
     const address =
-        typeof patient?.address === "object" &&
-            patient.address !== null
+        typeof patient?.address === "object" && patient.address !== null
             ? patient.address
             : {
                 street: patient?.address || "",
@@ -43,16 +42,16 @@ export default function ProfileScreen({ navigation }) {
                 <View style={styles.avatarSection}>
                     <AppAvatar
                         name={patient?.name}
-                        size={82}
+                        size={86}
                     />
-
-                    <Text style={styles.patientName}>
+                    <Text style={styles.patientName} numberOfLines={1}>
                         {patient?.name || "Patient"}
                     </Text>
-
-                    <Text style={styles.uhidText}>
-                        {patient?.UHID || "—"}
-                    </Text>
+                    <View style={styles.uhidBadge}>
+                        <Text style={styles.uhidText}>
+                            UHID: {patient?.UHID || "—"}
+                        </Text>
+                    </View>
                 </View>
 
                 <AppCard style={styles.card}>
@@ -61,33 +60,25 @@ export default function ProfileScreen({ navigation }) {
                         label="Email"
                         value={patient?.email}
                     />
-
                     <Divider />
-
                     <InfoRow
                         icon="📞"
                         label="Phone"
                         value={patient?.phone}
                     />
-
                     <Divider />
-
                     <InfoRow
                         icon="🩸"
                         label="Blood Group"
                         value={patient?.bloodGroup}
                     />
-
                     <Divider />
-
                     <InfoRow
                         icon="👤"
                         label="Gender"
                         value={patient?.gender?.toUpperCase()}
                     />
-
                     <Divider />
-
                     <InfoRow
                         icon="📅"
                         label="DOB"
@@ -105,25 +96,19 @@ export default function ProfileScreen({ navigation }) {
                         label="Street"
                         value={address?.street}
                     />
-
                     <Divider />
-
                     <InfoRow
                         icon="📍"
                         label="City"
                         value={address?.city}
                     />
-
                     <Divider />
-
                     <InfoRow
                         icon="🗺️"
                         label="State"
                         value={address?.state}
                     />
-
                     <Divider />
-
                     <InfoRow
                         icon="📌"
                         label="Pincode"
@@ -141,17 +126,13 @@ export default function ProfileScreen({ navigation }) {
                         label="Name"
                         value={patient?.emergencyContact?.name}
                     />
-
                     <Divider />
-
                     <InfoRow
                         icon="🔗"
                         label="Relation"
                         value={patient?.emergencyContact?.relation}
                     />
-
                     <Divider />
-
                     <InfoRow
                         icon="📞"
                         label="Phone"
@@ -159,16 +140,11 @@ export default function ProfileScreen({ navigation }) {
                     />
                 </AppCard>
 
-                <View style={styles.btnContainer}>
+                <View style={styles.btnGroup}>
                     <AppButton
                         title="Edit Profile"
-                        onPress={() =>
-                            navigation.navigate("EditProfile")
-                        }
+                        onPress={() => navigation.navigate("EditProfile")}
                     />
-                </View>
-
-                <View style={styles.btnContainer}>
                     <AppButton
                         title="Logout"
                         onPress={logout}
@@ -185,19 +161,10 @@ function InfoRow({ icon, label, value }) {
     return (
         <View style={styles.infoRow}>
             <View style={styles.infoLeft}>
-                <Text style={styles.infoIcon}>
-                    {icon}
-                </Text>
-
-                <Text style={styles.infoLabel}>
-                    {label}
-                </Text>
+                <Text style={styles.infoIcon}>{icon}</Text>
+                <Text style={styles.infoLabel}>{label}</Text>
             </View>
-
-            <Text
-                style={styles.infoValue}
-                numberOfLines={2}
-            >
+            <Text style={styles.infoValue} numberOfLines={2}>
                 {value || "—"}
             </Text>
         </View>
@@ -212,76 +179,78 @@ const styles = StyleSheet.create({
     scroll: {
         paddingBottom: 40,
     },
-
     avatarSection: {
         alignItems: "center",
         paddingVertical: 24,
+        paddingHorizontal: 20,
     },
-
     patientName: {
         fontSize: 22,
         fontWeight: "900",
         color: COLORS.text,
-        marginTop: 10,
+        marginTop: 16,
+        textAlign: "center",
     },
-
+    uhidBadge: {
+        backgroundColor: COLORS.primaryLight,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 20,
+        marginTop: 8,
+    },
     uhidText: {
-        fontSize: 14,
-        color: COLORS.subtitle,
-        marginTop: 4,
+        fontSize: 13,
+        fontWeight: "700",
+        color: COLORS.primary,
     },
-
     card: {
         marginHorizontal: 20,
-        marginBottom: 14,
+        marginBottom: 16,
+        padding: 20,
     },
-
     cardSectionTitle: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: "900",
         color: COLORS.text,
-        paddingBottom: 8,
+        paddingBottom: 12,
     },
-
     infoRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: 13,
-        gap: 10,
+        paddingVertical: 12,
+        gap: 16,
     },
-
     infoLeft: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 10,
+        gap: 12,
     },
-
     infoIcon: {
-        fontSize: 18,
-        width: 26,
+        fontSize: 20,
+        width: 28,
+        textAlign: "center",
     },
-
     infoLabel: {
         fontSize: 15,
         color: COLORS.subtitle,
+        fontWeight: "500",
     },
-
     infoValue: {
         flex: 1,
         fontSize: 15,
-        fontWeight: "800",
+        fontWeight: "700",
         color: COLORS.text,
         textAlign: "right",
     },
-
     divider: {
         height: 1,
         backgroundColor: COLORS.border,
+        opacity: 0.6,
     },
-
-    btnContainer: {
+    btnGroup: {
         marginHorizontal: 20,
-        marginBottom: 12,
+        marginTop: 8,
+        gap: 12,
     },
 });

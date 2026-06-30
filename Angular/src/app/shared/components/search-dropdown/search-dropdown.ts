@@ -16,11 +16,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, of, Observable } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, tap, catchError } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-search-dropdown',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatProgressSpinnerModule],
+  imports: [CommonModule, ReactiveFormsModule, MatProgressSpinnerModule, MatFormFieldModule, MatInputModule, MatIconModule],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -31,20 +34,21 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="search-dropdown-container">
-      <div class="input-wrapper">
+      <mat-form-field appearance="outline" class="full-width">
         <input
+          matInput
           type="text"
           [placeholder]="placeholder"
           [formControl]="inputControl"
           (focus)="onFocus()"
           (keydown)="onKeyDown($event)"
           [disabled]="disabledSignal()"
-          class="dropdown-input"
+          autocomplete="off"
         />
-        <div class="spinner-wrapper" *ngIf="loadingSignal()">
+        <div matSuffix class="spinner-suffix" *ngIf="loadingSignal()">
           <mat-spinner diameter="18"></mat-spinner>
         </div>
-      </div>
+      </mat-form-field>
 
       <div class="dropdown-list" *ngIf="isOpenSignal() && !disabledSignal()">
         <ng-container *ngIf="resultsSignal().length > 0; else noResults">
@@ -76,36 +80,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
       position: relative;
       width: 100%;
     }
-    .input-wrapper {
-      position: relative;
+    .full-width {
       width: 100%;
     }
-    .dropdown-input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 10px 36px 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-      outline: none;
-      background-color: #fff;
-    }
-    .dropdown-input:focus {
-      border-color: #3f51b5;
-    }
-    .dropdown-input:disabled {
-      background-color: #f5f5f5;
-      cursor: not-allowed;
-    }
-    .spinner-wrapper {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
+    .spinner-suffix {
+      margin-right: 8px;
+      display: flex;
+      align-items: center;
     }
     .dropdown-list {
       position: absolute;
-      top: 105%;
+      top: calc(100% - 15px);
       left: 0;
       width: 100%;
       max-height: 200px;
@@ -122,7 +107,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
       font-size: 14px;
       color: #333;
     }
-    .dropdown-item.highlighted {
+    .dropdown-item:hover, .dropdown-item.highlighted {
       background-color: #f5f5f5;
       color: #3f51b5;
     }
@@ -131,6 +116,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
       font-size: 14px;
       color: #888;
       font-style: italic;
+    }
+    ::ng-deep .search-dropdown-container .mat-mdc-form-field-subscript-wrapper {
+      display: none;
     }
   `]
 })

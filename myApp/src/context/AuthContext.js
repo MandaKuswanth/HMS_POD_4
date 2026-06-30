@@ -7,8 +7,15 @@ import React, {
     useState,
 } from "react";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setLogoutCallback } from "../utils/api";
+import {
+    saveAccessToken,
+    saveRefreshToken,
+    saveUserData,
+    getAccessToken,
+    getUserData,
+    clearAllAuthData,
+} from "../utils/secureStorage";
 
 import {
     loginPatient,
@@ -22,7 +29,6 @@ import {
 const AuthContext = createContext(null);
 
 const normalizePatient = (p) => {
-    console.log(p);
     if (!p) return null;
 
     return {
@@ -40,13 +46,13 @@ const normalizePatient = (p) => {
 };
 
 const normalizeLogin = (payload) => {
-    console.log(payload);
     const d = payload?.data || payload;
 
     return {
-        token: d?.token || null,
+        token: d?.accessToken || d?.token || null,
+        refreshToken: d?.refreshToken || null,
         user: d?.user || null,
-        patient: normalizePatient(d?.patient),
+        patient: normalizePatient(d?.patient || (d?.user?.isEmployee ? null : d?.user)),
     };
 };
 
@@ -58,14 +64,13 @@ export function AuthProvider({ children }) {
 
     const restoreSession = useCallback(async () => {
         try {
-            const t = await AsyncStorage.getItem("token");
-            const u = await AsyncStorage.getItem("user");
-            const p = await AsyncStorage.getItem("patient");
+            const t = await getAccessToken();
+            const storedData = await getUserData();
 
-            if (t && p) {
+            if (t && storedData) {
                 setToken(t);
-                setUser(u ? JSON.parse(u) : null);
-                setPatient(normalizePatient(JSON.parse(p)));
+                setUser(storedData.user || null);
+                setPatient(normalizePatient(storedData.patient));
             }
         } catch (err) {
             console.log("RESTORE SESSION ERROR:", err);
@@ -86,34 +91,29 @@ export function AuthProvider({ children }) {
     }, [logout]);
 
     const login = useCallback(async ({ email, password }) => {
-        const data = normalizeLogin(
-            await loginPatient({
-                email: email.trim().toLowerCase(),
-                password,
-            })
-        );
+        const rawData = await loginPatient({
+            email: email.trim().toLowerCase(),
+            password,
+        });
+        const data = normalizeLogin(rawData);
 
-        console.log("LOGIN DATA:", data);
+        console.log("LOGIN DATA parsed:", data);
 
-        if (!data.token || !data.patient) {
+        if (!data.token) {
             throw new Error("Invalid login response from server");
         }
 
-        await AsyncStorage.setItem("token", data.token);
-
-        if (data.user) {
-            await AsyncStorage.setItem(
-                "user",
-                JSON.stringify(data.user)
-            );
-        } else {
-            await AsyncStorage.removeItem("user");
+        await saveAccessToken(data.token);
+        
+        if (data.refreshToken) {
+            await saveRefreshToken(data.refreshToken);
         }
 
-        await AsyncStorage.setItem(
-            "patient",
-            JSON.stringify(data.patient)
-        );
+        const userDataToStore = {
+            user: data.user,
+            patient: data.patient
+        };
+        await saveUserData(userDataToStore);
 
         setToken(data.token);
         setUser(data.user || null);
@@ -127,11 +127,7 @@ export function AuthProvider({ children }) {
     }, []);
 
     const logout = useCallback(async () => {
-        await AsyncStorage.multiRemove([
-            "token",
-            "user",
-            "patient",
-        ]);
+        await clearAllAuthData();
 
         setToken(null);
         setUser(null);
@@ -142,26 +138,23 @@ export function AuthProvider({ children }) {
         const n = normalizePatient(p);
 
         if (!n) {
-            await AsyncStorage.removeItem("patient");
+            await saveUserData({ user, patient: null });
             setPatient(null);
             return;
         }
 
         setPatient(n);
-
-        await AsyncStorage.setItem(
-            "patient",
-            JSON.stringify(n)
-        );
-    }, []);
+        await saveUserData({ user, patient: n });
+    }, [user]);
 
     const updateProfile = useCallback(async (data) => {
-        if (!patient?.UHID) {
+        const uhid = patient?.UHID || user?.UHID;
+        if (!uhid) {
             throw new Error("Patient UHID missing");
         }
 
         const updated = await updatePatientApi(
-            patient.UHID,
+            uhid,
             data
         );
 
@@ -172,7 +165,7 @@ export function AuthProvider({ children }) {
         await updatePatientState(finalPatient);
 
         return finalPatient;
-    }, [patient, updatePatientState]);
+    }, [patient, user, updatePatientState]);
 
     const value = useMemo(() => ({
         token,

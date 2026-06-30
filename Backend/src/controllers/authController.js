@@ -43,6 +43,7 @@ exports.login = asyncHandler(async (req, res) => {
             200,
             {
                 accessToken,
+                refreshToken,
                 user: userData
             },
             "Login successful"
@@ -51,7 +52,11 @@ exports.login = asyncHandler(async (req, res) => {
 });
 
 exports.refresh = asyncHandler(async (req, res) => {
-    const token = getCookie(req, "refreshToken");
+    let token = getCookie(req, "refreshToken");
+    if (!token && req.body && req.body.refreshToken) {
+        token = req.body.refreshToken;
+    }
+
     if (!token) {
         throw new ApiError(401, "No refresh token found");
     }
@@ -121,6 +126,7 @@ exports.refresh = asyncHandler(async (req, res) => {
             200,
             {
                 accessToken: newAccessToken,
+                refreshToken: newRefreshToken,
                 user: userData
             },
             "Token refreshed successfully"

@@ -1,5 +1,4 @@
 import React, { useCallback } from "react";
-
 import {
     ActivityIndicator,
     Alert,
@@ -9,30 +8,20 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-
 import { useFocusEffect } from "@react-navigation/native";
 
 import AppButton from "../../components/AppButton";
 import AppCard from "../../components/AppCard";
 import AppContainer from "../../components/AppContainer";
 import ScreenHeader from "../../components/ScreenHeader";
-
 import { useAppointments } from "../../context/AppointmentContext";
-
 import COLORS from "../../utils/colors";
 import { formatDateDisplay } from "../../utils/dateUtils";
 
-const canEdit = (status) => {
-    return status === "PENDING";
-};
+const canEdit = (status) => status === "PENDING";
+const canCancel = (status) => status !== "COMPLETED" && status !== "CANCELLED";
 
-const canCancel = (status) => {
-    return status !== "COMPLETED" && status !== "CANCELLED";
-};
-
-export default function MyAppointmentsScreen({
-    navigation,
-}) {
+export default function MyAppointmentsScreen({ navigation }) {
     const {
         appointments,
         appointmentsLoading,
@@ -51,33 +40,33 @@ export default function MyAppointmentsScreen({
             "Cancel Appointment",
             "Are you sure you want to cancel this appointment?",
             [
-                {
-                    text: "No",
-                    style: "cancel",
-                },
+                { text: "No", style: "cancel" },
                 {
                     text: "Yes",
                     style: "destructive",
                     onPress: async () => {
                         try {
                             await cancelAppointment(appointmentId);
-
-                            Alert.alert(
-                                "Success",
-                                "Appointment cancelled"
-                            );
+                            Alert.alert("Success", "Appointment cancelled");
                         } catch (err) {
-                            Alert.alert(
-                                "Error",
-                                err?.response?.data?.message ||
-                                "Unable to cancel appointment"
-                            );
+                            Alert.alert("Error", err?.response?.data?.message || "Unable to cancel appointment");
                         }
                     },
                 },
             ]
         );
     };
+
+    const renderEmptyState = () => (
+        <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No appointments found</Text>
+            <AppButton
+                title="Book an Appointment"
+                onPress={() => navigation.navigate("BookAppointment")}
+                style={styles.emptyButton}
+            />
+        </View>
+    );
 
     return (
         <AppContainer>
@@ -89,148 +78,89 @@ export default function MyAppointmentsScreen({
             <View style={styles.tabContainer}>
                 <TouchableOpacity
                     style={styles.tab}
-                    onPress={() =>
-                        navigation.navigate("BookAppointment")
-                    }
+                    onPress={() => navigation.navigate("BookAppointment")}
+                    activeOpacity={0.7}
                 >
-                    <Text style={styles.tabText}>
-                        Book Appointment
-                    </Text>
+                    <Text style={styles.tabText}>Book Appointment</Text>
                 </TouchableOpacity>
 
                 <View style={[styles.tab, styles.tabActive]}>
-                    <Text
-                        style={[
-                            styles.tabText,
-                            styles.tabTextActive,
-                        ]}
-                    >
-                        My Appointments
-                    </Text>
+                    <Text style={[styles.tabText, styles.tabTextActive]}>My Appointments</Text>
                 </View>
             </View>
 
             <View style={styles.listHeader}>
-                <Text style={styles.listTitle}>
-                    My Appointments
-                </Text>
-
+                <Text style={styles.listTitle}>My Appointments</Text>
                 <Text style={styles.listCount}>
-                    {appointments.length} total
+                    {appointments.length} {appointments.length === 1 ? 'appointment' : 'appointments'}
                 </Text>
             </View>
 
             {appointmentsLoading ? (
                 <View style={styles.loader}>
-                    <ActivityIndicator
-                        size="large"
-                        color={COLORS.primary}
-                    />
+                    <ActivityIndicator size="large" color={COLORS.primary} />
                 </View>
             ) : (
                 <FlatList
                     data={appointments}
                     keyExtractor={(item, index) =>
-                        item.appointmentId?.toString() ||
-                        item._id?.toString() ||
-                        String(index)
+                        item.appointmentId?.toString() || item._id?.toString() || String(index)
                     }
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.listContent}
-                    ListEmptyComponent={
-                        <Text style={styles.emptyText}>
-                            No appointments found
-                        </Text>
-                    }
+                    ListEmptyComponent={renderEmptyState}
                     renderItem={({ item }) => {
-                        const statusStyle =
-                            getStatusStyle(item.status);
+                        const statusStyle = getStatusStyle(item.status);
 
                         return (
                             <AppCard style={styles.apptCard}>
                                 <View style={styles.apptTop}>
-                                    <View style={{ flex: 1 }}>
+                                    <View style={styles.apptInfo}>
                                         <Text style={styles.doctorName}>
-                                            Dr.{" "}
-                                            {item.doctorName ||
-                                                item.doctorEmployeeId ||
-                                                "Doctor"}
+                                            Dr. {item.doctorName || item.doctorEmployeeId || "Doctor"}
                                         </Text>
-
                                         <Text style={styles.apptDate}>
-                                            {formatDateDisplay(item.date)}
-                                            {" • "}
-                                            {item.timeSlot || "—"}
+                                            {formatDateDisplay(item.date)} • {item.timeSlot || "—"}
                                         </Text>
-
                                         {item.reason ? (
-                                            <Text style={styles.apptReason}>
-                                                {item.reason}
-                                            </Text>
+                                            <Text style={styles.apptReason}>{item.reason}</Text>
                                         ) : null}
                                     </View>
 
-                                    <View
-                                        style={[
-                                            styles.statusBadge,
-                                            {
-                                                backgroundColor:
-                                                    statusStyle.bg,
-                                            },
-                                        ]}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.statusText,
-                                                {
-                                                    color:
-                                                        statusStyle.text,
-                                                },
-                                            ]}
-                                        >
+                                    <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                                        <Text style={[styles.statusText, { color: statusStyle.text }]}>
                                             {item.status || "—"}
                                         </Text>
                                     </View>
                                 </View>
 
-                                {(canEdit(item.status) ||
-                                    canCancel(item.status)) && (
-                                        <View style={styles.btnRow}>
-                                            {canEdit(item.status) && (
-                                                <View style={{ flex: 1 }}>
-                                                    <AppButton
-                                                        title="Edit"
-                                                        onPress={() =>
-                                                            navigation.navigate(
-                                                                "EditAppointment",
-                                                                {
-                                                                    appointment:
-                                                                        item,
-                                                                }
-                                                            )
-                                                        }
-                                                        style={styles.actionBtn}
-                                                    />
-                                                </View>
-                                            )}
+                                {(canEdit(item.status) || canCancel(item.status)) && (
+                                    <View style={styles.btnRow}>
+                                        {canEdit(item.status) && (
+                                            <View style={styles.btnWrapper}>
+                                                <AppButton
+                                                    title="Edit"
+                                                    onPress={() =>
+                                                        navigation.navigate("EditAppointment", { appointment: item })
+                                                    }
+                                                    style={styles.actionBtn}
+                                                />
+                                            </View>
+                                        )}
 
-                                            {canCancel(item.status) && (
-                                                <View style={{ flex: 1 }}>
-                                                    <AppButton
-                                                        title="Cancel"
-                                                        color={COLORS.dangerLight}
-                                                        textColor={COLORS.danger}
-                                                        onPress={() =>
-                                                            handleCancel(
-                                                                item.appointmentId
-                                                            )
-                                                        }
-                                                        style={styles.actionBtn}
-                                                    />
-                                                </View>
-                                            )}
-                                        </View>
-                                    )}
+                                        {canCancel(item.status) && (
+                                            <View style={styles.btnWrapper}>
+                                                <AppButton
+                                                    title="Cancel"
+                                                    color={COLORS.dangerLight}
+                                                    textColor={COLORS.danger}
+                                                    onPress={() => handleCancel(item.appointmentId)}
+                                                    style={styles.actionBtn}
+                                                />
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
                             </AppCard>
                         );
                     }}
@@ -243,34 +173,15 @@ export default function MyAppointmentsScreen({
 function getStatusStyle(status) {
     switch (status) {
         case "BOOKED":
-            return {
-                bg: COLORS.bookedLight,
-                text: COLORS.booked,
-            };
-
+            return { bg: COLORS.bookedLight, text: COLORS.booked };
         case "PENDING":
-            return {
-                bg: COLORS.warningLight || "#FEF3C7",
-                text: COLORS.warning || "#D97706",
-            };
-
+            return { bg: COLORS.warningLight || "#FEF3C7", text: COLORS.warning || "#D97706" };
         case "COMPLETED":
-            return {
-                bg: COLORS.primaryLight,
-                text: COLORS.primaryMid,
-            };
-
+            return { bg: COLORS.primaryLight, text: COLORS.primaryMid };
         case "CANCELLED":
-            return {
-                bg: COLORS.dangerLight,
-                text: COLORS.danger,
-            };
-
+            return { bg: COLORS.dangerLight, text: COLORS.danger };
         default:
-            return {
-                bg: "#F1F5F9",
-                text: COLORS.subtitle,
-            };
+            return { bg: COLORS.surface || "#F1F5F9", text: COLORS.subtitle };
     }
 }
 
@@ -279,113 +190,124 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         marginHorizontal: 20,
         backgroundColor: COLORS.white,
-        borderRadius: 14,
+        borderRadius: 12,
         padding: 4,
-        marginBottom: 16,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: COLORS.border,
     },
-
     tab: {
         flex: 1,
         paddingVertical: 12,
-        borderRadius: 10,
+        borderRadius: 8,
         alignItems: "center",
     },
-
     tabActive: {
         backgroundColor: COLORS.primary,
     },
-
     tabText: {
         fontSize: 14,
-        fontWeight: "800",
+        fontWeight: "600",
         color: COLORS.subtitle,
     },
-
     tabTextActive: {
-        color: "#fff",
+        color: COLORS.white,
+        fontWeight: "700",
     },
-
     listHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
+        alignItems: "flex-end",
         paddingHorizontal: 20,
-        marginBottom: 10,
+        marginBottom: 16,
     },
-
     listTitle: {
         fontSize: 18,
-        fontWeight: "800",
+        fontWeight: "700",
         color: COLORS.text,
     },
-
     listCount: {
         fontSize: 13,
         color: COLORS.subtitle,
+        fontWeight: "500",
     },
-
     loader: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
     },
-
     listContent: {
         paddingHorizontal: 20,
         paddingBottom: 40,
+        flexGrow: 1,
     },
-
     apptCard: {
-        marginBottom: 12,
+        marginBottom: 16,
+        padding: 16,
     },
-
     apptTop: {
         flexDirection: "row",
         alignItems: "flex-start",
-        gap: 10,
+        justifyContent: "space-between",
+        gap: 12,
     },
-
+    apptInfo: {
+        flex: 1,
+    },
     doctorName: {
-        fontSize: 17,
-        fontWeight: "800",
+        fontSize: 16,
+        fontWeight: "700",
         color: COLORS.text,
+        marginBottom: 4,
     },
-
     apptDate: {
         fontSize: 13,
         color: COLORS.subtitle,
-        marginTop: 4,
+        fontWeight: "500",
     },
-
     apptReason: {
-        fontSize: 13,
+        fontSize: 14,
         color: COLORS.text,
-        marginTop: 6,
+        marginTop: 8,
+        lineHeight: 20,
     },
-
     statusBadge: {
-        paddingHorizontal: 12,
-        paddingVertical: 5,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
         borderRadius: 20,
     },
-
     statusText: {
-        fontSize: 12,
-        fontWeight: "800",
+        fontSize: 11,
+        fontWeight: "700",
+        textTransform: "uppercase",
     },
-
     btnRow: {
         flexDirection: "row",
-        gap: 10,
-        marginTop: 14,
+        gap: 12,
+        marginTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
+        paddingTop: 16,
     },
-
+    btnWrapper: {
+        flex: 1,
+    },
     actionBtn: {
-        paddingVertical: 11,
+        paddingVertical: 10,
     },
-
+    emptyContainer: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingTop: 60,
+    },
     emptyText: {
-        textAlign: "center",
-        marginTop: 50,
+        fontSize: 16,
         color: COLORS.subtitle,
+        marginBottom: 20,
+        fontWeight: "500",
+    },
+    emptyButton: {
+        minWidth: 200,
     },
 });

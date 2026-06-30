@@ -1,13 +1,14 @@
-import React from "react";
-
+import React, { useRef } from "react";
 import {
     ActivityIndicator,
     Text,
-    TouchableOpacity,
+    Pressable,
     StyleSheet,
+    Animated,
 } from "react-native";
-
 import COLORS from "../utils/colors";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function AppButton({
     title,
@@ -15,51 +16,78 @@ export default function AppButton({
     disabled,
     loading,
     color = COLORS.primary,
-    textColor = "#fff",
+    textColor = COLORS.white,
     style,
+    textStyle,
+    ...props
 }) {
+    const scaleValue = useRef(new Animated.Value(1)).current;
+
+    const handlePressIn = () => {
+        Animated.spring(scaleValue, {
+            toValue: 0.96,
+            useNativeDriver: true,
+        }).start();
+    };
+
+    const handlePressOut = () => {
+        Animated.spring(scaleValue, {
+            toValue: 1,
+            friction: 5,
+            tension: 40,
+            useNativeDriver: true,
+        }).start();
+    };
+
+    const isInactive = disabled || loading;
+
     return (
-        <TouchableOpacity
+        <AnimatedPressable
+            onPressIn={!isInactive ? handlePressIn : undefined}
+            onPressOut={!isInactive ? handlePressOut : undefined}
+            onPress={onPress}
+            disabled={isInactive}
             style={[
                 styles.button,
-                { backgroundColor: color },
-                (disabled || loading) && styles.disabled,
+                { backgroundColor: isInactive ? COLORS.disabledBg : color },
+                isInactive && styles.disabled,
+                { transform: [{ scale: scaleValue }] },
                 style,
             ]}
-            onPress={onPress}
-            disabled={disabled || loading}
-            activeOpacity={0.85}
+            {...props}
         >
             {loading ? (
-                <ActivityIndicator color={textColor} />
+                <ActivityIndicator color={textColor} size="small" />
             ) : (
-                <Text
-                    style={[
-                        styles.text,
-                        { color: textColor },
-                    ]}
-                >
+                <Text style={[styles.text, { color: isInactive ? COLORS.disabledText : textColor }, textStyle]}>
                     {title}
                 </Text>
             )}
-        </TouchableOpacity>
+        </AnimatedPressable>
     );
 }
 
 const styles = StyleSheet.create({
     button: {
-        borderRadius: 50,
-        paddingVertical: 14,
+        height: 52,
+        width: "100%",
+        borderRadius: 16,
         alignItems: "center",
         justifyContent: "center",
+        flexDirection: "row",
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 4,
     },
-
     disabled: {
-        opacity: 0.65,
+        shadowOpacity: 0,
+        elevation: 0,
     },
-
     text: {
-        fontSize: 15,
-        fontWeight: "900",
+        fontSize: 16,
+        fontWeight: "700",
+        letterSpacing: 0.5,
     },
 });

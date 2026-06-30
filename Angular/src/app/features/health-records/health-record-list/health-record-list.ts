@@ -61,6 +61,7 @@ export class HealthRecordList implements OnInit {
 
   readonly searchTextSignal = signal('');
   readonly expandedRecordSignal = signal<HealthRecordRequest | null>(null);
+  readonly refreshSignal = signal(0);
 
   private readonly searchSubject = new Subject<string>();
 
@@ -88,6 +89,7 @@ export class HealthRecordList implements OnInit {
       const page = this.pageSignal() + 1;
       const limit = this.limitSignal();
       const search = this.searchTextSignal();
+      const refresh = this.refreshSignal();
 
       this.loadHealthRecords(page, limit, search);
     });
@@ -175,7 +177,7 @@ export class HealthRecordList implements OnInit {
 
     ref.afterClosed().subscribe((result: boolean) => {
       if (result) {
-        this.pageSignal.set(this.pageSignal());
+        this.refreshSignal.update(v => v + 1);
       }
     });
   }

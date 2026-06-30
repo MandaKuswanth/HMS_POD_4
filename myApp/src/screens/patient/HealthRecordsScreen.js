@@ -1,30 +1,19 @@
-import React, {
-    useEffect,
-    useState,
-} from "react";
-
+import React, { useEffect, useState } from "react";
 import {
     FlatList,
     StyleSheet,
     Text,
-    TouchableOpacity,
     View,
     ActivityIndicator,
 } from "react-native";
+
 import MedicalRecordCard from "../../components/MedicalRecordCard";
 import AppContainer from "../../components/AppContainer";
-import AppCard from "../../components/AppCard";
-
-import {
-    getMyHealthRecords,
-} from "../../api/healthRecordService";
-
+import ScreenHeader from "../../components/ScreenHeader";
+import { getMyHealthRecords } from "../../api/healthRecordService";
 import COLORS from "../../utils/colors";
 
-export default function HealthRecordsScreen({
-    navigation,
-}) {
-
+export default function HealthRecordsScreen({ navigation }) {
     const [records, setRecords] = useState([]);
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
@@ -53,7 +42,7 @@ export default function HealthRecordsScreen({
             if (isRefresh || pageToLoad === 1) {
                 setRecords(newRecords);
             } else {
-                setRecords(prev => [...prev, ...newRecords]);
+                setRecords((prev) => [...prev, ...newRecords]);
             }
 
             setPage(pageToLoad);
@@ -87,112 +76,83 @@ export default function HealthRecordsScreen({
         />
     );
 
+    const renderEmptyState = () => (
+        <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No health records found</Text>
+            <Text style={styles.emptySubText}>Your past diagnoses and prescriptions will appear here.</Text>
+        </View>
+    );
+
     return (
         <AppContainer>
-
-            {/* Header */}
-
-            <View style={styles.header}>
-
-                <TouchableOpacity
-                    onPress={() =>
-                        navigation.goBack()
-                    }
-                >
-                    <Text style={styles.back}>
-                        ←
-                    </Text>
-                </TouchableOpacity>
-
-                <Text style={styles.headerTitle}>
-                    Health Records
-                </Text>
-
-            </View>
+            <ScreenHeader
+                title="Health Records"
+                subtitle="View your past medical history"
+                goBack={() => navigation.goBack()}
+            />
 
             {loading && records.length === 0 ? (
-                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
                 </View>
             ) : (
                 <FlatList
                     data={records}
-                    keyExtractor={(item) =>
-                        item.healthRecordId || item._id
-                    }
+                    keyExtractor={(item) => item.healthRecordId || item._id}
                     renderItem={renderItem}
-                    contentContainerStyle={{
-                        padding: 20,
-                    }}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
                     refreshing={refreshing}
                     onRefresh={handleRefresh}
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.5}
+                    ListEmptyComponent={renderEmptyState}
                     ListFooterComponent={
                         loadingMore ? (
                             <ActivityIndicator
                                 size="small"
                                 color={COLORS.primary}
-                                style={{ marginVertical: 20 }}
+                                style={styles.footerLoader}
                             />
                         ) : null
                     }
-                    ListEmptyComponent={
-                        <Text
-                            style={styles.empty}
-                        >
-                            No health records found
-                        </Text>
-                    }
                 />
             )}
-
         </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
-
-    header: {
-        flexDirection: "row",
+    listContent: {
+        padding: 20,
+        paddingBottom: 40,
+        flexGrow: 1,
+    },
+    loaderContainer: {
+        flex: 1,
+        justifyContent: "center",
         alignItems: "center",
-        paddingHorizontal: 20,
-        paddingVertical: 15,
     },
-
-    back: {
-        fontSize: 28,
-        fontWeight: "bold",
-        marginRight: 15,
+    footerLoader: {
+        marginVertical: 20,
     },
-
-    headerTitle: {
-        fontSize: 22,
-        fontWeight: "900",
+    emptyContainer: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingTop: 80,
     },
-
-    card: {
-        marginBottom: 15,
-    },
-
-    title: {
+    emptyText: {
         fontSize: 18,
-        fontWeight: "800",
-        marginBottom: 10,
-    },
-
-    label: {
         fontWeight: "700",
-        marginTop: 8,
+        color: COLORS.text,
+        marginBottom: 8,
     },
-
-    date: {
-        marginTop: 10,
+    emptySubText: {
+        fontSize: 14,
         color: COLORS.subtitle,
-    },
-
-    empty: {
         textAlign: "center",
-        marginTop: 50,
+        paddingHorizontal: 30,
+        lineHeight: 20,
     },
 });

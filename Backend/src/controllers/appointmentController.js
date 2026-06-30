@@ -222,18 +222,31 @@ exports.getAppointments = asyncHandler(async (req, res) => {
     baseFilter.patientId = req.query.patientId;
   }
 
-  const searchFields = [
-    "patientId",
-    "doctorEmployeeId",
-    "appointmentId",
-    "reason",
-  ];
+  if (req.query.search) {
+    const searchRegex = new RegExp(req.query.search, "i");
+    const [patientsMatch, doctorsMatch] = await Promise.all([
+      Patient.find({ name: searchRegex }, { UHID: 1 }).lean(),
+      Employee.find({ name: searchRegex }, { employeeCode: 1 }).lean(),
+    ]);
+
+    const patientIdsSearch = patientsMatch.map((p) => p.UHID);
+    const doctorIdsSearch = doctorsMatch.map((d) => d.employeeCode);
+
+    baseFilter.$or = [
+      { appointmentId: searchRegex },
+      { reason: searchRegex },
+      ...(patientIdsSearch.length > 0 ? [{ patientId: { $in: patientIdsSearch } }] : []),
+      ...(doctorIdsSearch.length > 0 ? [{ doctorEmployeeId: { $in: doctorIdsSearch } }] : []),
+    ];
+    
+    delete req.query.search;
+  }
 
   const result = await paginateQuery({
     model: Appointment,
     query: req.query,
     baseFilter,
-    searchFields,
+    searchFields: [],
     defaultSortField: "date",
   });
 

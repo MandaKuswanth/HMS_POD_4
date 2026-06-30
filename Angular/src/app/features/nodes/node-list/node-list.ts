@@ -65,6 +65,7 @@ export class NodeList implements OnInit {
   readonly loadingSignal = signal(false);
 
   readonly searchTextSignal = signal('');
+  readonly refreshSignal = signal(0);
 
   private readonly searchSubject = new Subject<string>();
 
@@ -83,6 +84,7 @@ export class NodeList implements OnInit {
       const page = this.pageSignal() + 1;
       const limit = this.limitSignal();
       const search = this.searchTextSignal();
+      const refresh = this.refreshSignal();
 
       this.loadNodes(page, limit, search);
     });
@@ -161,7 +163,7 @@ export class NodeList implements OnInit {
 
     ref.afterClosed().subscribe((result: boolean) => {
       if (result) {
-        this.pageSignal.set(this.pageSignal());
+        this.refreshSignal.update(v => v + 1);
       }
     });
   }

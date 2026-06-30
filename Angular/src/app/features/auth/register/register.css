@@ -155,15 +155,15 @@ select:focus {
 .slot-option {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  padding: 10px 12px;
+  gap: 12px;
+  min-height: 52px;
+  padding: 14px 16px;
   border-radius: 14px;
   border: 1px solid #dbe7ff;
   background: #ffffff;
   color: #334155;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
 }

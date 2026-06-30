@@ -257,7 +257,7 @@ export class AppointmentList implements OnInit {
     this.appointmentService.approveAppointment(appointment.appointmentId).subscribe({
       next: () => {
         this.toastr.success('Appointment approved successfully');
-        this.pageSignal.set(this.pageSignal());
+        this.refreshSignal.update(v => v + 1);
       },
       error: (err) => {
         this.toastr.error(err?.error?.message || 'Approval failed');
@@ -274,7 +274,7 @@ export class AppointmentList implements OnInit {
     this.appointmentService.rejectAppointment(appointment.appointmentId).subscribe({
       next: () => {
         this.toastr.success('Appointment rejected successfully');
-        this.pageSignal.set(this.pageSignal());
+        this.refreshSignal.update(v => v + 1);
       },
       error: (err) => {
         this.toastr.error(err?.error?.message || 'Rejection failed');
@@ -292,6 +292,7 @@ export class AppointmentList implements OnInit {
       next: () => {
         this.toastr.success('Appointment deleted successfully');
         this.expandedAppointmentSignal.set(null);
+        this.refreshSignal.update(v => v + 1);
         this.pageSignal.set(0);
       },
       error: (err) => {

@@ -60,6 +60,7 @@ export class RoleList implements OnInit {
   readonly loadingSignal = signal(false);
 
   readonly searchTextSignal = signal('');
+  readonly refreshSignal = signal(0);
 
   private readonly searchSubject = new Subject<string>();
 
@@ -87,6 +88,7 @@ export class RoleList implements OnInit {
       const page = this.pageSignal() + 1;
       const limit = this.limitSignal();
       const search = this.searchTextSignal();
+      const refresh = this.refreshSignal();
 
       this.loadRoles(page, limit, search);
     });
@@ -149,6 +151,7 @@ export class RoleList implements OnInit {
       next: () => {
         this.toastr.success('Role deleted successfully');
         this.pageSignal.set(0);
+        this.authService.refresh().subscribe();
       },
       error: (error) => {
         this.toastr.error(
@@ -169,6 +172,7 @@ export class RoleList implements OnInit {
 
     ref.afterClosed().subscribe((result) => {
       if (result) {
+        this.refreshSignal.update(v => v + 1);
         this.pageSignal.set(0);
       }
     });
@@ -186,7 +190,8 @@ export class RoleList implements OnInit {
 
     ref.afterClosed().subscribe((result) => {
       if (result) {
-        this.pageSignal.set(this.pageSignal());
+        this.refreshSignal.update(v => v + 1);
+        this.authService.refresh().subscribe();
       }
     });
   }

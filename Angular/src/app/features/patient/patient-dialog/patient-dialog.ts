@@ -73,7 +73,7 @@ export class PatientDialog implements OnInit {
 
     form = this.fb.group({
         name: [
-            null,
+            '',
             [
                 Validators.required,
                 Validators.minLength(3),
@@ -83,7 +83,7 @@ export class PatientDialog implements OnInit {
         ],
 
         email: [
-            null,
+            '',
             [
                 Validators.required,
                 Validators.email,
@@ -92,7 +92,7 @@ export class PatientDialog implements OnInit {
         ],
 
         phone: [
-            null,
+            '',
             [
                 Validators.required,
                 Validators.pattern(/^[6-9]\d{9}$/)
@@ -100,12 +100,12 @@ export class PatientDialog implements OnInit {
         ],
 
         gender: [
-            null,
+            '',
             Validators.required
         ],
 
         dob: [
-            null,
+            '',
             [
                 Validators.required,
                 this.futureDateValidator
@@ -113,12 +113,12 @@ export class PatientDialog implements OnInit {
         ],
 
         address: [
-            null,
+            '',
             Validators.maxLength(200)
         ],
 
         emergencyName: [
-            null,
+            '',
             [
                 Validators.maxLength(50),
                 Validators.pattern(/^[A-Za-z ]*$/)
@@ -126,12 +126,12 @@ export class PatientDialog implements OnInit {
         ],
 
         emergencyRelation: [
-            null,
+            '',
             Validators.maxLength(30)
         ],
 
         emergencyPhone: [
-            null,
+            '',
             Validators.pattern(/^[6-9]\d{9}$/)
         ]
     });
@@ -202,15 +202,15 @@ export class PatientDialog implements OnInit {
     private resetForm(): void {
 
         this.form.reset({
-            name: null,
-            email: null,
-            phone: null,
-            gender: null,
-            dob: null,
-            address: null,
-            emergencyName: null,
-            emergencyRelation: null,
-            emergencyPhone: null
+            name: '',
+            email: '',
+            phone: '',
+            gender: '',
+            dob: '',
+            address: '',
+            emergencyName: '',
+            emergencyRelation: '',
+            emergencyPhone: ''
         });
 
         this.form.enable();

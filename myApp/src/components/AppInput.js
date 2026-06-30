@@ -1,12 +1,13 @@
-import React from "react";
-
+import React, { useState, useRef, useEffect } from "react";
 import {
     Text,
     TextInput,
     View,
     StyleSheet,
+    Animated,
+    Pressable
 } from "react-native";
-
+import { Ionicons } from "@expo/vector-icons";
 import COLORS from "../utils/colors";
 
 export default function AppInput({
@@ -20,26 +21,123 @@ export default function AppInput({
     numberOfLines,
     style,
     error,
+    label,
+    onFocus,
+    onBlur,
+    ...props
 }) {
+    const [isFocused, setIsFocused] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [internalValue, setInternalValue] = useState(value || props.defaultValue || "");
+
+    useEffect(() => {
+        if (value !== undefined) {
+            setInternalValue(value);
+        }
+    }, [value]);
+
+    const hasValue = internalValue !== undefined && internalValue !== null && internalValue.toString().length > 0;
+    
+    const animatedIsFocused = useRef(new Animated.Value(hasValue ? 1 : 0)).current;
+
+    useEffect(() => {
+        Animated.timing(animatedIsFocused, {
+            toValue: (isFocused || hasValue) ? 1 : 0,
+            duration: 150,
+            useNativeDriver: false,
+        }).start();
+    }, [isFocused, hasValue]);
+
+    const handleFocus = (e) => {
+        setIsFocused(true);
+        if (onFocus) onFocus(e);
+    };
+
+    const handleBlur = (e) => {
+        setIsFocused(false);
+        if (onBlur) onBlur(e);
+    };
+
+    const handleChangeText = (text) => {
+        setInternalValue(text);
+        if (onChangeText) onChangeText(text);
+    };
+
+    const togglePasswordVisibility = () => {
+        setIsPasswordVisible(!isPasswordVisible);
+    };
+
+    const displayLabel = label || placeholder;
+    const showRealPlaceholder = isFocused && !hasValue && label && placeholder;
+
+    const labelStyle = {
+        position: "absolute",
+        left: 14,
+        top: animatedIsFocused.interpolate({
+            inputRange: [0, 1],
+            outputRange: [18, 6],
+        }),
+        fontSize: animatedIsFocused.interpolate({
+            inputRange: [0, 1],
+            outputRange: [15, 12],
+        }),
+        color: animatedIsFocused.interpolate({
+            inputRange: [0, 1],
+            outputRange: [COLORS.subtitle, COLORS.primary],
+        }),
+        zIndex: 1,
+    };
+
     return (
         <View style={styles.wrapper}>
-            <TextInput
-                value={value}
-                onChangeText={onChangeText}
-                placeholder={placeholder}
-                secureTextEntry={secureTextEntry}
-                keyboardType={keyboardType}
-                autoCapitalize={autoCapitalize}
-                multiline={multiline}
-                numberOfLines={numberOfLines}
-                placeholderTextColor={COLORS.subtitle}
+            <View
                 style={[
-                    styles.input,
-                    multiline && styles.multiline,
+                    styles.inputContainer,
+                    isFocused && styles.inputFocused,
                     error && styles.inputError,
-                    style,
+                    multiline && styles.multilineContainer,
                 ]}
-            />
+            >
+                {displayLabel ? (
+                    <Animated.Text style={labelStyle} pointerEvents="none">
+                        {displayLabel}
+                    </Animated.Text>
+                ) : null}
+                
+                <TextInput
+                    value={value}
+                    onChangeText={handleChangeText}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    secureTextEntry={secureTextEntry && !isPasswordVisible}
+                    keyboardType={keyboardType}
+                    autoCapitalize={autoCapitalize}
+                    multiline={multiline}
+                    numberOfLines={numberOfLines}
+                    placeholder={showRealPlaceholder ? placeholder : ""} 
+                    placeholderTextColor={COLORS.subtitle}
+                    style={[
+                        styles.input,
+                        multiline && styles.multiline,
+                        style,
+                    ]}
+                    {...props}
+                />
+
+                {secureTextEntry ? (
+                    <Pressable 
+                        onPress={togglePasswordVisibility} 
+                        style={styles.eyeIcon}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Ionicons 
+                            name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} 
+                            size={20} 
+                            color={COLORS.subtitle} 
+                        />
+                    </Pressable>
+                ) : null}
+            </View>
 
             {error ? (
                 <Text style={styles.errorText}>
@@ -52,33 +150,60 @@ export default function AppInput({
 
 const styles = StyleSheet.create({
     wrapper: {
-        marginBottom: 12,
+        marginBottom: 16,
+        width: "100%",
     },
-
-    input: {
+    inputContainer: {
         backgroundColor: COLORS.surface,
-        borderWidth: 1,
+        borderWidth: 1.5,
         borderColor: COLORS.border,
-        borderRadius: 12,
+        borderRadius: 16,
         paddingHorizontal: 14,
-        paddingVertical: 13,
-        fontSize: 15,
-        color: COLORS.text,
+        paddingTop: 22,
+        paddingBottom: 8,
+        flexDirection: "row",
+        alignItems: "center",
+        minHeight: 56,
     },
-
-    multiline: {
-        minHeight: 100,
-        textAlignVertical: "top",
+    inputFocused: {
+        borderColor: COLORS.primary,
+        backgroundColor: COLORS.white,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
-
     inputError: {
         borderColor: COLORS.danger,
+        backgroundColor: COLORS.dangerLight,
     },
-
+    input: {
+        flex: 1,
+        fontSize: 16,
+        color: COLORS.text,
+        padding: 0,
+        margin: 0,
+        includeFontPadding: false,
+        minHeight: 24,
+    },
+    multilineContainer: {
+        alignItems: "flex-start",
+        paddingTop: 24,
+    },
+    multiline: {
+        minHeight: 80,
+        textAlignVertical: "top",
+    },
+    eyeIcon: {
+        padding: 4,
+        marginLeft: 8,
+    },
     errorText: {
-        marginTop: 5,
+        marginTop: 6,
         color: COLORS.danger,
         fontSize: 12,
-        fontWeight: "700",
+        fontWeight: "600",
+        paddingHorizontal: 4,
     },
 });

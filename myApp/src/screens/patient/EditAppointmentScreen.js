@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import PropTypes from "prop-types";
-
 import {
     ActivityIndicator,
     Alert,
@@ -10,7 +9,6 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import AppButton from "../../components/AppButton";
@@ -19,7 +17,6 @@ import AppContainer from "../../components/AppContainer";
 import ScreenHeader from "../../components/ScreenHeader";
 
 import { useAppointments } from "../../context/AppointmentContext";
-
 import COLORS from "../../utils/colors";
 
 import {
@@ -27,7 +24,6 @@ import {
     formatDateForApi,
     getTodayDate,
 } from "../../utils/dateUtils";
-
 import { isTodayOrFuture } from "../../utils/validators";
 
 export default function EditAppointmentScreen({ navigation, route }) {
@@ -65,7 +61,6 @@ export default function EditAppointmentScreen({ navigation, route }) {
 
     useEffect(() => {
         const doctorId = appointment?.doctorEmployeeId || doctor?.employeeCode;
-
         if (doctorId && date) {
             loadDoctorSlots(doctorId, formatDateForApi(date));
         }
@@ -82,110 +77,88 @@ export default function EditAppointmentScreen({ navigation, route }) {
             return false;
         }
 
-        return Array.isArray(doctorSlots.bookedSlots) &&
+        return (
+            Array.isArray(doctorSlots.bookedSlots) &&
             doctorSlots.bookedSlots.some(
                 (bookedSlot) =>
-                    bookedSlot?.trim().toLowerCase() ===
-                    slot?.trim().toLowerCase()
-            );
+                    bookedSlot?.trim().toLowerCase() === slot?.trim().toLowerCase()
+            )
+        );
     };
 
     const isPastSlot = (slot) => {
-        return Array.isArray(doctorSlots.pastSlots) &&
+        return (
+            Array.isArray(doctorSlots.pastSlots) &&
             doctorSlots.pastSlots.some(
                 (pastSlot) =>
-                    pastSlot?.trim().toLowerCase() ===
-                    slot?.trim().toLowerCase()
-            );
+                    pastSlot?.trim().toLowerCase() === slot?.trim().toLowerCase()
+            )
+        );
     };
 
     const handleDateChange = (event, selectedDate) => {
         if (Platform.OS === "android") {
             setShowPicker(false);
         }
-
         if (selectedDate) {
             setDate(selectedDate);
             setTimeSlot("");
             setSlotError("");
         }
-
         if (Platform.OS === "ios") {
             setShowPicker(false);
         }
     };
 
-    const handleSelectSlot = (slot, booked) => {
-        if (booked) {
-            Alert.alert(
-                "Slot Booked",
-                "This slot is already booked. Please select another slot."
-            );
+    const handleSelectSlot = (slot, disabled) => {
+        if (disabled) {
+            if (isBookedSlot(slot)) {
+                Alert.alert("Slot Booked", "This slot is already booked. Please select another slot.");
+            }
             return;
         }
-
         setTimeSlot(slot);
         setSlotError("");
     };
 
     const handleUpdate = async () => {
         if (!appointment?.appointmentId) {
-            Alert.alert("Error", "Appointment ID missing");
+            Alert.alert("Error", "Appointment ID missing.");
             return;
         }
-
         if (!["PENDING", "BOOKED"].includes(appointment.status)) {
-            Alert.alert(
-                "Not Allowed",
-                "Only pending or booked appointments can be edited"
-            );
+            Alert.alert("Not Allowed", "Only pending or booked appointments can be edited.");
             return;
         }
-
         if (!date) {
-            Alert.alert("Validation Error", "Please select appointment date");
+            Alert.alert("Validation Error", "Please select an appointment date.");
             return;
         }
-
         if (!isTodayOrFuture(date)) {
-            Alert.alert(
-                "Invalid Date",
-                "Appointment date must be today or future date"
-            );
+            Alert.alert("Invalid Date", "Appointment date must be today or a future date.");
             return;
         }
-
         if (!timeSlot) {
-            setSlotError("Time slot is required");
-            Alert.alert("Validation Error", "Please select time slot");
+            setSlotError("Time slot is required.");
+            Alert.alert("Validation Error", "Please select a time slot.");
             return;
         }
-
         if (isBookedSlot(timeSlot)) {
-            setSlotError("This slot is already booked");
-            Alert.alert(
-                "Slot Booked",
-                "This slot is already booked. Please select another slot."
-            );
+            setSlotError("This slot is already booked.");
+            Alert.alert("Slot Booked", "This slot is already booked. Please select another slot.");
             return;
         }
 
         try {
             setLoading(true);
-
             await updateAppointment(appointment.appointmentId, {
                 date: formatDateForApi(date),
                 timeSlot,
             });
-
-            Alert.alert("Success", "Appointment updated successfully");
-
+            Alert.alert("Success", "Appointment updated successfully.");
             navigation.goBack();
         } catch (err) {
-            Alert.alert(
-                "Error",
-                err?.response?.data?.message || "Update failed"
-            );
+            Alert.alert("Error", err?.response?.data?.message || "Update failed.");
         } finally {
             setLoading(false);
         }
@@ -193,11 +166,13 @@ export default function EditAppointmentScreen({ navigation, route }) {
 
     const renderSlots = () => {
         if (slotsLoading) {
+            return <ActivityIndicator color={COLORS.primary} style={styles.loader} />;
+        }
+        if (allSlots.length === 0) {
             return (
-                <ActivityIndicator
-                    color={COLORS.primary}
-                    style={styles.loader}
-                />
+                <View style={styles.slotsEmpty}>
+                    <Text style={styles.slotsEmptyText}>No slots available for this date</Text>
+                </View>
             );
         }
 
@@ -220,6 +195,7 @@ export default function EditAppointmentScreen({ navigation, route }) {
                                 disabled && styles.slotChipDisabled,
                             ]}
                             onPress={() => handleSelectSlot(slot, disabled)}
+                            activeOpacity={0.7}
                         >
                             <Text
                                 style={[
@@ -246,38 +222,32 @@ export default function EditAppointmentScreen({ navigation, route }) {
             />
 
             <AppCard style={styles.card}>
-                <Text style={styles.label}>Appointment Date</Text>
+                <View style={styles.section}>
+                    <Text style={styles.label}>Appointment Date</Text>
+                    <TouchableOpacity
+                        style={styles.dateButton}
+                        onPress={() => setShowPicker(true)}
+                        disabled={loading}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.dateText}>📅 {formatDateDisplay(date)}</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.dateHint}>Appointments can be rescheduled from today onwards</Text>
+                    {showPicker && (
+                        <DateTimePicker
+                            value={date}
+                            mode="date"
+                            minimumDate={getTodayDate()}
+                            onChange={handleDateChange}
+                        />
+                    )}
+                </View>
 
-                <TouchableOpacity
-                    style={styles.dateButton}
-                    onPress={() => setShowPicker(true)}
-                    disabled={loading}
-                >
-                    <Text style={styles.dateText}>
-                        📅 {formatDateDisplay(date)}
-                    </Text>
-                </TouchableOpacity>
-
-                <Text style={styles.dateHint}>
-                    Appointments can be rescheduled from today onwards
-                </Text>
-
-                {showPicker && (
-                    <DateTimePicker
-                        value={date}
-                        mode="date"
-                        minimumDate={getTodayDate()}
-                        onChange={handleDateChange}
-                    />
-                )}
-
-                <Text style={styles.label}>Time Slot</Text>
-
-                {renderSlots()}
-
-                {slotError ? (
-                    <Text style={styles.inlineError}>{slotError}</Text>
-                ) : null}
+                <View style={styles.section}>
+                    <Text style={styles.label}>Time Slot</Text>
+                    {renderSlots()}
+                    {slotError ? <Text style={styles.inlineError}>{slotError}</Text> : null}
+                </View>
 
                 <AppButton
                     title="Update Appointment"
@@ -295,113 +265,109 @@ EditAppointmentScreen.propTypes = {
     navigation: PropTypes.shape({
         goBack: PropTypes.func.isRequired,
     }).isRequired,
-
     route: PropTypes.shape({
         params: PropTypes.shape({
-            appointment: PropTypes.shape({
-                appointmentId: PropTypes.string,
-                doctorEmployeeId: PropTypes.string,
-                date: PropTypes.oneOfType([
-                    PropTypes.string,
-                    PropTypes.instanceOf(Date),
-                ]),
-                timeSlot: PropTypes.string,
-                status: PropTypes.string,
-                doctor: PropTypes.shape({
-                    employeeCode: PropTypes.string,
-                }),
-            }),
+            appointment: PropTypes.object,
         }),
     }),
 };
 
 EditAppointmentScreen.defaultProps = {
-    route: {
-        params: {
-            appointment: null,
-        },
-    },
+    route: { params: { appointment: null } },
 };
 
 const styles = StyleSheet.create({
     card: {
         marginHorizontal: 20,
+        padding: 20,
     },
-
+    section: {
+        marginBottom: 20,
+    },
     label: {
         fontSize: 15,
-        fontWeight: "800",
+        fontWeight: "700",
         color: COLORS.text,
-        marginBottom: 10,
-        marginTop: 12,
+        marginBottom: 8,
     },
-
     dateButton: {
+        backgroundColor: COLORS.surface,
+        borderRadius: 12,
         borderWidth: 1,
         borderColor: COLORS.border,
-        borderRadius: 12,
-        padding: 16,
-        backgroundColor: COLORS.surface,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        justifyContent: "center",
     },
-
     dateText: {
         color: COLORS.text,
         fontSize: 15,
-        fontWeight: "700",
+        fontWeight: "600",
     },
-
+    dateHint: {
+        fontSize: 12,
+        color: COLORS.subtitle,
+        marginTop: 6,
+    },
     slotsGrid: {
         flexDirection: "row",
         flexWrap: "wrap",
-        gap: 8,
+        gap: 10,
     },
-
     slotChip: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 14,
         paddingVertical: 10,
-        borderRadius: 50,
+        borderRadius: 8,
         backgroundColor: COLORS.surface,
         borderWidth: 1,
         borderColor: COLORS.border,
+        alignItems: "center",
+        justifyContent: "center",
     },
-
     slotChipActive: {
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
     },
-
     slotChipDisabled: {
-        backgroundColor: COLORS.disabledBg || "#E5E7EB",
-        borderColor: COLORS.disabledBg || "#E5E7EB",
-        opacity: 0.9,
+        backgroundColor: COLORS.disabledBg,
+        borderColor: COLORS.border,
+        opacity: 0.7,
     },
-
     slotText: {
         fontSize: 13,
-        fontWeight: "800",
+        fontWeight: "600",
         color: COLORS.text,
     },
-
     slotTextActive: {
-        color: "#fff",
+        color: COLORS.white,
     },
-
     slotTextDisabled: {
-        color: COLORS.disabledText || "#9CA3AF",
+        color: COLORS.disabledText,
     },
-
+    slotsEmpty: {
+        backgroundColor: COLORS.surface,
+        borderRadius: 12,
+        padding: 16,
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderStyle: "dashed",
+    },
+    slotsEmptyText: {
+        color: COLORS.subtitle,
+        fontSize: 14,
+        fontWeight: "500",
+    },
     inlineError: {
         marginTop: 8,
         color: COLORS.danger,
-        fontSize: 12,
-        fontWeight: "700",
+        fontSize: 13,
+        fontWeight: "600",
     },
-
     loader: {
-        marginVertical: 12,
+        marginVertical: 20,
     },
-
     button: {
-        marginTop: 25,
+        marginTop: 10,
     },
 });

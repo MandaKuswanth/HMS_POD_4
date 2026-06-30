@@ -1,11 +1,15 @@
-import React, { useState } from "react";
-
+import React, { useState, useRef } from "react";
 import {
     Alert,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
+    ScrollView
 } from "react-native";
 
 import AppContainer from "../../components/AppContainer";
@@ -16,7 +20,6 @@ import AppButton from "../../components/AppButton";
 import COLORS from "../../utils/colors";
 
 import { useAuth } from "../../context/AuthContext";
-
 import {
     isEmpty,
     isValidEmail,
@@ -36,6 +39,7 @@ export default function LoginScreen({ navigation }) {
     });
 
     const [loading, setLoading] = useState(false);
+    const passwordRef = useRef(null);
 
     const updateError = (field, message) => {
         setErrors((prev) => ({
@@ -46,44 +50,23 @@ export default function LoginScreen({ navigation }) {
 
     const handleEmailChange = (value) => {
         setEmail(value);
-
         if (isEmpty(value)) {
             updateError("email", "");
             return;
         }
-
-        updateError(
-            "email",
-            isValidEmail(value)
-                ? ""
-                : "Please enter a valid email address"
-        );
+        updateError("email", isValidEmail(value) ? "" : "Please enter a valid email address");
     };
 
     const handlePasswordChange = (value) => {
         setPassword(value);
-
-        if (isEmpty(value)) {
-            updateError("password", "");
-            return;
-        }
-
         updateError("password", "");
     };
 
     const handleLogin = async () => {
-        const submitErrors = validateLoginSubmit({
-            email,
-            password,
-        });
-
-        setErrors((prev) => ({
-            ...prev,
-            ...submitErrors,
-        }));
+        const submitErrors = validateLoginSubmit({ email, password });
+        setErrors((prev) => ({ ...prev, ...submitErrors }));
 
         const message = firstErrorMessage(submitErrors);
-
         if (message) {
             Alert.alert("Validation Error", message);
             return;
@@ -91,17 +74,11 @@ export default function LoginScreen({ navigation }) {
 
         try {
             setLoading(true);
-
-            await login({
-                email,
-                password,
-            });
+            await login({ email, password });
         } catch (error) {
             Alert.alert(
                 "Login Failed",
-                error?.response?.data?.message ||
-                error?.message ||
-                "Something went wrong"
+                error?.response?.data?.message || error?.message || "Something went wrong"
             );
         } finally {
             setLoading(false);
@@ -110,108 +87,128 @@ export default function LoginScreen({ navigation }) {
 
     return (
         <AppContainer>
-            <View style={styles.wrapper}>
-                <AppCard>
-                    <Text style={styles.logo}>🏥</Text>
-
-                    <Text style={styles.title}>
-                        Welcome Back
-                    </Text>
-
-                    <Text style={styles.subtitle}>
-                        Sign in to continue
-                    </Text>
-
-                    <AppInput
-                        placeholder="Email"
-                        value={email}
-                        onChangeText={handleEmailChange}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        error={errors.email}
-                    />
-
-                    <AppInput
-                        placeholder="Password"
-                        value={password}
-                        onChangeText={handlePasswordChange}
-                        secureTextEntry
-                        error={errors.password}
-                    />
-
-                    <AppButton
-                        title="Login"
-                        onPress={handleLogin}
-                        loading={loading}
-                        disabled={loading}
-                    />
-
-                    {/* ✅ NEW: Forgot Password Link */}
-                    <TouchableOpacity
-                        onPress={() =>
-                            navigation.navigate("ForgotPassword")
-                        }
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                style={styles.keyboardView}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <ScrollView 
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
                     >
-                        <Text style={styles.forgotPasswordLink}>
-                            Forgot Password?
-                        </Text>
-                    </TouchableOpacity>
+                        <AppCard style={styles.card}>
+                            <View style={styles.header}>
+                                <Text style={styles.logo}>🏥</Text>
+                                <Text style={styles.title}>Welcome Back</Text>
+                                <Text style={styles.subtitle}>Sign in to continue</Text>
+                            </View>
 
-                    <TouchableOpacity
-                        onPress={() =>
-                            navigation.navigate("Register")
-                        }
-                    >
-                        <Text style={styles.link}>
-                            Don't have an account? Register
-                        </Text>
-                    </TouchableOpacity>
-                </AppCard>
-            </View>
+                            <AppInput
+                                placeholder="Email Address"
+                                value={email}
+                                onChangeText={handleEmailChange}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                error={errors.email}
+                                returnKeyType="next"
+                                onSubmitEditing={() => passwordRef.current?.focus()}
+                                blurOnSubmit={false}
+                            />
+
+                            <AppInput
+                                ref={passwordRef}
+                                placeholder="Password"
+                                value={password}
+                                onChangeText={handlePasswordChange}
+                                secureTextEntry
+                                error={errors.password}
+                                returnKeyType="done"
+                                onSubmitEditing={handleLogin}
+                            />
+
+                            <View style={styles.forgotPasswordContainer}>
+                                <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
+                                    <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <AppButton
+                                title="Login"
+                                onPress={handleLogin}
+                                loading={loading}
+                                style={styles.loginButton}
+                            />
+
+                            <View style={styles.registerContainer}>
+                                <Text style={styles.registerText}>Don't have an account? </Text>
+                                <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+                                    <Text style={styles.registerLink}>Register</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </AppCard>
+                    </ScrollView>
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
         </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
-    wrapper: {
+    keyboardView: {
         flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        padding: 24,
         justifyContent: "center",
-        padding: 20,
     },
-
+    card: {
+        paddingVertical: 32,
+        paddingHorizontal: 24,
+    },
+    header: {
+        alignItems: "center",
+        marginBottom: 32,
+    },
     logo: {
-        fontSize: 60,
-        textAlign: "center",
-        marginBottom: 12,
+        fontSize: 64,
+        marginBottom: 16,
     },
-
     title: {
-        fontSize: 30,
-        fontWeight: "900",
-        textAlign: "center",
+        fontSize: 28,
+        fontWeight: "bold",
         color: COLORS.text,
+        marginBottom: 8,
     },
-
     subtitle: {
-        textAlign: "center",
+        fontSize: 15,
         color: COLORS.subtitle,
+    },
+    forgotPasswordContainer: {
+        alignItems: "flex-end",
         marginBottom: 24,
-        marginTop: 6,
     },
-
-    link: {
-        marginTop: 20,
-        textAlign: "center",
+    forgotPasswordText: {
         color: COLORS.primary,
-        fontWeight: "800",
-    },
-
-    // ✅ NEW: Forgot Password Link Style
-    forgotPasswordLink: {
-        marginTop: 15,
-        textAlign: "center",
-        color: COLORS.primary,
-        fontWeight: "600",
         fontSize: 14,
+        fontWeight: "600",
+    },
+    loginButton: {
+        marginBottom: 24,
+    },
+    registerContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    registerText: {
+        color: COLORS.subtitle,
+        fontSize: 15,
+    },
+    registerLink: {
+        color: COLORS.primary,
+        fontSize: 15,
+        fontWeight: "bold",
     },
 });

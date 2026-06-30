@@ -68,20 +68,21 @@ mat-form-field {
     align-items: center;
     justify-content: center;
 
-    min-height: 46px;
-    padding: 12px 14px;
+    min-height: 54px;
+    padding: 16px 20px;
 
     border: 1.5px solid #dbeafe;
-    border-radius: 14px;
+    border-radius: 16px;
     background: #ffffff;
 
     cursor: pointer;
     user-select: none;
 
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 800;
     color: #1f2937;
     text-align: center;
+    letter-spacing: 0.3px;
 
     transition:
         background 0.2s ease,

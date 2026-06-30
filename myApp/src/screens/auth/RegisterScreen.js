@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-
+import React, { useState, useRef } from "react";
 import {
     Alert,
     ScrollView,
@@ -7,6 +6,10 @@ import {
     Text,
     TouchableOpacity,
     View,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard
 } from "react-native";
 
 import AppButton from "../../components/AppButton";
@@ -21,7 +24,6 @@ import AddressForm from "../../components/forms/AddressForm";
 import EmergencyContactForm from "../../components/forms/EmergencyContactForm";
 
 import { useAuth } from "../../context/AuthContext";
-
 import COLORS from "../../utils/colors";
 import { formatDateForApi } from "../../utils/dateUtils";
 
@@ -45,7 +47,6 @@ export default function RegisterScreen({ navigation }) {
 
     const [gender, setGender] = useState("");
     const [bloodGroup, setBloodGroup] = useState("");
-
     const [dob, setDob] = useState(null);
 
     const [street, setStreet] = useState("");
@@ -56,157 +57,69 @@ export default function RegisterScreen({ navigation }) {
     const [ecName, setEcName] = useState("");
     const [ecRelation, setEcRelation] = useState("");
     const [ecPhone, setEcPhone] = useState("");
-    const GENDER_OPTIONS = [
-        "male",
-        "female",
-        "others",
-    ];
 
-    const BLOOD_GROUPS = [
-        "A+",
-        "A-",
-        "B+",
-        "B-",
-        "AB+",
-        "AB-",
-        "O+",
-        "O-",
-    ];
+    const phoneRef = useRef(null);
+    const emailRef = useRef(null);
+    const passwordRef = useRef(null);
 
-    const formatGender = (gender) => {
-        return gender.charAt(0).toUpperCase() + gender.slice(1);
-    };
+    const GENDER_OPTIONS = ["male", "female", "others"];
+    const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
+    const formatGender = (gender) => gender.charAt(0).toUpperCase() + gender.slice(1);
 
     const [errors, setErrors] = useState({
-        name: "",
-        phone: "",
-        email: "",
-        password: "",
-        gender: "",
-        dob: "",
-        pincode: "",
-        emergencyPhone: "",
+        name: "", phone: "", email: "", password: "", gender: "", dob: "", pincode: "", emergencyPhone: "",
     });
 
     const [loading, setLoading] = useState(false);
 
     const updateError = (field, message) => {
-        setErrors((prev) => ({
-            ...prev,
-            [field]: message,
-        }));
+        setErrors((prev) => ({ ...prev, [field]: message }));
     };
 
     const handleNameChange = (value) => {
         setName(value);
-
-        if (isEmpty(value)) {
-            updateError("name", "");
-            return;
-        }
-
-        updateError(
-            "name",
-            value.trim().length < 3
-                ? "Name must be at least 3 characters"
-                : ""
-        );
+        if (isEmpty(value)) return updateError("name", "");
+        updateError("name", value.trim().length < 3 ? "Name must be at least 3 characters" : "");
     };
 
     const handlePhoneChange = (value) => {
         setPhone(value);
-
-        if (isEmpty(value)) {
-            updateError("phone", "");
-            return;
-        }
-
-        updateError(
-            "phone",
-            isValidIndianMobile(value)
-                ? ""
-                : "Phone must be a valid 10-digit Indian mobile number"
-        );
+        if (isEmpty(value)) return updateError("phone", "");
+        updateError("phone", isValidIndianMobile(value) ? "" : "Phone must be a valid 10-digit Indian mobile number");
     };
 
     const handleEmailChange = (value) => {
         setEmail(value);
-
-        if (isEmpty(value)) {
-            updateError("email", "");
-            return;
-        }
-
-        updateError(
-            "email",
-            isValidEmail(value)
-                ? ""
-                : "Please enter a valid email address"
-        );
+        if (isEmpty(value)) return updateError("email", "");
+        updateError("email", isValidEmail(value) ? "" : "Please enter a valid email address");
     };
 
     const handlePasswordChange = (value) => {
         setPassword(value);
-
-        if (isEmpty(value)) {
-            updateError("password", "");
-            return;
-        }
-
-        updateError(
-            "password",
-            isValidPassword(value)
-                ? ""
-                : "Password must be at least 8 characters"
-        );
+        if (isEmpty(value)) return updateError("password", "");
+        updateError("password", isValidPassword(value) ? "" : "Password must be at least 8 characters");
     };
 
     const handlePincodeChange = (value) => {
         setPincode(value);
-
-        updateError(
-            "pincode",
-            isValidPincode(value)
-                ? ""
-                : "Pincode must be 6 digits"
-        );
+        updateError("pincode", isValidPincode(value) ? "" : "Pincode must be 6 digits");
     };
 
     const handleEmergencyPhoneChange = (value) => {
         setEcPhone(value);
-
-        if (isEmpty(value)) {
-            updateError("emergencyPhone", "");
-            return;
-        }
-
-        updateError(
-            "emergencyPhone",
-            isValidIndianMobile(value)
-                ? ""
-                : "Emergency contact phone must be a valid 10-digit mobile number"
-        );
+        if (isEmpty(value)) return updateError("emergencyPhone", "");
+        updateError("emergencyPhone", isValidIndianMobile(value) ? "" : "Emergency contact phone must be a valid 10-digit mobile number");
     };
 
     const handleRegister = async () => {
         const submitErrors = validateRegisterSubmit({
-            name,
-            phone,
-            email,
-            password,
-            gender,
-            dob,
-            pincode,
-            emergencyPhone: ecPhone,
+            name, phone, email, password, gender, dob, pincode, emergencyPhone: ecPhone,
         });
 
-        setErrors((prev) => ({
-            ...prev,
-            ...submitErrors,
-        }));
+        setErrors((prev) => ({ ...prev, ...submitErrors }));
 
         const message = firstErrorMessage(submitErrors);
-
         if (message) {
             Alert.alert("Validation Error", message);
             return;
@@ -236,18 +149,12 @@ export default function RegisterScreen({ navigation }) {
                 },
             });
 
-            Alert.alert(
-                "Success",
-                "Account created successfully. Please login."
-            );
-
+            Alert.alert("Success", "Account created successfully. Please login.");
             navigation.navigate("Login");
         } catch (err) {
             Alert.alert(
                 "Registration Failed",
-                err?.response?.data?.message ||
-                err?.message ||
-                "Something went wrong"
+                err?.response?.data?.message || err?.message || "Something went wrong"
             );
         } finally {
             setLoading(false);
@@ -256,178 +163,192 @@ export default function RegisterScreen({ navigation }) {
 
     return (
         <AppContainer>
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                style={styles.keyboardView}
             >
-                <View style={styles.wrapper}>
-                    <AppCard>
-                        <View style={styles.logoContainer}>
-                            <Text style={styles.logo}>🏥</Text>
-                        </View>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                        contentContainerStyle={styles.scrollContent}
+                    >
+                        <AppCard style={styles.card}>
+                            <View style={styles.header}>
+                                <Text style={styles.logo}>🏥</Text>
+                                <Text style={styles.title}>Create Account</Text>
+                                <Text style={styles.subtitle}>Register as a patient</Text>
+                            </View>
 
-                        <Text style={styles.title}>
-                            Create Account
-                        </Text>
+                            <SectionLabel text="Basic Information" />
 
-                        <Text style={styles.subtitle}>
-                            Register as a patient
-                        </Text>
+                            <AppInput
+                                placeholder="Full Name *"
+                                value={name}
+                                onChangeText={handleNameChange}
+                                error={errors.name}
+                                returnKeyType="next"
+                                onSubmitEditing={() => phoneRef.current?.focus()}
+                                blurOnSubmit={false}
+                            />
 
-                        <SectionLabel text="Basic Information" />
+                            <AppInput
+                                ref={phoneRef}
+                                placeholder="Phone Number *"
+                                value={phone}
+                                onChangeText={handlePhoneChange}
+                                keyboardType="phone-pad"
+                                error={errors.phone}
+                                returnKeyType="next"
+                                onSubmitEditing={() => emailRef.current?.focus()}
+                                blurOnSubmit={false}
+                            />
 
-                        <AppInput
-                            placeholder="Full Name *"
-                            value={name}
-                            onChangeText={handleNameChange}
-                            error={errors.name}
-                        />
+                            <AppInput
+                                ref={emailRef}
+                                placeholder="Email *"
+                                value={email}
+                                onChangeText={handleEmailChange}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                error={errors.email}
+                                returnKeyType="next"
+                                onSubmitEditing={() => passwordRef.current?.focus()}
+                                blurOnSubmit={false}
+                            />
 
-                        <AppInput
-                            placeholder="Phone Number *"
-                            value={phone}
-                            onChangeText={handlePhoneChange}
-                            keyboardType="phone-pad"
-                            error={errors.phone}
-                        />
+                            <AppInput
+                                ref={passwordRef}
+                                placeholder="Password *"
+                                value={password}
+                                onChangeText={handlePasswordChange}
+                                secureTextEntry
+                                error={errors.password}
+                                returnKeyType="done"
+                            />
 
-                        <AppInput
-                            placeholder="Email *"
-                            value={email}
-                            onChangeText={handleEmailChange}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            error={errors.email}
-                        />
+                            <ChipSelector
+                                label="Gender"
+                                options={GENDER_OPTIONS}
+                                value={gender}
+                                required
+                                error={errors.gender}
+                                formatLabel={formatGender}
+                                onChange={(value) => {
+                                    setGender(value);
+                                    updateError("gender", "");
+                                }}
+                            />
 
-                        <AppInput
-                            placeholder="Password *"
-                            value={password}
-                            onChangeText={handlePasswordChange}
-                            secureTextEntry
-                            error={errors.password}
-                        />
+                            <ChipSelector
+                                label="Blood Group"
+                                options={BLOOD_GROUPS}
+                                value={bloodGroup}
+                                onChange={setBloodGroup}
+                            />
 
-                        <ChipSelector
-                            label="Gender"
-                            options={GENDER_OPTIONS}
-                            value={gender}
-                            required
-                            error={errors.gender}
-                            formatLabel={formatGender}
-                            onChange={(value) => {
-                                setGender(value);
-                                updateError("gender", "");
-                            }}
-                        />
+                            <DatePickerField
+                                label="Date of Birth"
+                                value={dob}
+                                required
+                                error={errors.dob}
+                                onChange={(selectedDate) => {
+                                    setDob(selectedDate);
+                                    updateError("dob", "");
+                                }}
+                            />
 
-                        <ChipSelector
-                            label="Blood Group"
-                            options={BLOOD_GROUPS}
-                            value={bloodGroup}
-                            onChange={setBloodGroup}
-                        />
+                            <AddressForm
+                                street={street}
+                                city={city}
+                                stateName={stateName}
+                                pincode={pincode}
+                                onStreetChange={setStreet}
+                                onCityChange={setCity}
+                                onStateChange={setStateName}
+                                onPincodeChange={handlePincodeChange}
+                                pincodeError={errors.pincode}
+                            />
 
-                        <DatePickerField
-                            label="Date of Birth"
-                            value={dob}
-                            required
-                            error={errors.dob}
-                            onChange={(selectedDate) => {
-                                setDob(selectedDate);
-                                updateError("dob", "");
-                            }}
-                        />
+                            <EmergencyContactForm
+                                name={ecName}
+                                relation={ecRelation}
+                                phone={ecPhone}
+                                onNameChange={setEcName}
+                                onRelationChange={setEcRelation}
+                                onPhoneChange={handleEmergencyPhoneChange}
+                                phoneError={errors.emergencyPhone}
+                            />
 
-                        <AddressForm
-                            street={street}
-                            city={city}
-                            stateName={stateName}
-                            pincode={pincode}
-                            onStreetChange={setStreet}
-                            onCityChange={setCity}
-                            onStateChange={setStateName}
-                            onPincodeChange={handlePincodeChange}
-                            pincodeError={errors.pincode}
-                        />
+                            <AppButton
+                                title="Create Account"
+                                onPress={handleRegister}
+                                loading={loading}
+                                style={styles.submitBtn}
+                            />
 
-                        <EmergencyContactForm
-                            name={ecName}
-                            relation={ecRelation}
-                            phone={ecPhone}
-                            onNameChange={setEcName}
-                            onRelationChange={setEcRelation}
-                            onPhoneChange={handleEmergencyPhoneChange}
-                            phoneError={errors.emergencyPhone}
-                        />
-
-                        <AppButton
-                            title="Create Account"
-                            onPress={handleRegister}
-                            loading={loading}
-                            disabled={loading}
-                            style={styles.submitBtn}
-                        />
-
-                        <TouchableOpacity
-                            onPress={() =>
-                                navigation.navigate("Login")
-                            }
-                        >
-                            <Text style={styles.switchText}>
-                                Already have an account?{" "}
-                                <Text style={styles.switchLink}>
-                                    Login
-                                </Text>
-                            </Text>
-                        </TouchableOpacity>
-                    </AppCard>
-                </View>
-            </ScrollView>
+                            <View style={styles.loginContainer}>
+                                <Text style={styles.loginText}>Already have an account? </Text>
+                                <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+                                    <Text style={styles.loginLink}>Login</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </AppCard>
+                    </ScrollView>
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
         </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
-    wrapper: {
-        padding: 20,
+    keyboardView: {
+        flex: 1,
     },
-
-    logoContainer: {
+    scrollContent: {
+        flexGrow: 1,
+        padding: 24,
+    },
+    card: {
+        paddingVertical: 32,
+        paddingHorizontal: 20,
+    },
+    header: {
         alignItems: "center",
-        marginBottom: 15,
+        marginBottom: 24,
     },
-
     logo: {
         fontSize: 55,
+        marginBottom: 12,
     },
-
     title: {
         fontSize: 28,
-        fontWeight: "900",
+        fontWeight: "bold",
         textAlign: "center",
         color: COLORS.text,
+        marginBottom: 8,
     },
-
     subtitle: {
         textAlign: "center",
         color: COLORS.subtitle,
-        marginTop: 6,
+        fontSize: 15,
+    },
+    submitBtn: {
+        marginTop: 16,
         marginBottom: 24,
     },
-
-    submitBtn: {
-        marginTop: 8,
+    loginContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
     },
-
-    switchText: {
-        marginTop: 18,
-        textAlign: "center",
+    loginText: {
+        fontSize: 15,
         color: COLORS.subtitle,
     },
-
-    switchLink: {
+    loginLink: {
+        fontSize: 15,
         color: COLORS.primary,
-        fontWeight: "900",
+        fontWeight: "bold",
     },
 });

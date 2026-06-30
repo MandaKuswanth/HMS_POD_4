@@ -1,13 +1,17 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 
 import {
     ActivityIndicator,
+    Animated,
+    Dimensions,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
+    KeyboardAvoidingView,
+    Platform,
 } from "react-native";
 
 import { useFocusEffect } from "@react-navigation/native";
@@ -16,15 +20,55 @@ import AppAvatar from "../../components/AppAvatar";
 import AppCard from "../../components/AppCard";
 import AppContainer from "../../components/AppContainer";
 import AppInput from "../../components/AppInput";
+import AppButton from "../../components/AppButton";
 
 import { useAuth } from "../../context/AuthContext";
 import { useAppointments } from "../../context/AppointmentContext";
 
 import COLORS from "../../utils/colors";
 
+const { width } = Dimensions.get("window");
+
+function DoctorSkeleton() {
+    const fadeAnim = useRef(new Animated.Value(0.5)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(fadeAnim, {
+                    toValue: 0.5,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, [fadeAnim]);
+
+    return (
+        <AppCard style={styles.doctorCard}>
+            <Animated.View style={[styles.doctorTop, { opacity: fadeAnim }]}>
+                <View style={styles.skeletonAvatar} />
+                <View style={styles.doctorHeaderText}>
+                    <View style={styles.skeletonTitle} />
+                    <View style={styles.skeletonSubtitle} />
+                </View>
+            </Animated.View>
+            <Animated.View style={[styles.doctorInfoBox, { opacity: fadeAnim, paddingVertical: 14, gap: 12 }]}>
+                 <View style={styles.skeletonLine} />
+                 <View style={styles.skeletonLineShort} />
+            </Animated.View>
+            <Animated.View style={[styles.skeletonButton, { opacity: fadeAnim }]} />
+        </AppCard>
+    );
+}
+
 export default function DashboardScreen({ navigation }) {
     const { patient } = useAuth();
-
     const { doctors, doctorsLoading, loadDoctors } = useAppointments();
 
     const [search, setSearch] = useState("");
@@ -36,11 +80,10 @@ export default function DashboardScreen({ navigation }) {
         }, [loadDoctors])
     );
 
-    React.useEffect(() => {
+    useEffect(() => {
         const timeoutId = setTimeout(() => {
             loadDoctors(search.trim(), activeFilter);
         }, 500);
-
         return () => clearTimeout(timeoutId);
     }, [search, activeFilter, loadDoctors]);
 
@@ -57,39 +100,28 @@ export default function DashboardScreen({ navigation }) {
 
     const filteredDoctors = doctors;
 
-    const goToProfile = () => {
-        navigation.navigate("Profile");
-    };
-
-    const goToBookAppointment = () => {
-        navigation.navigate("BookAppointment");
-    };
-
-    const goToMyAppointments = () => {
-        navigation.navigate("MyAppointments");
-    };
-
-    const goToBookWithDoctor = (doctor) => {
-        navigation.navigate("BookAppointment", {
-            doctor,
-        });
-    };
+    const goToProfile = () => navigation.navigate("Profile");
+    const goToBookAppointment = () => navigation.navigate("BookAppointment");
+    const goToMyAppointments = () => navigation.navigate("MyAppointments");
+    const goToBookWithDoctor = (doctor) => navigation.navigate("BookAppointment", { doctor });
 
     const renderDoctorsContent = () => {
         if (doctorsLoading) {
             return (
-                <ActivityIndicator
-                    color={COLORS.primary}
-                    style={styles.loader}
-                />
+                <View>
+                    <DoctorSkeleton />
+                    <DoctorSkeleton />
+                </View>
             );
         }
 
         if (filteredDoctors.length === 0) {
             return (
-                <Text style={styles.emptyText}>
-                    No doctors found
-                </Text>
+                <View style={styles.emptyState}>
+                    <Text style={styles.emptyIcon}>👩‍⚕️</Text>
+                    <Text style={styles.emptyTitle}>No doctors found</Text>
+                    <Text style={styles.emptySubtitle}>Try adjusting your filters or search term.</Text>
+                </View>
             );
         }
 
@@ -104,148 +136,134 @@ export default function DashboardScreen({ navigation }) {
 
     return (
         <AppContainer>
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scroll}
+            <KeyboardAvoidingView 
+                style={styles.flex1} 
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
             >
-                <View style={styles.topBar}>
-                    <View>
-                        <Text style={styles.greeting}>Good day,</Text>
-                        <Text style={styles.screenTitle}>
-                            {patient?.name || "Patient"}
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scroll}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <View style={styles.topBar}>
+                        <View style={styles.greetingBox}>
+                            <Text style={styles.greeting}>Good day,</Text>
+                            <Text style={styles.screenTitle} numberOfLines={1}>
+                                {patient?.name || "Patient"}
+                            </Text>
+                        </View>
+                        <TouchableOpacity onPress={goToProfile} activeOpacity={0.7}>
+                            <AppAvatar name={patient?.name} size={48} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <AppCard style={styles.uhidCard}>
+                        <View style={styles.uhidRow}>
+                            <View>
+                                <Text style={styles.uhidLabel}>Patient UHID</Text>
+                                <Text style={styles.uhidValue}>
+                                    {patient?.UHID || "—"}
+                                </Text>
+                            </View>
+                            <View style={styles.activeBadge}>
+                                <Text style={styles.activeText}>Active</Text>
+                            </View>
+                        </View>
+                    </AppCard>
+
+                    <View style={styles.quickActionsContainer}>
+                        <TouchableOpacity
+                            onPress={goToMyAppointments}
+                            style={styles.actionCard}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.actionIconContainer}>
+                                <Text style={styles.actionIcon}>📋</Text>
+                            </View>
+                            <View style={styles.actionContent}>
+                                <Text style={styles.actionTitle}>My Appointments</Text>
+                                <Text style={styles.actionSubtitle}>View upcoming & completed</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={goToBookAppointment}
+                            style={styles.actionCard}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.actionIconContainer}>
+                                <Text style={styles.actionIcon}>➕</Text>
+                            </View>
+                            <View style={styles.actionContent}>
+                                <Text style={styles.actionTitle}>Book Appointment</Text>
+                                <Text style={styles.actionSubtitle}>Schedule a consultation</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate("HealthRecords")}
+                            style={styles.actionCard}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.actionIconContainer}>
+                                <Text style={styles.actionIcon}>📑</Text>
+                            </View>
+                            <View style={styles.actionContent}>
+                                <Text style={styles.actionTitle}>Health Records</Text>
+                                <Text style={styles.actionSubtitle}>Diagnosis & prescriptions</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+
+                    <AppCard style={styles.findCard}>
+                        <Text style={styles.sectionTitle}>Find a Doctor</Text>
+                        <Text style={styles.sectionSub}>
+                            Search by doctor name or specialization
+                        </Text>
+                        <AppInput
+                            value={search}
+                            onChangeText={setSearch}
+                            placeholder="Search doctors..."
+                        />
+                    </AppCard>
+
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.filterRow}
+                    >
+                        {specializations.map((spec) => (
+                            <TouchableOpacity
+                                key={spec}
+                                onPress={() => setActiveFilter(spec)}
+                                activeOpacity={0.7}
+                                style={[
+                                    styles.filterChip,
+                                    activeFilter === spec && styles.filterChipActive,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        styles.filterText,
+                                        activeFilter === spec && styles.filterTextActive,
+                                    ]}
+                                >
+                                    {spec}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+
+                    <View style={styles.doctorsHeader}>
+                        <Text style={styles.sectionTitle}>Available Doctors</Text>
+                        <Text style={styles.countText}>
+                            {filteredDoctors.length} found
                         </Text>
                     </View>
 
-                    <TouchableOpacity onPress={goToProfile}>
-                        <AppAvatar name={patient?.name} size={48} />
-                    </TouchableOpacity>
-                </View>
-
-                <AppCard style={styles.uhidCard}>
-                    <View style={styles.uhidRow}>
-                        <View>
-                            <Text style={styles.uhidLabel}>
-                                Patient UHID
-                            </Text>
-                            <Text style={styles.uhidValue}>
-                                {patient?.UHID || "—"}
-                            </Text>
-                        </View>
-
-                        <View style={styles.activeBadge}>
-                            <Text style={styles.activeText}>Active</Text>
-                        </View>
-                    </View>
-                </AppCard>
-<View style={styles.quickActionsContainer}>
-
-    <TouchableOpacity
-        onPress={goToMyAppointments}
-        style={styles.actionCard}
-    >
-        <Text style={styles.actionIcon}>📋</Text>
-
-        <View style={styles.actionContent}>
-            <Text style={styles.actionTitle}>
-                My Appointments
-            </Text>
-
-            <Text style={styles.actionSubtitle}>
-                View upcoming and completed appointments
-            </Text>
-        </View>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-        onPress={goToBookAppointment}
-        style={styles.actionCard}
-    >
-        <Text style={styles.actionIcon}>➕</Text>
-
-        <View style={styles.actionContent}>
-            <Text style={styles.actionTitle}>
-                Book Appointment
-            </Text>
-
-            <Text style={styles.actionSubtitle}>
-                Schedule a consultation with a doctor
-            </Text>
-        </View>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-        onPress={() =>
-            navigation.navigate("HealthRecords")
-        }
-        style={styles.actionCard}
-    >
-        <Text style={styles.actionIcon}>📑</Text>
-
-        <View style={styles.actionContent}>
-            <Text style={styles.actionTitle}>
-                Health Records
-            </Text>
-
-            <Text style={styles.actionSubtitle}>
-                View diagnosis, prescriptions and reports
-            </Text>
-        </View>
-    </TouchableOpacity>
-
-</View>
-
-                <AppCard style={styles.findCard}>
-                    <Text style={styles.sectionTitle}>Find a Doctor</Text>
-                    <Text style={styles.sectionSub}>
-                        Search by doctor name or specialization
-                    </Text>
-
-                    <AppInput
-                        value={search}
-                        onChangeText={setSearch}
-                        placeholder="Search doctors"
-                    />
-                </AppCard>
-
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.filterRow}
-                >
-                    {specializations.map((spec) => (
-                        <TouchableOpacity
-                            key={spec}
-                            onPress={() => setActiveFilter(spec)}
-                            style={[
-                                styles.filterChip,
-                                activeFilter === spec &&
-                                    styles.filterChipActive,
-                            ]}
-                        >
-                            <Text
-                                style={[
-                                    styles.filterText,
-                                    activeFilter === spec &&
-                                        styles.filterTextActive,
-                                ]}
-                            >
-                                {spec}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                    {renderDoctorsContent()}
                 </ScrollView>
-
-                <View style={styles.doctorsHeader}>
-                    <Text style={styles.sectionTitle}>
-                        Available Doctors
-                    </Text>
-                    <Text style={styles.countText}>
-                        {filteredDoctors.length} found
-                    </Text>
-                </View>
-
-                {renderDoctorsContent()}
-            </ScrollView>
+            </KeyboardAvoidingView>
         </AppContainer>
     );
 }
@@ -264,12 +282,11 @@ function DoctorCard({ doctor, onBook }) {
                     backgroundColor={COLORS.primaryLight}
                     textColor={COLORS.primary}
                 />
-
                 <View style={styles.doctorHeaderText}>
-                    <Text style={styles.doctorName}>
+                    <Text style={styles.doctorName} numberOfLines={1}>
                         Dr. {doctor.name}
                     </Text>
-                    <Text style={styles.doctorSpec}>
+                    <Text style={styles.doctorSpec} numberOfLines={1}>
                         {doctor.specialization || "Doctor"}
                     </Text>
                 </View>
@@ -281,14 +298,10 @@ function DoctorCard({ doctor, onBook }) {
                 <InfoRow label="Fee" value={`₹${fee}`} />
             </View>
 
-            <TouchableOpacity
-                style={styles.bookBtn}
+            <AppButton
+                title="Book Appointment"
                 onPress={() => onBook(doctor)}
-            >
-                <Text style={styles.bookBtnText}>
-                    Book Appointment
-                </Text>
-            </TouchableOpacity>
+            />
         </AppCard>
     );
 }
@@ -297,35 +310,26 @@ function InfoRow({ label, value }) {
     return (
         <View style={styles.doctorInfoRow}>
             <Text style={styles.doctorInfoLabel}>{label}</Text>
-            <Text style={styles.doctorInfoValue}>{value}</Text>
+            <Text style={styles.doctorInfoValue} numberOfLines={1}>{value}</Text>
         </View>
     );
 }
 
 function getQualification(qualification) {
     if (Array.isArray(qualification)) {
-        return qualification.length > 0
-            ? qualification.join(", ")
-            : "MBBS";
+        return qualification.length > 0 ? qualification.join(", ") : "MBBS";
     }
-
     return qualification || "MBBS";
 }
 
 function getAvailability(availabilitySlots) {
-    if (
-        !Array.isArray(availabilitySlots) ||
-        availabilitySlots.length === 0
-    ) {
+    if (!Array.isArray(availabilitySlots) || availabilitySlots.length === 0) {
         return "Not available";
     }
-
-    const firstSlot = availabilitySlots.at(0);
-    const lastSlot = availabilitySlots.at(-1);
-
+    const firstSlot = availabilitySlots[0];
+    const lastSlot = availabilitySlots[availabilitySlots.length - 1];
     const startTime = firstSlot.split(" - ")[0];
     const endTime = lastSlot.split(" - ")[1];
-
     return `${startTime} - ${endTime}`;
 }
 
@@ -336,41 +340,22 @@ DashboardScreen.propTypes = {
 };
 
 DoctorCard.propTypes = {
-    doctor: PropTypes.shape({
-        _id: PropTypes.string,
-        employeeCode: PropTypes.string,
-        name: PropTypes.string,
-        specialization: PropTypes.string,
-        qualification: PropTypes.oneOfType([
-            PropTypes.string,
-            PropTypes.arrayOf(PropTypes.string),
-        ]),
-        availabilitySlots: PropTypes.arrayOf(PropTypes.string),
-        consultationFee: PropTypes.oneOfType([
-            PropTypes.string,
-            PropTypes.number,
-        ]),
-        fee: PropTypes.oneOfType([
-            PropTypes.string,
-            PropTypes.number,
-        ]),
-    }).isRequired,
+    doctor: PropTypes.object.isRequired,
     onBook: PropTypes.func.isRequired,
 };
 
 InfoRow.propTypes = {
     label: PropTypes.string.isRequired,
-    value: PropTypes.oneOfType([
-        PropTypes.string,
-        PropTypes.number,
-    ]).isRequired,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
 const styles = StyleSheet.create({
+    flex1: {
+        flex: 1,
+    },
     scroll: {
         paddingBottom: 40,
     },
-
     topBar: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -379,266 +364,261 @@ const styles = StyleSheet.create({
         paddingTop: 10,
         paddingBottom: 16,
     },
-
+    greetingBox: {
+        flex: 1,
+        paddingRight: 10,
+    },
     greeting: {
         fontSize: 14,
         color: COLORS.subtitle,
     },
-
     screenTitle: {
         fontSize: 26,
         fontWeight: "900",
         color: COLORS.text,
     },
     quickActionsContainer: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-},
-
-actionCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 12,
-
-    flexDirection: "row",
-    alignItems: "center",
-
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-},
-
-actionIcon: {
-    fontSize: 28,
-    marginRight: 16,
-},
-
-actionContent: {
-    flex: 1,
-},
-
-actionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.text,
-},
-
-actionSubtitle: {
-    marginTop: 4,
-    fontSize: 13,
-    color: COLORS.subtitle,
-},
-
+        marginHorizontal: 20,
+        marginBottom: 20,
+    },
+    actionCard: {
+        backgroundColor: COLORS.white,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    actionIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: COLORS.surface,
+        justifyContent: "center",
+        alignItems: "center",
+        marginRight: 16,
+    },
+    actionIcon: {
+        fontSize: 24,
+    },
+    actionContent: {
+        flex: 1,
+    },
+    actionTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: COLORS.text,
+    },
+    actionSubtitle: {
+        marginTop: 4,
+        fontSize: 13,
+        color: COLORS.subtitle,
+    },
     uhidCard: {
         marginHorizontal: 20,
-        marginBottom: 14,
+        marginBottom: 16,
+        padding: 20,
     },
-
     uhidRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
     },
-
     uhidLabel: {
         fontSize: 13,
         color: COLORS.subtitle,
         marginBottom: 4,
     },
-
     uhidValue: {
         fontSize: 20,
         fontWeight: "900",
         color: COLORS.primaryMid,
     },
-
     activeBadge: {
         backgroundColor: COLORS.bookedLight,
-        paddingHorizontal: 14,
+        paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
     },
-
     activeText: {
         color: COLORS.booked,
         fontWeight: "800",
-        fontSize: 13,
+        fontSize: 12,
     },
-quickRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginHorizontal: 20,
-    marginBottom: 16,
-    gap: 10,
-},
-
-quickCard: {
-    flex: 1,
-},
-
-quickCardInner: {
-    height: 130,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 8,
-},
-
-quickIcon: {
-    fontSize: 28,
-    color: COLORS.primary,
-    marginBottom: 10,
-},
-
-quickLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.text,
-    textAlign: "center",
-    lineHeight: 20,
-},
-
-
-
     findCard: {
         marginHorizontal: 20,
-        marginBottom: 14,
+        marginBottom: 16,
+        padding: 20,
     },
-
     sectionTitle: {
         fontSize: 18,
         fontWeight: "800",
         color: COLORS.text,
     },
-
     sectionSub: {
         fontSize: 13,
         color: COLORS.subtitle,
         marginTop: 4,
-        marginBottom: 12,
+        marginBottom: 16,
     },
-
     filterRow: {
         paddingHorizontal: 20,
         gap: 8,
-        marginBottom: 14,
+        marginBottom: 16,
     },
-
     filterChip: {
-        paddingHorizontal: 18,
-        paddingVertical: 9,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
         borderRadius: 50,
         backgroundColor: COLORS.white,
         borderWidth: 1,
         borderColor: COLORS.border,
+        shadowColor: "#000",
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 1,
     },
-
     filterChipActive: {
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
     },
-
     filterText: {
         fontSize: 14,
         fontWeight: "700",
         color: COLORS.text,
     },
-
     filterTextActive: {
-        color: "#fff",
+        color: COLORS.white,
     },
-
     doctorsHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
+        alignItems: "center",
         paddingHorizontal: 20,
-        marginBottom: 10,
+        marginBottom: 12,
     },
-
     countText: {
         fontSize: 13,
         color: COLORS.subtitle,
+        fontWeight: "600",
     },
-
-    emptyText: {
-        textAlign: "center",
+    emptyState: {
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 40,
+        marginTop: 20,
+    },
+    emptyIcon: {
+        fontSize: 48,
+        marginBottom: 16,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: COLORS.text,
+        marginBottom: 8,
+    },
+    emptySubtitle: {
+        fontSize: 14,
         color: COLORS.subtitle,
-        marginTop: 30,
+        textAlign: "center",
     },
-
-    loader: {
-        marginTop: 30,
-    },
-
     doctorCard: {
         marginHorizontal: 20,
-        marginBottom: 14,
+        marginBottom: 16,
+        padding: 16,
     },
-
     doctorTop: {
         flexDirection: "row",
         alignItems: "center",
         gap: 12,
-        marginBottom: 14,
+        marginBottom: 16,
     },
-
     doctorHeaderText: {
         flex: 1,
     },
-
     doctorName: {
         fontSize: 17,
         fontWeight: "800",
         color: COLORS.text,
     },
-
     doctorSpec: {
         fontSize: 14,
         color: COLORS.primaryMid,
         fontWeight: "700",
-        marginTop: 2,
+        marginTop: 4,
     },
-
     doctorInfoBox: {
         backgroundColor: COLORS.surface,
         borderRadius: 12,
-        paddingHorizontal: 14,
-        marginBottom: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginBottom: 16,
     },
-
     doctorInfoRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-        paddingVertical: 10,
+        alignItems: "center",
+        paddingVertical: 8,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
         gap: 12,
     },
-
     doctorInfoLabel: {
-        fontSize: 14,
+        fontSize: 13,
         color: COLORS.subtitle,
+        fontWeight: "500",
     },
-
     doctorInfoValue: {
         flex: 1,
         textAlign: "right",
         fontSize: 14,
-        fontWeight: "800",
+        fontWeight: "700",
         color: COLORS.text,
     },
-
-    bookBtn: {
-        backgroundColor: COLORS.primary,
-        borderRadius: 50,
-        paddingVertical: 14,
-        alignItems: "center",
+    skeletonAvatar: {
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: COLORS.border,
     },
-
-    bookBtnText: {
-        color: "#fff",
-        fontWeight: "800",
-        fontSize: 15,
+    skeletonTitle: {
+        height: 16,
+        width: "60%",
+        backgroundColor: COLORS.border,
+        borderRadius: 4,
+        marginBottom: 8,
     },
-});
+    skeletonSubtitle: {
+        height: 12,
+        width: "40%",
+        backgroundColor: COLORS.border,
+        borderRadius: 4,
+    },
+    skeletonLine: {
+        height: 12,
+        width: "100%",
+        backgroundColor: COLORS.border,
+        borderRadius: 4,
+    },
+    skeletonLineShort: {
+        height: 12,
+        width: "80%",
+        backgroundColor: COLORS.border,
+        borderRadius: 4,
+    },
+    skeletonButton: {
+        height: 48,
+        width: "100%",
+        backgroundColor: COLORS.border,
+        borderRadius: 24,
+    },
+});

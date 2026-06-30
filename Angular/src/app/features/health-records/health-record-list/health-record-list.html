@@ -5,10 +5,13 @@
         </div>
 
         <div class="toolbar-row">
-            <div class="search-box">
-                <input type="text"
-                    placeholder="Search by record, appointment, patient, doctor..." [ngModel]="searchTextSignal()"
-                    (input)="onSearchInput($event)" />
+            <div style="flex: 1; min-width: 200px;">
+                <mat-form-field appearance="outline" style="width: 100%;" subscriptSizing="dynamic">
+                    <input matInput type="text"
+                        placeholder="Search by record, appointment, patient, doctor..." [ngModel]="searchTextSignal()"
+                        (input)="onSearchInput($event)" />
+                    <mat-icon matSuffix>search</mat-icon>
+                </mat-form-field>
             </div>
 
             @if (searchTextSignal()) {

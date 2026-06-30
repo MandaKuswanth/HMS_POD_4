@@ -71,6 +71,8 @@ export class AppointmentDialog implements OnInit {
         date: appt.date ? new Date(appt.date) as any : '',
         timeSlot: appt.timeSlot || ''
       });
+      this.form.get('patientId')?.disable();
+      this.form.get('doctorEmployeeId')?.disable();
 
       if (appt.doctorEmployeeId && appt.date) {
         this.loadDoctorSlots(appt.doctorEmployeeId, appt.date);

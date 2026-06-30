@@ -1,12 +1,15 @@
-import React, { useState } from "react";
-
+import React, { useState, useRef } from "react";
 import {
     Alert,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
-    ScrollView
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard
 } from "react-native";
 
 import AppContainer from "../../components/AppContainer";
@@ -18,18 +21,15 @@ import COLORS from "../../utils/colors";
 
 import {
     isEmpty,
-    firstErrorMessage,
 } from "../../utils/validators";
 
 import { resetPasswordApi } from "../../api/authService";
 
 export default function ResetPasswordScreen({ navigation, route }) {
-    const { email, verificationToken } = route.params || {};
+    const { email } = route.params || {};
 
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [errors, setErrors] = useState({
         newPassword: "",
@@ -39,6 +39,8 @@ export default function ResetPasswordScreen({ navigation, route }) {
     const [loading, setLoading] = useState(false);
     const [passwordReset, setPasswordReset] = useState(false);
 
+    const confirmPasswordRef = useRef(null);
+
     const updateError = (field, message) => {
         setErrors((prev) => ({
             ...prev,
@@ -47,45 +49,28 @@ export default function ResetPasswordScreen({ navigation, route }) {
     };
 
     const validatePassword = (password) => {
-        if (isEmpty(password)) {
-            return "Password is required";
-        }
-
-        if (password.length < 8) {
-            return "Password must be at least 8 characters";
-        }
-
-        if (!/[A-Z]/.test(password)) {
-            return "Password must contain at least one uppercase letter";
-        }
-
-        if (!/\d/.test(password)) {
-            return "Password must contain at least one number";
-        }
-
+        if (isEmpty(password)) return "Password is required";
+        if (password.length < 8) return "Password must be at least 8 characters";
+        if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter";
+        if (!/\d/.test(password)) return "Password must contain at least one number";
         return "";
     };
 
     const handleNewPasswordChange = (value) => {
         setNewPassword(value);
-
         if (isEmpty(value)) {
             updateError("newPassword", "");
             return;
         }
-
-        const error = validatePassword(value);
-        updateError("newPassword", error);
+        updateError("newPassword", validatePassword(value));
     };
 
     const handleConfirmPasswordChange = (value) => {
         setConfirmPassword(value);
-
         if (isEmpty(value)) {
             updateError("confirmPassword", "");
             return;
         }
-
         if (value !== newPassword) {
             updateError("confirmPassword", "Passwords do not match");
         } else {
@@ -94,24 +79,19 @@ export default function ResetPasswordScreen({ navigation, route }) {
     };
 
     const handleResetPassword = async () => {
-        // Validate new password
         const newPasswordError = validatePassword(newPassword);
         if (newPasswordError) {
             updateError("newPassword", newPasswordError);
-            Alert.alert("Validation Error", newPasswordError);
             return;
         }
 
-        // Validate confirm password
         if (isEmpty(confirmPassword)) {
             updateError("confirmPassword", "Please confirm your password");
-            Alert.alert("Validation Error", "Please confirm your password");
             return;
         }
 
         if (newPassword !== confirmPassword) {
             updateError("confirmPassword", "Passwords do not match");
-            Alert.alert("Validation Error", "Passwords do not match");
             return;
         }
 
@@ -132,10 +112,11 @@ export default function ResetPasswordScreen({ navigation, route }) {
 
             setPasswordReset(true);
 
-            // Show success and navigate to login after 2 seconds
-            Alert.alert("Success", "Password reset successfully!");
             setTimeout(() => {
-                navigation.navigate("Login");
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                });
             }, 2000);
 
         } catch (error) {
@@ -149,130 +130,77 @@ export default function ResetPasswordScreen({ navigation, route }) {
 
     return (
         <AppContainer>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={styles.container}>
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <Text style={styles.title}>Set New Password</Text>
-                        <Text style={styles.subtitle}>
-                            Create a strong password to protect your account
-                        </Text>
-                    </View>
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                style={styles.keyboardView}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <ScrollView 
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <View style={styles.header}>
+                            <Text style={styles.title}>Set New Password</Text>
+                            <Text style={styles.subtitle}>
+                                Create a strong password to protect your account
+                            </Text>
+                        </View>
 
-                    {/* Success Message */}
-                    {passwordReset && (
-                        <AppCard style={styles.successCard}>
-                            <View style={styles.successContent}>
-                                <Text style={styles.successIcon}>✓</Text>
-                                <Text style={styles.successText}>
-                                    Password Reset Successfully!
-                                </Text>
-                                <Text style={styles.successSubtext}>
-                                    You can now login with your new password
-                                </Text>
-                            </View>
-                        </AppCard>
-                    )}
-
-                    {/* Form */}
-                    {!passwordReset && (
-                        <AppCard style={styles.formCard}>
-                            <View style={styles.formContent}>
-                                {/* New Password Field */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>New Password</Text>
-                                    <View style={[
-                                        styles.passwordInputWrapper,
-                                        errors.newPassword && styles.inputWrapperError
-                                    ]}>
-                                        <AppInput
-                                            placeholder="Enter new password"
-                                            value={newPassword}
-                                            onChangeText={handleNewPasswordChange}
-                                            secureTextEntry={!showPassword}
-                                            editable={!loading}
-                                            style={styles.input}
-                                        />
-                                        <TouchableOpacity
-                                            onPress={() => setShowPassword(!showPassword)}
-                                            style={styles.eyeIcon}
-                                        >
-                                            <Text style={styles.eyeIconText}>
-                                                {showPassword ? "👁" : "👁‍🗨"}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                    {errors.newPassword ? (
-                                        <Text style={styles.errorText}>
-                                            {errors.newPassword}
-                                        </Text>
-                                    ) : null}
+                        {passwordReset ? (
+                            <AppCard style={styles.successCard}>
+                                <View style={styles.successContent}>
+                                    <Text style={styles.successIcon}>✓</Text>
+                                    <Text style={styles.successText}>Password Reset Successfully!</Text>
+                                    <Text style={styles.successSubtext}>You can now login with your new password</Text>
                                 </View>
+                            </AppCard>
+                        ) : (
+                            <AppCard>
+                                <AppInput
+                                    placeholder="New Password"
+                                    value={newPassword}
+                                    onChangeText={handleNewPasswordChange}
+                                    secureTextEntry
+                                    error={errors.newPassword}
+                                    returnKeyType="next"
+                                    onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                                    blurOnSubmit={false}
+                                />
 
-                                {/* Password Requirements */}
                                 <View style={styles.requirementsBox}>
                                     <Text style={styles.requirementsTitle}>Password must contain:</Text>
                                     <View style={styles.requirement}>
-                                        <Text style={[
-                                            styles.requirementIcon,
-                                            newPassword.length >= 8 && styles.requirementDone
-                                        ]}>
+                                        <Text style={[styles.requirementIcon, newPassword.length >= 8 && styles.requirementDone]}>
                                             {newPassword.length >= 8 ? "✓" : "○"}
                                         </Text>
                                         <Text style={styles.requirementText}>At least 8 characters</Text>
                                     </View>
                                     <View style={styles.requirement}>
-                                        <Text style={[
-                                            styles.requirementIcon,
-                                            /[A-Z]/.test(newPassword) && styles.requirementDone
-                                        ]}>
+                                        <Text style={[styles.requirementIcon, /[A-Z]/.test(newPassword) && styles.requirementDone]}>
                                             {/[A-Z]/.test(newPassword) ? "✓" : "○"}
                                         </Text>
                                         <Text style={styles.requirementText}>At least one uppercase letter</Text>
                                     </View>
                                     <View style={styles.requirement}>
-                                        <Text style={[
-                                            styles.requirementIcon,
-                                            /\d/.test(newPassword) && styles.requirementDone
-                                        ]}>
+                                        <Text style={[styles.requirementIcon, /\d/.test(newPassword) && styles.requirementDone]}>
                                             {/\d/.test(newPassword) ? "✓" : "○"}
                                         </Text>
                                         <Text style={styles.requirementText}>At least one number</Text>
                                     </View>
                                 </View>
 
-                                {/* Confirm Password Field */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>Confirm Password</Text>
-                                    <View style={[
-                                        styles.passwordInputWrapper,
-                                        errors.confirmPassword && styles.inputWrapperError
-                                    ]}>
-                                        <AppInput
-                                            placeholder="Confirm your password"
-                                            value={confirmPassword}
-                                            onChangeText={handleConfirmPasswordChange}
-                                            secureTextEntry={!showConfirmPassword}
-                                            editable={!loading}
-                                            style={styles.input}
-                                        />
-                                        <TouchableOpacity
-                                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            style={styles.eyeIcon}
-                                        >
-                                            <Text style={styles.eyeIconText}>
-                                                {showConfirmPassword ? "👁" : "👁‍🗨"}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                    {errors.confirmPassword ? (
-                                        <Text style={styles.errorText}>
-                                            {errors.confirmPassword}
-                                        </Text>
-                                    ) : null}
-                                </View>
+                                <AppInput
+                                    ref={confirmPasswordRef}
+                                    placeholder="Confirm Password"
+                                    value={confirmPassword}
+                                    onChangeText={handleConfirmPasswordChange}
+                                    secureTextEntry
+                                    error={errors.confirmPassword}
+                                    returnKeyType="done"
+                                    onSubmitEditing={handleResetPassword}
+                                />
 
-                                {/* Match Indicator */}
                                 {confirmPassword && newPassword === confirmPassword && (
                                     <View style={styles.matchBox}>
                                         <Text style={styles.matchIcon}>✓</Text>
@@ -280,119 +208,73 @@ export default function ResetPasswordScreen({ navigation, route }) {
                                     </View>
                                 )}
 
-                                {/* Reset Button */}
                                 <AppButton
-                                    title={loading ? "Resetting Password..." : "Reset Password"}
+                                    title={loading ? "Resetting..." : "Reset Password"}
                                     onPress={handleResetPassword}
-                                    disabled={loading}
+                                    loading={loading}
                                     style={styles.submitButton}
                                 />
-                            </View>
-                        </AppCard>
-                    )}
+                            </AppCard>
+                        )}
 
-                    {/* Back Link */}
-                    <View style={styles.footer}>
-                        <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <Text style={styles.footerLink}>← Back</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </ScrollView>
+                        <View style={styles.footer}>
+                            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                                <Text style={styles.footerLink}>← Back</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
         </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    keyboardView: {
         flex: 1,
-        padding: 20,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        padding: 24,
         justifyContent: "center",
     },
     header: {
-        marginBottom: 30,
-        marginTop: 20,
+        alignItems: "center",
+        marginBottom: 32,
     },
     title: {
         fontSize: 28,
         fontWeight: "bold",
-        color: COLORS.dark,
-        marginBottom: 10,
+        color: COLORS.text,
+        marginBottom: 8,
+        textAlign: "center",
     },
     subtitle: {
-        fontSize: 14,
-        color: COLORS.gray,
-        lineHeight: 21,
-    },
-    formCard: {
-        marginBottom: 20,
-        paddingVertical: 25,
-    },
-    formContent: {
-        paddingHorizontal: 5,
-    },
-    inputGroup: {
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: COLORS.dark,
-        marginBottom: 8,
-    },
-    passwordInputWrapper: {
-        flexDirection: "row",
-        alignItems: "center",
-        borderColor: COLORS.lightGray,
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingRight: 10,
-        backgroundColor: "#FAFAFA",
-    },
-    inputWrapperError: {
-        borderColor: COLORS.danger,
-    },
-    input: {
-        flex: 1,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        fontSize: 14,
-        color: COLORS.dark,
-        backgroundColor: "transparent",
-    },
-    eyeIcon: {
-        padding: 8,
-    },
-    eyeIconText: {
-        fontSize: 18,
-    },
-    errorText: {
-        color: COLORS.danger,
-        fontSize: 12,
-        marginTop: 5,
+        fontSize: 15,
+        color: COLORS.subtitle,
+        textAlign: "center",
+        lineHeight: 22,
     },
     requirementsBox: {
-        backgroundColor: "#F0F8E8",
-        borderLeftWidth: 4,
-        borderLeftColor: COLORS.success,
-        padding: 12,
-        borderRadius: 4,
-        marginBottom: 20,
+        backgroundColor: COLORS.successLight,
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 16,
     },
     requirementsTitle: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: "600",
-        color: COLORS.dark,
-        marginBottom: 8,
+        color: COLORS.text,
+        marginBottom: 12,
     },
     requirement: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 6,
+        marginBottom: 8,
     },
     requirementIcon: {
-        fontSize: 18,
-        color: COLORS.gray,
+        fontSize: 16,
+        color: COLORS.subtitle,
         marginRight: 10,
         fontWeight: "bold",
     },
@@ -400,65 +282,66 @@ const styles = StyleSheet.create({
         color: COLORS.success,
     },
     requirementText: {
-        fontSize: 13,
-        color: COLORS.dark,
+        fontSize: 14,
+        color: COLORS.text,
     },
     matchBox: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#E8F8F0",
-        borderLeftWidth: 4,
-        borderLeftColor: COLORS.success,
+        backgroundColor: COLORS.successLight,
         padding: 12,
-        borderRadius: 4,
-        marginBottom: 20,
+        borderRadius: 12,
+        marginBottom: 16,
     },
     matchIcon: {
-        fontSize: 18,
+        fontSize: 16,
         color: COLORS.success,
         marginRight: 10,
         fontWeight: "bold",
     },
     matchText: {
-        fontSize: 13,
+        fontSize: 14,
         color: COLORS.success,
         fontWeight: "500",
     },
     submitButton: {
-        marginTop: 10,
+        marginTop: 8,
     },
     successCard: {
-        marginBottom: 20,
-        backgroundColor: "#E8F8F0",
-        borderLeftWidth: 4,
-        borderLeftColor: COLORS.success,
+        backgroundColor: COLORS.successLight,
+        borderWidth: 1,
+        borderColor: COLORS.success,
     },
     successContent: {
         alignItems: "center",
-        paddingVertical: 30,
+        paddingVertical: 32,
     },
     successIcon: {
-        fontSize: 50,
+        fontSize: 48,
         color: COLORS.success,
-        marginBottom: 15,
+        marginBottom: 16,
     },
     successText: {
-        fontSize: 18,
-        fontWeight: "600",
+        fontSize: 20,
+        fontWeight: "bold",
         color: COLORS.success,
-        marginBottom: 5,
+        marginBottom: 8,
         textAlign: "center",
     },
     successSubtext: {
-        fontSize: 14,
-        color: COLORS.gray,
+        fontSize: 15,
+        color: COLORS.text,
         textAlign: "center",
     },
     footer: {
-        marginTop: 20,
+        marginTop: 32,
+        alignItems: "center",
+    },
+    backButton: {
+        padding: 8,
     },
     footerLink: {
-        fontSize: 14,
+        fontSize: 15,
         color: COLORS.primary,
         fontWeight: "600",
     },

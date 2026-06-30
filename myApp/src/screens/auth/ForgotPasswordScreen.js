@@ -1,12 +1,15 @@
 import React, { useState } from "react";
-
 import {
     Alert,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
-    ScrollView
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard
 } from "react-native";
 
 import AppContainer from "../../components/AppContainer";
@@ -16,12 +19,7 @@ import AppButton from "../../components/AppButton";
 
 import COLORS from "../../utils/colors";
 
-import {
-    isEmpty,
-    isValidEmail,
-    firstErrorMessage,
-} from "../../utils/validators";
-
+import { isEmpty, isValidEmail } from "../../utils/validators";
 import { forgotPasswordApi } from "../../api/authService";
 
 export default function ForgotPasswordScreen({ navigation }) {
@@ -39,22 +37,14 @@ export default function ForgotPasswordScreen({ navigation }) {
 
     const handleEmailChange = (value) => {
         setEmail(value);
-
         if (isEmpty(value)) {
             updateError("email", "");
             return;
         }
-
-        updateError(
-            "email",
-            isValidEmail(value)
-                ? ""
-                : "Please enter a valid email address"
-        );
+        updateError("email", isValidEmail(value) ? "" : "Please enter a valid email address");
     };
 
     const handleForgotPassword = async () => {
-        // Validate email
         if (isEmpty(email)) {
             updateError("email", "Email is required");
             Alert.alert("Validation Error", "Email is required");
@@ -69,12 +59,10 @@ export default function ForgotPasswordScreen({ navigation }) {
 
         try {
             setLoading(true);
-
             await forgotPasswordApi({ email: email.trim().toLowerCase() });
-
+            
             setEmailSent(true);
             
-            // Auto navigate to OTP screen after 2 seconds
             setTimeout(() => {
                 navigation.navigate("OTPVerification", { email: email.trim().toLowerCase() });
             }, 2000);
@@ -90,57 +78,45 @@ export default function ForgotPasswordScreen({ navigation }) {
 
     return (
         <AppContainer>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={styles.container}>
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <Text style={styles.title}>Forgot Password?</Text>
-                        <Text style={styles.subtitle}>
-                            Enter your email address and we'll send you an OTP to reset your password.
-                        </Text>
-                    </View>
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                style={styles.keyboardView}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <ScrollView 
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <View style={styles.header}>
+                            <Text style={styles.title}>Forgot Password?</Text>
+                            <Text style={styles.subtitle}>
+                                Enter your email address and we'll send you an OTP to reset your password.
+                            </Text>
+                        </View>
 
-                    {/* Success Message */}
-                    {emailSent && (
-                        <AppCard style={styles.successCard}>
-                            <View style={styles.successContent}>
-                                <Text style={styles.successIcon}>✓</Text>
-                                <Text style={styles.successText}>
-                                    OTP sent successfully!
-                                </Text>
-                                <Text style={styles.successSubtext}>
-                                    Check your email for the OTP
-                                </Text>
-                            </View>
-                        </AppCard>
-                    )}
-
-                    {/* Email Input Form */}
-                    {!emailSent && (
-                        <AppCard style={styles.formCard}>
-                            <View style={styles.formContent}>
-                                {/* Email Field */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>Email Address</Text>
-                                    <AppInput
-                                        placeholder="Enter your email"
-                                        value={email}
-                                        onChangeText={handleEmailChange}
-                                        keyboardType="email-address"
-                                        editable={!loading}
-                                        style={[
-                                            styles.input,
-                                            errors.email && styles.inputError
-                                        ]}
-                                    />
-                                    {errors.email ? (
-                                        <Text style={styles.errorText}>
-                                            {errors.email}
-                                        </Text>
-                                    ) : null}
+                        {emailSent ? (
+                            <AppCard style={styles.successCard}>
+                                <View style={styles.successContent}>
+                                    <Text style={styles.successIcon}>✓</Text>
+                                    <Text style={styles.successText}>OTP sent successfully!</Text>
+                                    <Text style={styles.successSubtext}>Check your email for the OTP</Text>
                                 </View>
+                            </AppCard>
+                        ) : (
+                            <AppCard style={styles.formCard}>
+                                <AppInput
+                                    placeholder="Email Address"
+                                    value={email}
+                                    onChangeText={handleEmailChange}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    editable={!loading}
+                                    error={errors.email}
+                                    returnKeyType="done"
+                                    onSubmitEditing={handleForgotPassword}
+                                />
 
-                                {/* Info Box */}
                                 <View style={styles.infoBox}>
                                     <Text style={styles.infoIcon}>ℹ</Text>
                                     <Text style={styles.infoText}>
@@ -148,146 +124,118 @@ export default function ForgotPasswordScreen({ navigation }) {
                                     </Text>
                                 </View>
 
-                                {/* Submit Button */}
                                 <AppButton
-                                    title={loading ? "Sending OTP..." : "Send OTP"}
+                                    title={loading ? "Sending..." : "Send OTP"}
                                     onPress={handleForgotPassword}
-                                    disabled={loading}
+                                    loading={loading}
                                     style={styles.submitButton}
                                 />
-                            </View>
-                        </AppCard>
-                    )}
+                            </AppCard>
+                        )}
 
-                    {/* Back to Login Link */}
-                    <View style={styles.footer}>
-                        <Text style={styles.footerText}>Remember your password? </Text>
-                        <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <Text style={styles.footerLink}>Back to Login</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </ScrollView>
+                        <View style={styles.footer}>
+                            <Text style={styles.footerText}>Remember your password? </Text>
+                            <TouchableOpacity onPress={() => navigation.goBack()}>
+                                <Text style={styles.footerLink}>Back to Login</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
         </AppContainer>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    keyboardView: {
         flex: 1,
-        padding: 20,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        padding: 24,
         justifyContent: "center",
     },
     header: {
-        marginBottom: 30,
-        marginTop: 20,
+        alignItems: "center",
+        marginBottom: 32,
     },
     title: {
         fontSize: 28,
         fontWeight: "bold",
-        color: COLORS.dark,
-        marginBottom: 10,
+        color: COLORS.text,
+        marginBottom: 12,
+        textAlign: "center",
     },
     subtitle: {
-        fontSize: 14,
-        color: COLORS.gray,
-        lineHeight: 21,
+        fontSize: 15,
+        color: COLORS.subtitle,
+        textAlign: "center",
+        lineHeight: 22,
     },
     formCard: {
-        marginBottom: 20,
-        paddingVertical: 25,
-    },
-    formContent: {
-        paddingHorizontal: 5,
-    },
-    inputGroup: {
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: COLORS.dark,
-        marginBottom: 8,
-    },
-    input: {
-        borderColor: COLORS.lightGray,
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        fontSize: 14,
-        color: COLORS.dark,
-    },
-    inputError: {
-        borderColor: COLORS.danger,
-    },
-    errorText: {
-        color: COLORS.danger,
-        fontSize: 12,
-        marginTop: 5,
+        paddingVertical: 24,
+        paddingHorizontal: 20,
     },
     infoBox: {
         flexDirection: "row",
-        backgroundColor: "#E8F4F8",
-        borderLeftWidth: 4,
-        borderLeftColor: COLORS.primary,
-        padding: 12,
-        borderRadius: 4,
-        marginBottom: 20,
+        alignItems: "center",
+        backgroundColor: COLORS.primaryLight,
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 24,
     },
     infoIcon: {
-        fontSize: 18,
+        fontSize: 20,
         color: COLORS.primary,
-        marginRight: 10,
+        marginRight: 12,
         fontWeight: "bold",
     },
     infoText: {
         flex: 1,
-        fontSize: 13,
-        color: COLORS.dark,
-        lineHeight: 18,
+        fontSize: 14,
+        color: COLORS.text,
+        lineHeight: 20,
     },
     submitButton: {
-        marginTop: 10,
+        marginTop: 8,
     },
     successCard: {
-        marginBottom: 20,
-        backgroundColor: "#E8F8F0",
-        borderLeftWidth: 4,
-        borderLeftColor: COLORS.success,
+        backgroundColor: COLORS.successLight,
+        borderColor: COLORS.success,
+        borderWidth: 1,
     },
     successContent: {
         alignItems: "center",
-        paddingVertical: 20,
+        paddingVertical: 32,
     },
     successIcon: {
-        fontSize: 40,
+        fontSize: 48,
         color: COLORS.success,
-        marginBottom: 10,
+        marginBottom: 16,
     },
     successText: {
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 20,
+        fontWeight: "bold",
         color: COLORS.success,
-        marginBottom: 5,
+        marginBottom: 8,
     },
     successSubtext: {
-        fontSize: 13,
-        color: COLORS.gray,
+        fontSize: 15,
+        color: COLORS.text,
     },
     footer: {
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        marginTop: 20,
+        marginTop: 32,
     },
     footerText: {
-        fontSize: 14,
-        color: COLORS.gray,
+        fontSize: 15,
+        color: COLORS.subtitle,
     },
     footerLink: {
-        fontSize: 14,
+        fontSize: 15,
         color: COLORS.primary,
-        fontWeight: "600",
+        fontWeight: "bold",
     },
 });
