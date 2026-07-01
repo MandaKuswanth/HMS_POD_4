@@ -1,0 +1,82 @@
+<div class="layout">
+    <main class="content">
+        <mat-card class="form-card">
+            <div class="page-header">
+                <mat-icon>vpn_key</mat-icon>
+                <div>
+                    <h2>Manage Permissions</h2>
+                    <p>Add new permissions to the system catalog</p>
+                </div>
+            </div>
+
+            <form *appHasPermission="PERMISSIONS.ROLE_CREATE" (ngSubmit)="onSubmit()" #permForm="ngForm"
+                class="permission-form">
+                <div class="form-row">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Key</mat-label>
+                        <input matInput [(ngModel)]="form.key" name="key" placeholder="BILLING_CREATE" required />
+                        <mat-hint>Auto-uppercased, spaces become underscores</mat-hint>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                        <mat-label>Label</mat-label>
+                        <input matInput [(ngModel)]="form.label" name="label" placeholder="Billing Create" required />
+                    </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Category</mat-label>
+                        <input matInput [(ngModel)]="form.category" name="category" placeholder="Billing Permissions"
+                            [matAutocomplete]="auto" required />
+                        <mat-autocomplete #auto="matAutocomplete">
+                            @for (cat of existingCategories; track cat) {
+                            <mat-option [value]="cat">{{ cat }}</mat-option>
+                            }
+                        </mat-autocomplete>
+                        <mat-hint>Pick an existing category or type a new one</mat-hint>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                        <mat-label>Description (optional)</mat-label>
+                        <input matInput [(ngModel)]="form.description" name="description" />
+                    </mat-form-field>
+                </div>
+
+                <button mat-flat-button color="primary" type="submit" [disabled]="submitting || permForm.invalid">
+                    <mat-icon>add</mat-icon>
+                    Add Permission
+                </button>
+            </form>
+        </mat-card>
+
+        <mat-card class="table-card">
+            @if (loading) {
+            <p class="loading-text">Loading permissions...</p>
+            } @else {
+            @for (group of permissionGroups; track group.category) {
+            <div class="permission-section">
+                <h4>{{ group.category }}</h4>
+                <div class="permission-list">
+                    @for (perm of group.permissions; track perm.key) {
+                    <div class="permission-row">
+                        <div>
+                            <strong>{{ perm.label }}</strong>
+                            <span class="perm-key">{{ perm.key }}</span>
+                            @if (perm.description) {
+                            <p class="perm-desc">{{ perm.description }}</p>
+                            }
+                        </div>
+                        <button *appHasPermission="PERMISSIONS.ROLE_UPDATE" mat-icon-button color="warn"
+                            matTooltip="Deactivate Permission" (click)="deletePermission(perm)">
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+            }
+        </mat-card>
+    </main>
+</div>

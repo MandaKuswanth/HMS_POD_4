@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Inject, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   MAT_DIALOG_DATA,
@@ -13,6 +13,7 @@ import { MatSelectModule } from '@angular/material/select';
 
 import { ToastrService } from 'ngx-toastr';
 import { RoleRequest, RoleService } from '../../../core/services/role';
+import { CatalogPermission, PermissionCatalogService } from '../../../core/services/permission-catalog';
 
 @Component({
   selector: 'app-role-dialog',
@@ -29,9 +30,11 @@ import { RoleRequest, RoleService } from '../../../core/services/role';
   templateUrl: './role-dialouge.html',
   styleUrl: './role-dialouge.css',
 })
-export class RoleDialog {
+export class RoleDialog implements OnInit {
   private readonly roleService = inject(RoleService);
   private readonly toastr = inject(ToastrService);
+  private readonly permissionCatalogService = inject(PermissionCatalogService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   loading = false;
 
@@ -42,66 +45,7 @@ export class RoleDialog {
     status: true,
   };
 
-  permissionGroups = [
-    {
-      title: 'Dashboard',
-      permissions: ['DASHBOARD_READ'],
-    },
-    {
-      title: 'Employee Permissions',
-      permissions: [
-        'EMPLOYEE_CREATE',
-        'EMPLOYEE_READ',
-        'EMPLOYEE_UPDATE',
-        'EMPLOYEE_DELETE',
-      ],
-    },
-    {
-      title: 'Patient Permissions',
-      permissions: [
-        'PATIENT_CREATE',
-        'PATIENT_READ',
-        'PATIENT_UPDATE',
-        'PATIENT_DELETE',
-      ],
-    },
-    {
-      title: 'Appointment Permissions',
-      permissions: [
-        'APPOINTMENT_CREATE',
-        'APPOINTMENT_READ',
-        'APPOINTMENT_UPDATE',
-        'APPOINTMENT_DELETE',
-      ],
-    },
-    {
-      title: 'Role Permissions',
-      permissions: [
-        'ROLE_CREATE',
-        'ROLE_READ',
-        'ROLE_UPDATE',
-        'ROLE_DELETE',
-      ],
-    },
-    {
-      title: 'Node/Menu Permissions',
-      permissions: [
-        'NODE_CREATE',
-        'NODE_READ',
-        'NODE_UPDATE',
-        'NODE_DELETE',
-      ],
-    },
-    {
-      title: 'Health Record Permissions',
-      permissions: [
-        'HEALTH_RECORD_CREATE',
-        'HEALTH_RECORD_READ',
-        'HEALTH_RECORD_UPDATE',
-        'HEALTH_RECORD_DELETE',
-      ],
-    },
-  ];
+  permissionGroups: { category: string; permissions: CatalogPermission[] }[] = [];
 
   constructor(
     private readonly dialogRef: MatDialogRef<RoleDialog>,
@@ -122,6 +66,23 @@ export class RoleDialog {
     }
   }
 
+  ngOnInit(): void {
+    this.loadCatalog();
+  }
+
+  loadCatalog(): void {
+    this.permissionCatalogService.getCatalog().subscribe({
+      next: (res) => {
+        this.permissionGroups = Object.entries(res.data).map(([category, permissions]) => ({
+          category,
+          permissions,
+        }));
+        this.cdr.detectChanges(); // force sync so the view reflects the new groups this tick
+      },
+      error: () => this.toastr.error('Failed to load permission catalog'),
+    });
+  }
+
   isChecked(permission: string): boolean {
     return this.form.permissions.includes(permission);
   }
@@ -132,18 +93,8 @@ export class RoleDialog {
         (item) => item !== permission
       );
     } else {
-      this.form.permissions = [
-        ...this.form.permissions,
-        permission,
-      ];
+      this.form.permissions = [...this.form.permissions, permission];
     }
-  }
-
-  formatPermission(permission: string): string {
-    return permission
-      .replaceAll('_', ' ')
-      .toLowerCase()
-      .replaceAll(/\b\w/g, (char) => char.toUpperCase());
   }
 
   onCancel(): void {
@@ -174,7 +125,7 @@ export class RoleDialog {
       next: (response: any) => {
         this.toastr.success(
           response?.message ||
-            `Role ${this.data.mode === 'add' ? 'created' : 'updated'} successfully`
+          `Role ${this.data.mode === 'add' ? 'created' : 'updated'} successfully`
         );
 
         this.loading = false;
