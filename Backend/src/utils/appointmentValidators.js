@@ -209,14 +209,31 @@ const validateStatusTransition = (appointment, status, user, permissions) => {
 };
 
 module.exports = {
+    SLOT_BLOCKING_STATUSES,
+    ALLOWED_STATUSES,
+    STATUS_TRANSITIONS,
+
+    getDateRange,
+    normalizeAppointmentDate,
+    getTomorrowDate,
+    getTodayDate,
+    isBeforeDoctorJoiningDate,
+    isBeforeDoctorJoiningDate,
+
+    findSlotConflict,
+
     getUserPermissions,
+    verifyDoctorByPermissions,
+    getAllowedActions,
+    getAllowedStatuses,
     formatAppointment,
+
     validateReschedule,
     validatePatientAndDoctor,
     validateAppointmentDateRule,
     validateSlotConflicts,
     sendAppointmentEmail,
     validateStatusTransition,
-    findSlotConflict,
+
     MAX_PAGE_LIMIT: 100
 };
