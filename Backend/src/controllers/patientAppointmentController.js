@@ -14,7 +14,7 @@ const {
     getTomorrowDate,
     isBeforeDoctorJoiningDate,
     findSlotConflict
-} = require("../utils/appointmentHelpers");
+} = require("../utils/appointmentValidators");
 
 const getPatientId = (req) => {
     return req.user?.UHID || req.user?.uhid || req.user?.patientId;
