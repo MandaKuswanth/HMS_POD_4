@@ -164,8 +164,8 @@ export function AuthProvider({ children }) {
         }
 
         const data = normalizeLogin(response);
-        console.log("TOKEN:", data.token);
-        console.log("REFRESH:", data.refreshToken);
+        // console.log("TOKEN:", data.token);
+        // console.log("REFRESH:", data.refreshToken);
 
         if (!data.token || !data.patient) {
             throw new Error("Invalid login response from server");
