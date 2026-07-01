@@ -17,7 +17,8 @@ body {
     padding: 0;
     overflow: hidden;
     font-family: Arial, Helvetica, sans-serif;
-    background: #f5f8fc;
+    background: #f5f7fb;
+    font-size: 14px;
 }
 
 app-root {
@@ -26,32 +27,22 @@ app-root {
     height: 100%;
 }
 
-/* Reusable Content Wrapper */
-.content {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
+button {
+    font-family: inherit;
 }
 
-/* Card */
-.table-card {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    overflow: hidden;
-
-    background: #fff;
-    border: 1px solid #dbeafe;
-    border-radius: 14px;
-
-    box-shadow:
-        0 10px 28px rgba(13, 71, 161, 0.08),
-        0 4px 10px rgba(0, 0, 0, 0.04);
+mat-icon {
+    vertical-align: middle;
 }
 
-/* Table Scroll */
-.table-wrapper {
-    flex: 1;
-    overflow: auto;
+/* Hide scrollbars globally but keep scroll working */
+* {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
 }

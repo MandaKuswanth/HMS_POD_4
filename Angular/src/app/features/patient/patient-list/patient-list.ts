@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MainComponent } from '../../../shared/components/maincomponent/maincomponent';
 
 import {
   MatTableDataSource,
@@ -30,6 +31,7 @@ import { PERMISSIONS } from '../../../constants/permission';
   selector: 'app-patient-list',
   standalone: true,
   imports: [
+    MainComponent,
     CommonModule,
     FormsModule,
     DatePipe,

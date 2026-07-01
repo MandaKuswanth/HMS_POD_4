@@ -1,0 +1,27 @@
+<section class="hms-page">
+
+  <div
+    class="hms-toolbar"
+    [style.grid-template-columns]="toolbarColumns"
+  >
+    <ng-content select="[hms-toolbar]"></ng-content>
+  </div>
+
+  <div class="hms-table-card">
+
+    <div class="hms-table-header">
+      <h3>{{ title }}</h3>
+      <span>{{ recordCount }} records</span>
+    </div>
+
+    <div class="hms-table-scroll">
+      <ng-content select="[hms-table]"></ng-content>
+    </div>
+
+    <ng-content select="[hms-empty]"></ng-content>
+
+    <ng-content select="[hms-paginator]"></ng-content>
+
+  </div>
+
+</section>

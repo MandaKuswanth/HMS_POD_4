@@ -83,8 +83,8 @@ api.interceptors.response.use(
                 const newToken = data?.data?.token;
                 const newRefreshToken = data?.data?.refreshToken;
 
-                await AsyncStorage.setItem("token", newToken);
-                await AsyncStorage.setItem("refreshToken", newRefreshToken);
+                // await AsyncStorage.setItem("token", newToken);
+                // await AsyncStorage.setItem("refreshToken", newRefreshToken);
 
                 processQueue(null, newToken);
                 isRefreshing = false;
