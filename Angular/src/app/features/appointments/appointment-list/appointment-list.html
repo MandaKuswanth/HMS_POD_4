@@ -35,7 +35,7 @@
 
         <mat-select [(ngModel)]="selectedStatus" (selectionChange)="applyFilters()">
           <mat-option *ngFor="let status of statuses" [value]="status">
-            {{ status }}
+            {{ status === 'ALL' ? 'ALL STATUS' : status }}
           </mat-option>
         </mat-select>
       </mat-form-field>
@@ -44,8 +44,9 @@
         <mat-label>Doctor</mat-label>
 
         <mat-select [(ngModel)]="selectedDoctor" (selectionChange)="applyFilters()">
-          <mat-option *ngFor="let doctor of doctors" [value]="doctor">
-            {{ doctor }}
+          <mat-option value="">ALL DOCTORS</mat-option>
+          <mat-option *ngFor="let doctor of doctors" [value]="doctor.employeeCode">
+            Dr. {{ doctor.name }} 
           </mat-option>
         </mat-select>
       </mat-form-field>
@@ -226,11 +227,11 @@
 
         <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
       </table>
-
-      <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
-        [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
-      </mat-paginator>
     </div>
+    <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
+      [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
+    </mat-paginator>
+
     } @else {
     <div class="no-data">
       <mat-icon>event_busy</mat-icon>
