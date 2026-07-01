@@ -1,13 +1,14 @@
 .dialog-form {
-    padding: 8px 0 4px;
-    min-width: 620px;
+    width: min(620px, calc(100vw - 64px));
+    max-width: 100%;
+    padding: 6px 0 4px;
 }
 
 /* FORM GRID */
 .form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px 16px;
+    gap: 12px 14px;
 }
 
 mat-form-field {
@@ -16,24 +17,24 @@ mat-form-field {
 
 /* MEDICAL SECTION */
 .medical-section {
-    margin-top: 22px;
-    padding: 18px;
-    border-radius: 18px;
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 16px;
     background: #f8fbff;
     border: 1px solid #dbeafe;
 }
 
 .medical-section h3 {
-    margin: 0 0 16px;
-    font-size: 16px;
+    margin: 0 0 14px;
+    font-size: 15px;
     font-weight: 800;
     color: #0d47a1;
 }
 
 /* SLOTS SECTION */
 .slots-section {
-    margin-top: 20px;
-    padding: 16px;
+    margin-top: 18px;
+    padding: 14px;
     border-radius: 16px;
     background: #ffffff;
     border: 1px solid #dbeafe;
@@ -43,7 +44,7 @@ mat-form-field {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .slots-header h3 {
@@ -57,8 +58,8 @@ mat-form-field {
 .slot-checkbox-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    margin-top: 10px;
+    gap: 10px;
+    margin-top: 8px;
 }
 
 /* SLOT CARD */
@@ -69,8 +70,8 @@ mat-form-field {
     align-items: center;
     justify-content: center;
 
-    min-height: 46px;
-    padding: 12px 14px;
+    min-height: 42px;
+    padding: 10px 12px;
 
     border: 1.5px solid #dbeafe;
     border-radius: 14px;
@@ -79,7 +80,7 @@ mat-form-field {
     cursor: pointer;
     user-select: none;
 
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     color: #1f2937;
     text-align: center;
@@ -137,14 +138,14 @@ mat-form-field {
 
 /* DIALOG CONTENT */
 mat-dialog-content {
-    max-height: 72vh;
+    max-height: calc(90vh - 140px);
     overflow-y: auto;
-    padding-top: 8px !important;
+    padding-top: 6px !important;
 }
 
 /* DIALOG ACTIONS */
 mat-dialog-actions {
-    padding: 14px 24px 18px !important;
+    padding: 12px 24px 16px !important;
     border-top: 1px solid #e5e7eb;
 }
 
@@ -168,7 +169,7 @@ mat-dialog-actions button {
 /* RESPONSIVE */
 @media (max-width: 760px) {
     .dialog-form {
-        min-width: 100%;
+        width: 100%;
     }
 
     .form-grid {
