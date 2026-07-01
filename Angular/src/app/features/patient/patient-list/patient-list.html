@@ -1,202 +1,236 @@
+<main class="content">
+  <app-maincomponent
+    title="Patients"
+    [recordCount]="totalRecords"
+    toolbarColumns="minmax(260px, 1fr) 145px 145px 82px 76px"
+  >
 
+    <input
+      hms-toolbar
+      class="hms-search-input"
+      type="text"
+      placeholder="Search patients..."
+      [(ngModel)]="searchText"
+      (input)="applyFilters()"
+    />
 
-<div class="layout">
+    <select
+      hms-toolbar
+      class="hms-filter-select"
+      [(ngModel)]="selectedGender"
+      (ngModelChange)="applyFilters()"
+    >
+      <option value="ALL">All Genders</option>
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+    </select>
 
+    <select
+      hms-toolbar
+      class="hms-filter-select"
+      [(ngModel)]="selectedStatus"
+      (ngModelChange)="applyFilters()"
+    >
+      <option value="ALL">All Status</option>
+      <option value="ACTIVE">Active</option>
+      <option value="INACTIVE">Inactive</option>
+    </select>
 
-  <main class="content">
+    <button
+      hms-toolbar
+      mat-stroked-button
+      color="warn"
+      class="hms-clear-button"
+      type="button"
+      (click)="clearFilters()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Clear
+    </button>
 
-    <div class="patient-page">
+    <button
+      hms-toolbar
+      *appHasPermission="PERMISSIONS.PATIENT_CREATE"
+      mat-flat-button
+      color="primary"
+      class="hms-add-button"
+      type="button"
+      (click)="openAddDialog()"
+    >
+      <mat-icon>add</mat-icon>
+      Add
+    </button>
 
-      <div class="page-header">
-        <div>
-          <h2>Patient List</h2>
-        </div>
+    <table
+      hms-table
+      mat-table
+      [dataSource]="dataSource"
+      class="hms-data-table patient-table"
+      multiTemplateDataRows
+    >
 
-        <button *appHasPermission="PERMISSIONS.PATIENT_CREATE" mat-raised-button color="primary"
-          (click)="openAddDialog()">
-          <mat-icon>add</mat-icon>
-          Add Patient
-        </button>
+      <ng-container matColumnDef="UHID">
+        <th mat-header-cell *matHeaderCellDef>UHID</th>
+        <td mat-cell *matCellDef="let row">
+          <strong class="hms-primary-text">{{ row.UHID || '-' }}</strong>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="patient-name">
+            <div class="patient-avatar">
+              {{ row.name?.charAt(0) || '?' }}
+            </div>
+
+            <span>{{ row.name || '-' }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.email || '-' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="phone">
+        <th mat-header-cell *matHeaderCellDef>Phone</th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.phone || '-' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="gender">
+        <th mat-header-cell *matHeaderCellDef>Gender</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="hms-chip blue">
+            {{ row.gender || '-' }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="dob">
+        <th mat-header-cell *matHeaderCellDef>DOB</th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.dob ? (row.dob | date:'dd-MM-yyyy') : '-' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let row">
+          <span [class]="row.status ? 'hms-chip active' : 'hms-chip inactive'">
+            {{ row.status ? 'Active' : 'Inactive' }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="expandedDetail">
+        <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length">
+
+          @if (expandedPatient?.UHID === row.UHID) {
+            <div class="hms-action-panel">
+
+              <div class="hms-action-info">
+                <strong>{{ row.name || 'Patient' }}</strong>
+                <span>{{ row.UHID || '-' }}</span>
+              </div>
+
+              <div class="hms-action-buttons">
+
+                <button
+                  *appHasPermission="PERMISSIONS.PATIENT_UPDATE"
+                  mat-stroked-button
+                  [class]="row.status ? 'hms-red-action' : 'hms-blue-action'"
+                  type="button"
+                  (click)="toggleStatus(row); $event.stopPropagation()"
+                >
+                  {{ row.status ? 'Deactivate' : 'Activate' }}
+                </button>
+
+                <button
+                  *appHasPermission="PERMISSIONS.PATIENT_READ"
+                  mat-stroked-button
+                  class="hms-blue-action"
+                  type="button"
+                  (click)="viewPatient(row); $event.stopPropagation()"
+                >
+                  <mat-icon>visibility</mat-icon>
+                  View
+                </button>
+
+                <button
+                  *appHasPermission="PERMISSIONS.PATIENT_UPDATE"
+                  mat-stroked-button
+                  class="hms-blue-action"
+                  type="button"
+                  (click)="editPatient(row); $event.stopPropagation()"
+                >
+                  <mat-icon>edit</mat-icon>
+                  Update
+                </button>
+
+                <button
+                  *appHasPermission="PERMISSIONS.PATIENT_DELETE"
+                  mat-stroked-button
+                  class="hms-red-action"
+                  type="button"
+                  (click)="deletePatient(row); $event.stopPropagation()"
+                >
+                  <mat-icon>delete</mat-icon>
+                  Delete
+                </button>
+
+              </div>
+
+            </div>
+          }
+
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="hms-row"
+        [class.selected-row]="expandedPatient?.UHID === row.UHID"
+        tabindex="0"
+        (click)="onRowClick(row, $event)"
+        (keydown.enter)="onRowClick(row, $event)"
+        (keydown.space)="onRowClick(row, $event)"
+      ></tr>
+
+      <tr
+        mat-row
+        *matRowDef="let row; columns: ['expandedDetail']"
+        class="hms-detail-row"
+        [class.hidden]="expandedPatient?.UHID !== row.UHID"
+      ></tr>
+
+    </table>
+
+    @if (dataSource.data.length === 0) {
+      <div hms-empty class="hms-no-data">
+        <mat-icon>personal_injury</mat-icon>
+        <p>No patients found</p>
       </div>
+    }
 
-      <div class="filter-card">
+    <mat-paginator
+      hms-paginator
+      [length]="totalRecords"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="pageSizeOptions"
+      showFirstLastButtons
+      (page)="onPageChange($event)"
+    >
+    </mat-paginator>
 
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Search</mat-label>
-
-          <input matInput [(ngModel)]="searchText" (input)="applyFilters()" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Gender</mat-label>
-
-          <mat-select [(value)]="selectedGender" (selectionChange)="applyFilters()">
-            <mat-option value="ALL">All</mat-option>
-            <mat-option value="male">Male</mat-option>
-            <mat-option value="female">Female</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Status</mat-label>
-
-          <mat-select [(value)]="selectedStatus" (selectionChange)="applyFilters()">
-            <mat-option value="ALL">All</mat-option>
-            <mat-option value="ACTIVE">Active</mat-option>
-            <mat-option value="INACTIVE">Inactive</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <button mat-stroked-button color="warn" (click)="clearFilters()">
-          <mat-icon>refresh</mat-icon>
-          Clear
-        </button>
-
-      </div>
-
-      <div class="table-card">
-
-        <div class="table-header">
-          <h3>Patients</h3>
-          <span>{{ dataSource.data.length || 0 }} records</span>
-        </div>
-
-        <div class="table-scroll">
-
-          <table mat-table [dataSource]="dataSource" multiTemplateDataRows>
-
-            <!-- UHID -->
-            <ng-container matColumnDef="UHID">
-              <th mat-header-cell *matHeaderCellDef>UHID</th>
-              <td mat-cell *matCellDef="let row">
-                {{ row.UHID }}
-              </td>
-            </ng-container>
-
-            <!-- NAME -->
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Name</th>
-              <td mat-cell *matCellDef="let row">
-                <div class="patient-name">
-                  <div class="avatar">
-                    {{ row.name?.charAt(0) }}
-                  </div>
-                  {{ row.name }}
-                </div>
-              </td>
-            </ng-container>
-
-            <!-- EMAIL -->
-            <ng-container matColumnDef="email">
-              <th mat-header-cell *matHeaderCellDef>Email</th>
-              <td mat-cell *matCellDef="let row">
-                {{ row.email }}
-              </td>
-            </ng-container>
-
-            <!-- PHONE -->
-            <ng-container matColumnDef="phone">
-              <th mat-header-cell *matHeaderCellDef>Phone</th>
-              <td mat-cell *matCellDef="let row">
-                {{ row.phone }}
-              </td>
-            </ng-container>
-
-            <!-- GENDER -->
-            <ng-container matColumnDef="gender">
-              <th mat-header-cell *matHeaderCellDef>Gender</th>
-              <td mat-cell *matCellDef="let row">
-                <span class="gender-badge">
-                  {{ row.gender }}
-                </span>
-              </td>
-            </ng-container>
-
-            <!-- DOB -->
-            <ng-container matColumnDef="dob">
-              <th mat-header-cell *matHeaderCellDef>DOB</th>
-              <td mat-cell *matCellDef="let row">
-                {{ row.dob | date:'dd-MM-yyyy' }}
-              </td>
-            </ng-container>
-
-            <!-- STATUS -->
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Status</th>
-              <td mat-cell *matCellDef="let row">
-                <span class="status-badge" [ngClass]="row.status ? 'active' : 'inactive'">
-                  {{ row.status ? 'Active' : 'Inactive' }}
-                </span>
-              </td>
-            </ng-container>
-
-            <!-- HEADER -->
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-
-            <!-- DATA ROW -->
-            <tr mat-row *matRowDef="let row; columns: displayedColumns" class="patient-row" tabindex="0"
-              (click)="onRowClick(row, $event)" (keydown.enter)="onRowClick(row, $event)"
-              (keydown.space)="onRowClick(row, $event)">
-            </tr>
-
-            <!-- EXPANDED PANEL -->
-            <ng-container matColumnDef="expandedDetail">
-              <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length">
-
-                <div class="patient-action-panel" *ngIf="expandedPatient?.UHID === row.UHID">
-
-                  <div class="patient-action-info">
-                    <strong>{{ row.name }}</strong>
-                    <span>{{ row.UHID }}</span>
-                  </div>
-
-                  <div class="patient-action-buttons">
-
-                    <button *appHasPermission="PERMISSIONS.PATIENT_UPDATE" mat-stroked-button class="status-btn"
-                      [ngClass]="row.status ? 'deactivate-btn' : 'activate-btn'" (click)="toggleStatus(row)">
-                      {{ row.status ? 'Deactivate' : 'Activate' }}
-                    </button>
-
-                    <button *appHasPermission="PERMISSIONS.PATIENT_READ" mat-stroked-button (click)="viewPatient(row)">
-                      <mat-icon>visibility</mat-icon>
-                      View Patient
-                    </button>
-
-                    <button *appHasPermission="PERMISSIONS.PATIENT_UPDATE" mat-stroked-button
-                      (click)="editPatient(row)">
-                      <mat-icon>edit</mat-icon>
-                      Update Patient
-                    </button>
-
-                    <button *appHasPermission="PERMISSIONS.PATIENT_DELETE" mat-stroked-button
-                      (click)="deletePatient(row)">
-                      <mat-icon>delete</mat-icon>
-                      Delete Patient
-                    </button>
-
-                  </div>
-
-                </div>
-
-              </td>
-            </ng-container>
-
-            <!-- DETAIL ROW -->
-            <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"
-              [class.hidden]="expandedPatient?.UHID !== row.UHID">
-            </tr>
-
-          </table>
-
-
-
-        </div>
-        <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
-          [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
-        </mat-paginator>
-      </div>
-
-    </div>
-
-  </main>
-</div>
+  </app-maincomponent>
+</main>
