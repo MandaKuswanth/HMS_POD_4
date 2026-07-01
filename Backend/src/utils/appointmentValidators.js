@@ -218,7 +218,6 @@ module.exports = {
     getTomorrowDate,
     getTodayDate,
     isBeforeDoctorJoiningDate,
-    isBeforeDoctorJoiningDate,
 
     findSlotConflict,
 

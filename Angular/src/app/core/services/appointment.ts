@@ -35,16 +35,52 @@ export class AppointmentService {
             data
         );
     }
+    getAppointments(
+        page = 1,
+        limit = 5,
+        filters?: {
+            doctorEmployeeId?: string;
+            status?: string;
+            search?: string;
+             date?: string;
+        }
+    ): Observable<any> {
+        const params: any = {
+            page,
+            limit,
+        };
 
-  getAppointments(
-  page = 1,
-  limit = 5
-): Observable<any> {
-  return this.http.get(
-    `${this.baseUrl}/appointments?page=${page}&limit=${limit}`
-  );
-}
+        if (filters?.doctorEmployeeId) {
+            params.doctorEmployeeId = filters.doctorEmployeeId;
+        }
 
+        if (filters?.status && filters.status !== 'ALL') {
+            params.status = filters.status;
+        }
+
+        if (filters?.search?.trim()) {
+            params.search = filters.search.trim();
+        }
+        if (filters?.date) {
+        params.date = filters.date;
+    }
+
+        return this.http.get(`${this.baseUrl}/appointments`, { params });
+    }
+    getAppointmentFilterOptions(
+        doctorSearch = ''
+    ): Observable<any> {
+        const params: any = {};
+
+        if (doctorSearch.trim()) {
+            params.doctorSearch = doctorSearch.trim();
+        }
+
+        return this.http.get(
+            `${this.baseUrl}/appointments/filter-options`,
+            { params }
+        );
+    }
     deleteAppointment(
         appointmentId: string
     ): Observable<any> {
@@ -85,14 +121,14 @@ export class AppointmentService {
             data
         );
     }
-    
+
     updateAppointmentStatus(
-    appointmentId: string,
-    status: string
-): Observable<any> {
-    return this.http.put(
-        `${this.baseUrl}/appointments/${appointmentId}/status`,
-        { status }
-    );
-}
+        appointmentId: string,
+        status: string
+    ): Observable<any> {
+        return this.http.put(
+            `${this.baseUrl}/appointments/${appointmentId}/status`,
+            { status }
+        );
+    }
 }

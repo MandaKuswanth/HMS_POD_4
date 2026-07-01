@@ -45,7 +45,12 @@ router.put(
   allowPermission(PERMISSIONS.APPOINTMENT_UPDATE),
   appointmentController.updateAppointmentStatus,
 );
-
+router.get(
+  "/filter-options",
+  auth,
+  allowPermission(PERMISSIONS.APPOINTMENT_READ),
+  appointmentController.getAppointmentFilterOptions,
+);
 // GET SINGLE APPOINTMENT
 router.get(
   "/:appointmentId",

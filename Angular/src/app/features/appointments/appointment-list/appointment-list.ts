@@ -71,8 +71,8 @@ export class AppointmentList implements OnInit {
   isLoading = false;
   expandedAppointment: any = null;
 
-  selectedStatus = 'ALL STATUS';
-  selectedDoctor = 'ALL DOCTORS';
+  selectedStatus = 'ALL';
+  selectedDoctor = '';
   selectedDate: Date | null = null;
 
   pageIndex = 0;
@@ -91,6 +91,7 @@ export class AppointmentList implements OnInit {
 
   ngOnInit(): void {
     this.role = this.authService.getRole()?.toUpperCase() || null;
+    this.loadFilterOptions();
     this.loadAppointments();
   }
 
@@ -98,67 +99,94 @@ export class AppointmentList implements OnInit {
 
     return this.filteredAppointments;
   }
+  doctors: any[] = [];
+  statuses: string[] = [];
 
-  get statuses(): string[] {
-    return [
-      'ALL STATUS',
-      'PENDING',
-      'BOOKED',
-      'IN-PROCESS',
-      'COMPLETED',
-      'CANCELLED',
-    ];
-  }
+  // get statuses(): string[] {
+  //   return [
+  //     'ALL STATUS',
+  //     'PENDING',
+  //     'BOOKED',
+  //     'IN-PROCESS',
+  //     'COMPLETED',
+  //     'CANCELLED',
+  //   ];
+  // }
 
-  get doctors(): any[] {
-    const doctorList = this.appointments
-      .map((appointment: any) => appointment.doctorName)
-      .filter(Boolean);
+  // get doctors(): any[] {
+  //   const doctorList = this.appointments
+  //     .map((appointment: any) => appointment.doctorName)
+  //     .filter(Boolean);
 
-    return ['ALL DOCTORS', ...new Set(doctorList)];
-  }
+  //   return ['ALL DOCTORS', ...new Set(doctorList)];
+  // }
 
   loadAppointments(): void {
-    this.isLoading = true;
-    this.expandedAppointment = null;
-    this.cdr.markForCheck();
+  this.isLoading = true;
+  this.expandedAppointment = null;
+  this.cdr.markForCheck();
 
-    this.appointmentService
-      .getAppointments(this.pageIndex + 1, this.pageSize)
-      .subscribe({
-        next: (response: any) => {
+    const formattedDate = this.selectedDate
+    ? this.selectedDate.toISOString().split('T')[0]
+    : undefined;
 
-          this.appointments = Array.isArray(response?.data?.records)
-            ? response.data.records
-            : [];
+  this.appointmentService
+    .getAppointments(
+      this.pageIndex + 1,
+      this.pageSize,
+      {
+        doctorEmployeeId: this.selectedDoctor || undefined,
+        status: this.selectedStatus,
+        search: this.searchText,
+        date: formattedDate,
+      }
+    )
+    .subscribe({
+      next: (response: any) => {
+        console.log('APPOINTMENT RESPONSE:', response);
 
-          this.filteredAppointments = [...this.appointments];
+        const data = response?.data;
 
-          this.totalRecords =
-            response?.data?.pagination?.totalRecords || 0;
+        this.appointments = Array.isArray(data?.records)
+          ? data.records
+          : [];
 
-          this.isLoading = false;
-          this.expandedAppointment = null;
+        this.filteredAppointments = [...this.appointments];
 
-          this.cdr.markForCheck();
-        },
+        this.totalRecords =
+          data?.pagination?.totalRecords || this.appointments.length;
 
-        error: (error) => {
-          console.error('APPOINTMENT LIST ERROR:', error);
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('APPOINTMENT LIST ERROR:', error);
 
-          this.isLoading = false;
-          this.appointments = [];
-          this.filteredAppointments = [];
-          this.totalRecords = 0;
-          this.expandedAppointment = null;
+        this.isLoading = false;
+        this.appointments = [];
+        this.filteredAppointments = [];
+        this.totalRecords = 0;
 
-          this.toastr.error(
-            error?.error?.message || 'Failed to load appointments'
-          );
+        this.toastr.error('Failed to load appointments');
+        this.cdr.markForCheck();
+      },
+    });
+}
+  loadFilterOptions(): void {
+    this.appointmentService.getAppointmentFilterOptions().subscribe({
+      next: (response: any) => {
+        this.doctors = response?.data?.doctors || [];
+        this.statuses = response?.data?.statuses || ['ALL'];
 
-          this.cdr.markForCheck();
-        },
-      });
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.doctors = [];
+        this.statuses = ['ALL'];
+
+        this.cdr.markForCheck();
+      },
+    });
   }
   applySearch(): void {
     this.applyFilters();
@@ -169,52 +197,24 @@ export class AppointmentList implements OnInit {
     this.applyFilters();
   }
 
+
   applyFilters(): void {
-    const search = this.searchText.toLowerCase().trim();
-
-    this.filteredAppointments = this.appointments.filter((appointment: any) => {
-      const matchesSearch =
-        !search ||
-        appointment.appointmentId?.toLowerCase().includes(search) ||
-        appointment.patientId?.toLowerCase().includes(search) ||
-        appointment.patientName?.toLowerCase().includes(search) ||
-        appointment.doctorEmployeeId?.toLowerCase().includes(search) ||
-        appointment.doctorName?.toLowerCase().includes(search) ||
-        appointment.timeSlot?.toLowerCase().includes(search) ||
-        appointment.status?.toLowerCase().includes(search);
-
-      const matchesStatus =
-        this.selectedStatus === 'ALL STATUS' ||
-        appointment.status === this.selectedStatus;
-
-      const matchesDoctor =
-        this.selectedDoctor === 'ALL DOCTORS' ||
-        appointment.doctorName === this.selectedDoctor;
-
-      const matchesDate =
-        !this.selectedDate ||
-        new Date(appointment.date).toDateString() ===
-        new Date(this.selectedDate).toDateString();
-
-      return matchesSearch && matchesStatus && matchesDoctor && matchesDate;
-    });
-
-    this.pageIndex = 0;
-    this.expandedAppointment = null;
-    this.cdr.markForCheck();
-  }
+  this.pageIndex = 0;
+  this.expandedAppointment = null;
+  this.loadAppointments();
+  this.cdr.markForCheck();
+}
 
   clearFilters(): void {
     this.searchText = '';
-    this.selectedStatus = 'ALL STATUS';
-    this.selectedDoctor = 'ALL DOCTORS';
+    this.selectedStatus = 'ALL';
+    this.selectedDoctor = '';
     this.selectedDate = null;
 
-    this.filteredAppointments = [...this.appointments];
     this.pageIndex = 0;
     this.expandedAppointment = null;
 
-    this.cdr.markForCheck();
+    this.loadAppointments();
   }
 
   onPageChange(event: PageEvent): void {
