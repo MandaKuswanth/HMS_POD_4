@@ -22,8 +22,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
 
 import { PatientService, PatientRequest } from '../../../core/services/patient';
-import { Navbar } from '../../../shared/components/navbar/navbar';
-import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 import { PatientDialog } from '../patient-dialog/patient-dialog';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { PERMISSIONS } from '../../../constants/permission';
@@ -42,8 +40,7 @@ import { PERMISSIONS } from '../../../constants/permission';
     MatSelectModule,
     MatIconModule,
     MatButtonModule,
-    Navbar,
-    Sidebar,
+
     HasPermissionDirective,
   ],
   templateUrl: './patient-list.html',

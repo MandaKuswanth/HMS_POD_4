@@ -13,8 +13,6 @@ import { MatDialog } from '@angular/material/dialog';
 
 import { ToastrService } from 'ngx-toastr';
 
-import { Navbar } from '../../../shared/components/navbar/navbar';
-import { Sidebar } from '../../../shared/components/sidebar/sidebar';
 import { HealthRecordDialog } from '../health-record-dialog/health-record-dialog';
 
 import {
@@ -38,8 +36,6 @@ import { PERMISSIONS } from '../../../constants/permission';
     MatIconModule,
     MatButtonModule,
     MatTooltipModule,
-    Navbar,
-    Sidebar,
     HasPermissionDirective,
   ],
   templateUrl: './health-record-list.html',
@@ -121,13 +117,13 @@ export class HealthRecordList implements OnInit {
 
     this.filteredHealthRecords = search
       ? this.healthRecords.filter((record) =>
-          (record.healthRecordId ?? '').toLowerCase().includes(search) ||
-          (record.appointmentId ?? '').toLowerCase().includes(search) ||
-          (record.patientId ?? '').toLowerCase().includes(search) ||
-          (record.patientName ?? '').toLowerCase().includes(search) ||
-          (record.doctorName ?? '').toLowerCase().includes(search) ||
-          (record.diagnosis ?? '').toLowerCase().includes(search)
-        )
+        (record.healthRecordId ?? '').toLowerCase().includes(search) ||
+        (record.appointmentId ?? '').toLowerCase().includes(search) ||
+        (record.patientId ?? '').toLowerCase().includes(search) ||
+        (record.patientName ?? '').toLowerCase().includes(search) ||
+        (record.doctorName ?? '').toLowerCase().includes(search) ||
+        (record.diagnosis ?? '').toLowerCase().includes(search)
+      )
       : [...this.healthRecords];
 
     this.expandedRecord = null;

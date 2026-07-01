@@ -48,9 +48,7 @@ function handleRefresh(
       isRefreshing = false;
       refreshTokenSubject.next(null);
 
-      // Refresh failed — clear storage and send to login
       localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
       localStorage.removeItem('permissions');
       router.navigate(['/login']);
@@ -66,22 +64,13 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 
   const token = localStorage.getItem('token');
 
-  const clonedRequest = token ? addAuthHeader(req, token) : req;
+  const reqWithCredentials = req.clone({ withCredentials: true });
+  const clonedRequest = token ? addAuthHeader(reqWithCredentials, token) : reqWithCredentials;
 
   return next(clonedRequest).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
-        const refreshToken = authService.getRefreshToken();
-
-        if (refreshToken) {
-          return handleRefresh(req, next, authService, router);
-        }
-
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('permissions');
-        router.navigate(['/login']);
+      if (error.status === 401 && !req.url.includes('/refresh-token')) {
+        return handleRefresh(req, next, authService, router);
       }
 
       return throwError(() => error);
