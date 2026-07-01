@@ -14,6 +14,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ToastrService } from 'ngx-toastr';
 import { NodeService } from '../../../core/services/node';
 import { NodeDialog } from '../node-dialog/node-dialog';
+import { MainComponent } from '../../../shared/components/maincomponent/maincomponent';
 
 @Component({
   selector: 'app-node-list',
@@ -27,6 +28,7 @@ import { NodeDialog } from '../node-dialog/node-dialog';
     MatIconModule,
     MatCardModule,
     MatTooltipModule,
+    MainComponent,
 
   ],
   templateUrl: './node-list.html',
