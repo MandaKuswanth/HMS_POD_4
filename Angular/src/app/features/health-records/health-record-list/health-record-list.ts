@@ -22,6 +22,7 @@ import {
 
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { PERMISSIONS } from '../../../constants/permission';
+import { MainComponent } from '../../../shared/components/maincomponent/maincomponent';
 
 @Component({
   selector: 'app-health-record-list',
@@ -37,6 +38,7 @@ import { PERMISSIONS } from '../../../constants/permission';
     MatButtonModule,
     MatTooltipModule,
     HasPermissionDirective,
+    MainComponent,
   ],
   templateUrl: './health-record-list.html',
   styleUrl: './health-record-list.css',

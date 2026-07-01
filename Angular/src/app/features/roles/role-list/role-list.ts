@@ -17,6 +17,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { RoleDialog } from '../role-dialouge/role-dialouge';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { PERMISSIONS } from '../../../constants/permission';
+import { MainComponent } from '../../../shared/components/maincomponent/maincomponent';
 
 @Component({
   selector: 'app-role-list',
@@ -32,6 +33,7 @@ import { PERMISSIONS } from '../../../constants/permission';
     MatTooltipModule,
 
     HasPermissionDirective,
+    MainComponent,
   ],
   templateUrl: './role-list.html',
   styleUrl: './role-list.css',

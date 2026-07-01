@@ -1,63 +1,79 @@
-@import "../../employee/employee-list/employee-list.css";
-
-.health-row {
-  cursor: pointer;
-  transition: background 0.2s ease;
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.health-row:hover {
-  background: #f8fbff !important;
+.content {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.health-record-table .mat-column-healthRecordId {
+  width: 17%;
+}
+
+.health-record-table .mat-column-appointmentId {
+  width: 16%;
+}
+
+.health-record-table .mat-column-patient {
+  width: 18%;
+}
+
+.health-record-table .mat-column-doctor {
+  width: 18%;
+}
+
+.health-record-table .mat-column-diagnosis {
+  width: 19%;
+}
+
+.health-record-table .mat-column-createdAt {
+  width: 12%;
+}
+
+.health-record-table .mat-column-patient strong,
+.health-record-table .mat-column-doctor strong {
+  display: block;
+  color: #263238;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.health-record-table .mat-column-patient small,
+.health-record-table .mat-column-doctor small {
+  display: block;
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .health-action-panel {
-  margin: 12px 16px 16px;
-  padding: 16px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  border: 1px solid #dbeafe;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #f8fbff, #eef6ff);
-  box-shadow: 0 8px 20px rgba(13, 71, 161, 0.08);
+  align-items: flex-start;
 }
 
 .health-info {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.health-info strong {
-  color: #0d47a1;
-  font-size: 14px;
-  font-weight: 800;
+  max-width: min(680px, 100%);
 }
 
 .health-info span {
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 600;
+  white-space: normal;
+  line-height: 1.35;
 }
 
-.health-action-buttons {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-@media (max-width: 760px) {
-  .health-action-panel {
-    margin: 12px;
-    padding: 14px;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .health-action-buttons {
-    width: 100%;
-    justify-content: flex-start;
+@media (max-width: 900px) {
+  .health-info {
+    max-width: 100%;
   }
 }

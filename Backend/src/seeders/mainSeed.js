@@ -340,7 +340,7 @@ async function main() {
 }
 
 try {
-    await main();
+    main();
 } catch (err) {
     console.error(err);
     process.exit(1);

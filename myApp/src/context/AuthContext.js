@@ -7,7 +7,7 @@ import React, {
     useState,
 } from "react";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import SecureStorage from "../utils/secureStorage";
 
 import {
     loginPatient,
@@ -78,7 +78,7 @@ export function AuthProvider({ children }) {
     const [tokenExpiry, setTokenExpiry] = useState(null);
 
     const clearSession = useCallback(async () => {
-        await AsyncStorage.multiRemove(["token", "refreshToken", "user", "patient", "tokenExpiry"]);
+        await SecureStorage.multiRemove(["token", "refreshToken", "user", "patient", "tokenExpiry"]);
         setToken(null);
         setUser(null);
         setPatient(null);
@@ -87,7 +87,7 @@ export function AuthProvider({ children }) {
 
     const restoreSession = useCallback(async () => {
         try {
-            const [t, rt, u, p, expiryStr] = await AsyncStorage.multiGet([
+            const [t, rt, u, p, expiryStr] = await SecureStorage.multiGet([
                 "token", "refreshToken", "user", "patient", "tokenExpiry"
             ]);
 
@@ -122,7 +122,7 @@ export function AuthProvider({ children }) {
 
                     const newExpiry = getTokenExpiry(newToken) ?? (Date.now() + 15 * 60 * 1000);
 
-                    await AsyncStorage.multiSet([
+                    await SecureStorage.multiSet([
                         ["token", newToken],
                         ["refreshToken", newRefreshToken],
                         ["tokenExpiry", newExpiry.toString()],
@@ -164,6 +164,8 @@ export function AuthProvider({ children }) {
         }
 
         const data = normalizeLogin(response);
+        // console.log("TOKEN:", data.token);
+        // console.log("REFRESH:", data.refreshToken);
 
         if (!data.token || !data.patient) {
             throw new Error("Invalid login response from server");
@@ -171,7 +173,7 @@ export function AuthProvider({ children }) {
 
         const expiry = getTokenExpiry(data.token) ?? (Date.now() + 15 * 60 * 1000);
 
-        await AsyncStorage.multiSet([
+        await SecureStorage.multiSet([
             ["token", data.token],
             ["refreshToken", data.refreshToken ?? ""],
             ["tokenExpiry", expiry.toString()],
@@ -180,7 +182,7 @@ export function AuthProvider({ children }) {
         ]);
 
         if (!data.user) {
-            await AsyncStorage.removeItem("user");
+            await SecureStorage.removeItem("user");
         }
 
         setToken(data.token);
@@ -196,7 +198,7 @@ export function AuthProvider({ children }) {
     }, []);
 
     const logout = useCallback(async () => {
-        const storedRefreshToken = await AsyncStorage.getItem("refreshToken");
+        const storedRefreshToken = await SecureStorage.getItem("refreshToken");
         await logoutApi(storedRefreshToken);
         await clearSession();
     }, [clearSession]);
@@ -210,7 +212,7 @@ export function AuthProvider({ children }) {
 
         if (timeUntilRefresh <= 0) {
             // Already at or past the refresh window — refresh immediately
-            AsyncStorage.getItem("refreshToken").then(async (rt) => {
+            SecureStorage.getItem("refreshToken").then(async (rt) => {
                 if (!rt) { logout(); return; }
                 try {
                     const refreshed = await refreshTokenApi(rt);
@@ -219,7 +221,7 @@ export function AuthProvider({ children }) {
                     if (!newToken || !newRefreshToken) throw new Error("Empty refresh");
 
                     const newExpiry = getTokenExpiry(newToken) ?? (Date.now() + 15 * 60 * 1000);
-                    await AsyncStorage.multiSet([
+                    await SecureStorage.multiSet([
                         ["token", newToken],
                         ["refreshToken", newRefreshToken],
                         ["tokenExpiry", newExpiry.toString()],
@@ -235,7 +237,7 @@ export function AuthProvider({ children }) {
         }
 
         const timeoutId = setTimeout(async () => {
-            const rt = await AsyncStorage.getItem("refreshToken");
+            const rt = await SecureStorage.getItem("refreshToken");
             if (!rt) { logout(); return; }
             try {
                 const refreshed = await refreshTokenApi(rt);
@@ -244,7 +246,7 @@ export function AuthProvider({ children }) {
                 if (!newToken || !newRefreshToken) throw new Error("Empty refresh");
 
                 const newExpiry = getTokenExpiry(newToken) ?? (Date.now() + 15 * 60 * 1000);
-                await AsyncStorage.multiSet([
+                await SecureStorage.multiSet([
                     ["token", newToken],
                     ["refreshToken", newRefreshToken],
                     ["tokenExpiry", newExpiry.toString()],
@@ -264,14 +266,14 @@ export function AuthProvider({ children }) {
         const n = normalizePatient(p);
 
         if (!n) {
-            await AsyncStorage.removeItem("patient");
+            await SecureStorage.removeItem("patient");
             setPatient(null);
             return;
         }
 
         setPatient(n);
 
-        await AsyncStorage.setItem(
+        await SecureStorage.setItem(
             "patient",
             JSON.stringify(n)
         );

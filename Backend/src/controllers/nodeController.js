@@ -1,5 +1,6 @@
 const Node = require("../models/Node");
 const Role = require("../models/Role");
+const PermissionCatalog = require("../models/PermissionCatalog");
 
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
@@ -68,6 +69,33 @@ const buildMenuTree = (nodes) => {
     return menu;
 };
 
+
+const syncPermissionsToSuperAdmin = async (permissions, categoryName) => {
+    if (!Array.isArray(permissions) || permissions.length === 0) return;
+
+    // 1. Register each permission in the catalog so it's visible/manageable
+    for (const key of permissions) {
+        await PermissionCatalog.updateOne(
+            { key },
+            {
+                $set: {
+                    key,
+                    label: key.replaceAll('_', ' ').toLowerCase()
+                        .replaceAll(/\b\w/g, (c) => c.toUpperCase()),
+                    category: `${categoryName} Permissions`,
+                    isActive: true,
+                },
+            },
+            { upsert: true }
+        );
+    }
+
+    // 2. Grant them to SUPER_ADMIN so the creator never loses access
+    await Role.updateOne(
+        { name: "SUPER_ADMIN" },
+        { $addToSet: { permissions: { $each: permissions } } }
+    );
+};
 const getUserPermissions = async (roleIds) => {
     const roles = await Role.find({
         roleId: { $in: roleIds },
@@ -209,6 +237,9 @@ exports.createNode = asyncHandler(async (req, res) => {
         status: status ?? true
     });
 
+    // NEW: keep catalog + SUPER_ADMIN in sync with the freshly generated permission(s)
+    await syncPermissionsToSuperAdmin(permissions, name);
+
     return res.status(201).json(
         new ApiResponse(
             201,
@@ -322,7 +353,12 @@ exports.updateNode = asyncHandler(async (req, res) => {
     handlePermissionsUpdate(node, permissions);
     applySimpleUpdates(node, { name, icon, order, status });
 
+
     await node.save();
+
+    if (Array.isArray(permissions) && permissions.length > 0) {
+        await syncPermissionsToSuperAdmin(permissions, node.name);
+    }
 
     return res.status(200).json(
         new ApiResponse(

@@ -6,6 +6,7 @@ import {
   ChangeDetectorRef,
 
 } from '@angular/core';
+import { MainComponent } from '../../../shared/components/maincomponent/maincomponent';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -31,6 +32,7 @@ import { EmployeeDialog } from '../employee-dialog/employee-dialog';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    MainComponent,
     CommonModule,
     FormsModule,
 

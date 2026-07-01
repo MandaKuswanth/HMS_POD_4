@@ -99,6 +99,14 @@ export const routes: Routes = [
                         './features/health-records/health-record-list/health-record-list'
                     ).then((m) => m.HealthRecordList),
             },
+            {
+                path: 'manage-permissions',
+                loadComponent: () =>
+                    import('./features/manage-permissions/manage-permissions').then(
+                        (m) => m.ManagePermissions
+                    ),
+                canActivate: [/* your existing permission guard, if routes use one */],
+            },
 
             // Default route after login
             {
