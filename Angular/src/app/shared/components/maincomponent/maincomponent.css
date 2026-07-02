@@ -371,3 +371,75 @@
         flex-direction: column;
     }
 }
+/* NAME CELL WITH AVATAR (reusable) */
+.hms-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    color: #263238;
+    font-weight: 700;
+}
+
+.hms-name-cell .hms-name-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.hms-name-cell span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-avatar {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    border-radius: 50%;
+    background: #dbeafe;
+    color: #0d47a1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+/* NAME CELL WITH AVATAR (reusable) */
+.hms-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    color: #263238;
+    font-weight: 700;
+}
+
+.hms-name-cell .hms-name-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.hms-name-cell span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hms-avatar {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    border-radius: 50%;
+    background: #dbeafe;
+    color: #0d47a1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
