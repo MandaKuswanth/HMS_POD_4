@@ -1,6 +1,7 @@
 .dialog-form {
     padding-top: 8px;
-    min-width: 680px;
+    width: min(680px, calc(100vw - 64px));
+    max-width: 100%;
 }
 
 
@@ -77,12 +78,21 @@
 
 /* RESPONSIVE */
 
-@media (max-width: 900px) {
+@media (max-width: 760px) {
     .dialog-form {
-        min-width: auto;
+        width: 100%;
     }
 
     .form-grid {
         grid-template-columns: 1fr;
+    }
+
+    ::ng-deep .mat-mdc-dialog-actions {
+        flex-wrap: wrap;
+    }
+
+    ::ng-deep .mat-mdc-dialog-actions button {
+        flex: 1 1 auto;
+        min-width: 0;
     }
 }

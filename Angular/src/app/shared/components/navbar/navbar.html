@@ -1,4 +1,9 @@
 <nav class="navbar">
+  <!-- Mobile hamburger -->
+  <button class="menu-btn" type="button" (click)="menuToggle.emit()" aria-label="Toggle menu">
+    <mat-icon>menu</mat-icon>
+  </button>
+
   <!-- Left side brand -->
   <button class="brand brand-btn" type="button">
     <mat-icon>local_hospital</mat-icon>

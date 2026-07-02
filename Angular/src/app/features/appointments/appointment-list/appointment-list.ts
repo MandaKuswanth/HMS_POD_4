@@ -2,8 +2,9 @@ import {
   Component,
   OnInit,
   inject,
+  signal,
+  computed,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
 } from '@angular/core';
 import { MainComponent } from '../../../shared/components/maincomponent/maincomponent';
 import { CommonModule } from '@angular/common';
@@ -61,25 +62,29 @@ export class AppointmentList implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly toastr = inject(ToastrService);
   private readonly dialog = inject(MatDialog);
-  private readonly cdr = inject(ChangeDetectorRef);
   readonly PERMISSIONS = PERMISSIONS;
   role: string | null = null;
 
-  appointments: any[] = [];
-  filteredAppointments: any[] = [];
+  readonly appointments = signal<any[]>([]);
+  readonly filteredAppointments = signal<any[]>([]);
 
-  searchText = '';
-  isLoading = false;
-  expandedAppointment: any = null;
+  readonly searchText = signal('');
+  readonly isLoading = signal(false);
+  readonly expandedAppointment = signal<any>(null);
 
-  selectedStatus = 'ALL';
-  selectedDoctor = '';
-  selectedDate: Date | null = null;
+  readonly selectedStatus = signal('ALL');
+  readonly selectedDoctor = signal('');
+  readonly selectedDate = signal<Date | null>(null);
 
-  pageIndex = 0;
-  pageSize = 5;
+  readonly pageIndex = signal(0);
+  readonly pageSize = signal(5);
   pageSizeOptions = [5, 10, 25];
-  totalRecords = 0;
+  readonly totalRecords = signal(0);
+
+  readonly doctors = signal<any[]>([]);
+  readonly statuses = signal<string[]>([]);
+
+  readonly paginatedAppointments = computed(() => this.filteredAppointments());
 
   displayedColumns: string[] = [
     'appointmentId',
@@ -96,53 +101,23 @@ export class AppointmentList implements OnInit {
     this.loadAppointments();
   }
 
-  get paginatedAppointments(): any[] {
-
-    return this.filteredAppointments;
-  }
-  doctors: any[] = [];
-  statuses: string[] = [];
-
-  // get statuses(): string[] {
-  //   return [
-  //     'ALL STATUS',
-  //     'PENDING',
-  //     'BOOKED',
-  //     'IN-PROCESS',
-  //     'COMPLETED',
-  //     'CANCELLED',
-  //   ];
-  // }
-
-  // get doctors(): any[] {
-  //   const doctorList = this.appointments
-  //     .map((appointment: any) => appointment.doctorName)
-  //     .filter(Boolean);
-
-  //   return ['ALL DOCTORS', ...new Set(doctorList)];
-  // }
-
   loadAppointments(): void {
-    this.isLoading = true;
-    this.expandedAppointment = null;
-    this.cdr.markForCheck();
+    this.isLoading.set(true);
+    this.expandedAppointment.set(null);
 
-    const formattedDate = this.selectedDate
-      ? [
-        this.selectedDate.getFullYear(),
-        String(this.selectedDate.getMonth() + 1).padStart(2, '0'),
-        String(this.selectedDate.getDate()).padStart(2, '0'),
-      ].join('-')
+    const selectedDate = this.selectedDate();
+    const formattedDate = selectedDate
+      ? selectedDate.toISOString().split('T')[0]
       : undefined;
 
     this.appointmentService
       .getAppointments(
-        this.pageIndex + 1,
-        this.pageSize,
+        this.pageIndex() + 1,
+        this.pageSize(),
         {
-          doctorEmployeeId: this.selectedDoctor || undefined,
-          status: this.selectedStatus,
-          search: this.searchText,
+          doctorEmployeeId: this.selectedDoctor() || undefined,
+          status: this.selectedStatus(),
+          search: this.searchText(),
           date: formattedDate,
         }
       )
@@ -151,98 +126,85 @@ export class AppointmentList implements OnInit {
           console.log('APPOINTMENT RESPONSE:', response);
 
           const data = response?.data;
+          const records = Array.isArray(data?.records) ? data.records : [];
 
-          this.appointments = Array.isArray(data?.records)
-            ? data.records
-            : [];
-
-          this.filteredAppointments = [...this.appointments];
-
-          this.totalRecords =
-            data?.pagination?.totalRecords || this.appointments.length;
-
-          this.isLoading = false;
-          this.cdr.markForCheck();
+          this.appointments.set(records);
+          this.filteredAppointments.set([...records]);
+          this.totalRecords.set(data?.pagination?.totalRecords || records.length);
+          this.isLoading.set(false);
         },
         error: (error) => {
           console.error('APPOINTMENT LIST ERROR:', error);
 
-          this.isLoading = false;
-          this.appointments = [];
-          this.filteredAppointments = [];
-          this.totalRecords = 0;
+          this.isLoading.set(false);
+          this.appointments.set([]);
+          this.filteredAppointments.set([]);
+          this.totalRecords.set(0);
 
           this.toastr.error('Failed to load appointments');
-          this.cdr.markForCheck();
         },
       });
   }
+
   loadFilterOptions(): void {
     this.appointmentService.getAppointmentFilterOptions().subscribe({
       next: (response: any) => {
-        this.doctors = response?.data?.doctors || [];
-        this.statuses = response?.data?.statuses || ['ALL'];
-
-        this.cdr.markForCheck();
+        this.doctors.set(response?.data?.doctors || []);
+        this.statuses.set(response?.data?.statuses || ['ALL']);
       },
       error: () => {
-        this.doctors = [];
-        this.statuses = ['ALL'];
-
-        this.cdr.markForCheck();
+        this.doctors.set([]);
+        this.statuses.set(['ALL']);
       },
     });
   }
+
   applySearch(): void {
     this.applyFilters();
   }
 
   clearSearch(): void {
-    this.searchText = '';
+    this.searchText.set('');
     this.applyFilters();
   }
 
-
   applyFilters(): void {
-    this.pageIndex = 0;
-    this.expandedAppointment = null;
+    this.pageIndex.set(0);
+    this.expandedAppointment.set(null);
     this.loadAppointments();
-    this.cdr.markForCheck();
   }
 
   clearFilters(): void {
-    this.searchText = '';
-    this.selectedStatus = 'ALL';
-    this.selectedDoctor = '';
-    this.selectedDate = null;
+    this.searchText.set('');
+    this.selectedStatus.set('ALL');
+    this.selectedDoctor.set('');
+    this.selectedDate.set(null);
 
-    this.pageIndex = 0;
-    this.expandedAppointment = null;
+    this.pageIndex.set(0);
+    this.expandedAppointment.set(null);
 
     this.loadAppointments();
   }
 
   onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
+    this.pageIndex.set(event.pageIndex);
+    this.pageSize.set(event.pageSize);
 
     this.loadAppointments();
   }
 
   toggleRow(appointment: any): void {
-    this.expandedAppointment =
-      this.expandedAppointment === appointment ? null : appointment;
-
-    this.cdr.markForCheck();
+    this.expandedAppointment.set(
+      this.expandedAppointment() === appointment ? null : appointment
+    );
   }
 
   closeExpandedRow(): void {
-    this.expandedAppointment = null;
-    this.cdr.markForCheck();
+    this.expandedAppointment.set(null);
   }
 
   getStatusCount(status: string): number {
-    return this.appointments.filter(
+    return this.appointments().filter(
       (appointment: any) => appointment.status === status
     ).length;
   }
@@ -290,7 +252,7 @@ export class AppointmentList implements OnInit {
       .subscribe({
         next: () => {
           this.toastr.success('Appointment deleted successfully');
-          this.expandedAppointment = null;
+          this.expandedAppointment.set(null);
           this.loadAppointments();
         },
         error: (err) => {
@@ -320,7 +282,7 @@ export class AppointmentList implements OnInit {
           this.toastr.success(
             response?.message || 'Appointment approved successfully'
           );
-          this.expandedAppointment = null;
+          this.expandedAppointment.set(null);
           this.loadAppointments();
         },
         error: (err: any) => {
@@ -352,7 +314,7 @@ export class AppointmentList implements OnInit {
           this.toastr.success(
             response?.message || 'Appointment rejected successfully'
           );
-          this.expandedAppointment = null;
+          this.expandedAppointment.set(null);
           this.loadAppointments();
         },
         error: (err: any) => {
@@ -397,7 +359,7 @@ export class AppointmentList implements OnInit {
               'Status updated successfully'
             );
 
-            this.expandedAppointment = null;
+            this.expandedAppointment.set(null);
 
             this.loadAppointments();
           },

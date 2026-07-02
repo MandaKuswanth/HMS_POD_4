@@ -67,6 +67,8 @@
     font-size: 30px;
     font-weight: 700;
     letter-spacing: 0.3px;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .profile-header p {
@@ -76,6 +78,12 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     color: #dbeafe;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.profile-header > div {
+    min-width: 0;
 }
 
 /* PROFILE GRID */
@@ -208,5 +216,64 @@
     .doctor-section {
         margin: 0 24px 30px;
         padding: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .content {
+        padding: 12px;
+    }
+
+    .profile-card {
+        border-radius: 18px;
+    }
+
+    .profile-header {
+        padding: 24px 16px;
+        gap: 14px;
+    }
+
+    .profile-avatar {
+        width: 76px;
+        height: 76px;
+        flex: 0 0 76px;
+    }
+
+    .profile-avatar mat-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 44px;
+        line-height: 44px;
+    }
+
+    .profile-header h2 {
+        font-size: 20px;
+    }
+
+    .profile-header p {
+        font-size: 13px;
+    }
+
+    .profile-grid {
+        padding: 16px;
+        gap: 14px;
+    }
+
+    .profile-item {
+        padding: 14px;
+    }
+
+    .doctor-section {
+        margin: 0 12px 20px;
+        padding: 16px;
+    }
+
+    .doctor-section h3 {
+        font-size: 18px;
+    }
+
+    .chip {
+        padding: 7px 12px;
+        font-size: 13px;
     }
 }

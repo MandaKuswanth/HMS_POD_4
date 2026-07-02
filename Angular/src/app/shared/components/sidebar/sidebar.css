@@ -130,5 +130,18 @@
         left: 0;
         z-index: 999;
         height: 100vh;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+    }
+
+    :host(.open) {
+        transform: translateX(0);
+    }
+}
+
+@media (max-width: 380px) {
+    :host {
+        width: 85vw;
     }
 }

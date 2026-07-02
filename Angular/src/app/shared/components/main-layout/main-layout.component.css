@@ -43,4 +43,23 @@ app-navbar {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 14px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sidebar-overlay {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 998;
+    }
+
+    .page-content {
+        padding: 10px;
+    }
 }

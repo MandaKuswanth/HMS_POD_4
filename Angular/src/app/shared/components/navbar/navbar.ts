@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, EventEmitter, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
@@ -25,6 +25,8 @@ export class Navbar {
   private readonly authService = inject(AuthService);
   private readonly toastr = inject(ToastrService);
   private readonly router = inject(Router);
+
+  @Output() menuToggle = new EventEmitter<void>();
 
   role = this.authService.getRole();
 

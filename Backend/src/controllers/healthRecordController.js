@@ -8,6 +8,9 @@ const Role = require("../models/Role");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 
+const escapeRegex = (value = "") => {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
 // ─── Helper: resolve caller's roles ─────────────────────────────────────────
 
 const getCallerRoles = async (req) => {
@@ -142,12 +145,62 @@ exports.getHealthRecords = async (req, res) => {
         const limit = Math.max(Number(req.query.limit) || 10, 1);
         const skip = (page - 1) * limit;
 
+        const { search } = req.query;
+
         const { loggedInEmployeeId, isDoctor } = await getCallerRoles(req);
 
         const filter = { isDeleted: false };
 
         if (isDoctor) {
             filter.doctorEmployeeId = loggedInEmployeeId;
+        }
+
+        if (search && search.trim()) {
+            const regex = new RegExp(escapeRegex(search.trim()), "i");
+
+            const [matchedPatients, matchedDoctors] = await Promise.all([
+                Patient.find(
+                    {
+                        isDeleted: false,
+                        $or: [
+                            { UHID: regex },
+                            { name: regex },
+                            { phone: regex },
+                            { email: regex }
+                        ]
+                    },
+                    { UHID: 1 }
+                ).lean(),
+
+                Employee.find(
+                    {
+                        isDeleted: false,
+                        $or: [
+                            { employeeCode: regex },
+                            { name: regex },
+                            { department: regex },
+                            { designation: regex },
+                            { specialization: regex }
+                        ]
+                    },
+                    { employeeCode: 1 }
+                ).lean()
+            ]);
+
+            const matchedPatientIds = matchedPatients.map((p) => p.UHID);
+            const matchedDoctorIds = matchedDoctors.map((d) => d.employeeCode);
+
+            filter.$or = [
+                { appointmentId: regex },
+                { patientId: regex },
+                { doctorEmployeeId: regex },
+                { symptoms: regex },
+                { diagnosis: regex },
+                { prescription: regex },
+                { notes: regex },
+                { patientId: { $in: matchedPatientIds } },
+                { doctorEmployeeId: { $in: matchedDoctorIds } }
+            ];
         }
 
         const totalRecords = await HealthRecord.countDocuments(filter);
@@ -157,12 +210,18 @@ exports.getHealthRecords = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
-        // Batch-fetch patients and doctors instead of N+1 queries
         const patientIds = healthRecords.map((r) => r.patientId);
         const doctorIds = healthRecords.map((r) => r.doctorEmployeeId);
 
-        const patients = await Patient.find({ UHID: { $in: patientIds }, isDeleted: false });
-        const doctors = await Employee.find({ employeeCode: { $in: doctorIds }, isDeleted: false });
+        const patients = await Patient.find({
+            UHID: { $in: patientIds },
+            isDeleted: false
+        });
+
+        const doctors = await Employee.find({
+            employeeCode: { $in: doctorIds },
+            isDeleted: false
+        });
 
         const patientMap = new Map(patients.map((p) => [p.UHID, p]));
         const doctorMap = new Map(doctors.map((d) => [d.employeeCode, d]));
@@ -197,10 +256,11 @@ exports.getHealthRecords = async (req, res) => {
         );
     } catch (err) {
         console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+        return res.status(500).json(
+            new ApiError(500, err.message || "Internal Server Error")
+        );
     }
 };
-
 // ─── Get Health Record By ID ─────────────────────────────────────────────────
 
 exports.getHealthRecordById = async (req, res) => {
@@ -234,21 +294,21 @@ exports.getHealthRecordById = async (req, res) => {
                     ...healthRecord.toObject(),
                     patient: patient
                         ? {
-                              UHID: patient.UHID,
-                              name: patient.name,
-                              phone: patient.phone,
-                              email: patient.email,
-                              gender: patient.gender,
-                              bloodGroup: patient.bloodGroup
-                          }
+                            UHID: patient.UHID,
+                            name: patient.name,
+                            phone: patient.phone,
+                            email: patient.email,
+                            gender: patient.gender,
+                            bloodGroup: patient.bloodGroup
+                        }
                         : null,
                     doctor: doctor
                         ? {
-                              employeeCode: doctor.employeeCode,
-                              name: doctor.name,
-                              specialization: doctor.specialization,
-                              department: doctor.department
-                          }
+                            employeeCode: doctor.employeeCode,
+                            name: doctor.name,
+                            specialization: doctor.specialization,
+                            department: doctor.department
+                        }
                         : null
                 },
                 "Health record fetched successfully"

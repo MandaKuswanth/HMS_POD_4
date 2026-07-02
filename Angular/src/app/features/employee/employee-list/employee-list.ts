@@ -109,16 +109,6 @@ export class EmployeeList implements OnInit {
       );
     }
 
-    if (this.searchText.trim()) {
-      const search = this.searchText.toLowerCase().trim();
-
-      employees = employees.filter((emp: any) =>
-        emp.employeeCode?.toLowerCase().includes(search) ||
-        emp.name?.toLowerCase().includes(search) ||
-        emp.email?.toLowerCase().includes(search) ||
-        emp.phone?.includes(search)
-      );
-    }
 
     return employees;
   }
@@ -178,7 +168,7 @@ export class EmployeeList implements OnInit {
 
   loadEmployees(): void {
     this.employeeService
-      .getEmployees(this.pageIndex + 1, this.pageSize)
+      .getEmployees(this.pageIndex + 1, this.pageSize, this.searchText)
       .subscribe({
         next: (response: any) => {
           const employees = Array.isArray(response?.data?.records)
@@ -208,6 +198,16 @@ export class EmployeeList implements OnInit {
   toggleRow(employee: any): void {
     this.expandedEmployee = this.expandedEmployee === employee ? null : employee;
     this.cdr.markForCheck();
+  }
+  applyFilters(): void {
+    this.pageIndex = 0;
+    this.expandedEmployee = null;
+    this.loadEmployees();
+  }
+
+  clearSearch(): void {
+    this.searchText = '';
+    this.applyFilters();
   }
 
   openAddDialog(): void {
