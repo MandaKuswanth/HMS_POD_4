@@ -123,56 +123,60 @@ export class AppointmentList implements OnInit {
   // }
 
   loadAppointments(): void {
-  this.isLoading = true;
-  this.expandedAppointment = null;
-  this.cdr.markForCheck();
+    this.isLoading = true;
+    this.expandedAppointment = null;
+    this.cdr.markForCheck();
 
     const formattedDate = this.selectedDate
-    ? this.selectedDate.toISOString().split('T')[0]
-    : undefined;
+      ? [
+        this.selectedDate.getFullYear(),
+        String(this.selectedDate.getMonth() + 1).padStart(2, '0'),
+        String(this.selectedDate.getDate()).padStart(2, '0'),
+      ].join('-')
+      : undefined;
 
-  this.appointmentService
-    .getAppointments(
-      this.pageIndex + 1,
-      this.pageSize,
-      {
-        doctorEmployeeId: this.selectedDoctor || undefined,
-        status: this.selectedStatus,
-        search: this.searchText,
-        date: formattedDate,
-      }
-    )
-    .subscribe({
-      next: (response: any) => {
-        console.log('APPOINTMENT RESPONSE:', response);
+    this.appointmentService
+      .getAppointments(
+        this.pageIndex + 1,
+        this.pageSize,
+        {
+          doctorEmployeeId: this.selectedDoctor || undefined,
+          status: this.selectedStatus,
+          search: this.searchText,
+          date: formattedDate,
+        }
+      )
+      .subscribe({
+        next: (response: any) => {
+          console.log('APPOINTMENT RESPONSE:', response);
 
-        const data = response?.data;
+          const data = response?.data;
 
-        this.appointments = Array.isArray(data?.records)
-          ? data.records
-          : [];
+          this.appointments = Array.isArray(data?.records)
+            ? data.records
+            : [];
 
-        this.filteredAppointments = [...this.appointments];
+          this.filteredAppointments = [...this.appointments];
 
-        this.totalRecords =
-          data?.pagination?.totalRecords || this.appointments.length;
+          this.totalRecords =
+            data?.pagination?.totalRecords || this.appointments.length;
 
-        this.isLoading = false;
-        this.cdr.markForCheck();
-      },
-      error: (error) => {
-        console.error('APPOINTMENT LIST ERROR:', error);
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          console.error('APPOINTMENT LIST ERROR:', error);
 
-        this.isLoading = false;
-        this.appointments = [];
-        this.filteredAppointments = [];
-        this.totalRecords = 0;
+          this.isLoading = false;
+          this.appointments = [];
+          this.filteredAppointments = [];
+          this.totalRecords = 0;
 
-        this.toastr.error('Failed to load appointments');
-        this.cdr.markForCheck();
-      },
-    });
-}
+          this.toastr.error('Failed to load appointments');
+          this.cdr.markForCheck();
+        },
+      });
+  }
   loadFilterOptions(): void {
     this.appointmentService.getAppointmentFilterOptions().subscribe({
       next: (response: any) => {
@@ -200,11 +204,11 @@ export class AppointmentList implements OnInit {
 
 
   applyFilters(): void {
-  this.pageIndex = 0;
-  this.expandedAppointment = null;
-  this.loadAppointments();
-  this.cdr.markForCheck();
-}
+    this.pageIndex = 0;
+    this.expandedAppointment = null;
+    this.loadAppointments();
+    this.cdr.markForCheck();
+  }
 
   clearFilters(): void {
     this.searchText = '';
