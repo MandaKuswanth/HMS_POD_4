@@ -98,7 +98,7 @@ export function getRolePayloadValue(role: unknown): string {
         : '';
 }
 
-export function noFutureDateValidator(control: any) {
+export function noPastDateValidator(control: any) {
 
     if (!control.value) {
         return null;
