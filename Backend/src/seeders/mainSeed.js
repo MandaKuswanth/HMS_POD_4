@@ -251,8 +251,8 @@ async function main() {
             email
         });
 
-        if (adminUser) {
-            console.log(" Super Admin user already exists");
+        if (adminEmployee) {
+            console.log(" Super Admin employee already exists");
         } else {
             adminEmployee = await Employee.create({
                 name: "System Super Administrator",

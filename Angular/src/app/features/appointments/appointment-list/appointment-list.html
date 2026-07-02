@@ -1,242 +1,252 @@
 <main class="content">
-  <mat-card class="table-card">
-    <div class="page-header">
-      <div class="header-left">
-        <mat-icon>event_available</mat-icon>
+  <app-maincomponent
+    title="Appointments"
+    [recordCount]="totalRecords"
+    toolbarColumns="minmax(240px, 1fr) 150px 170px 170px auto 76px"
+  >
 
-        <div>
-          <h2>Appointments</h2>
-          <p>Manage hospital appointments</p>
+    <input
+      hms-toolbar
+      class="hms-search-input"
+      type="text"
+      placeholder="Search appointments..."
+      [(ngModel)]="searchText"
+      (ngModelChange)="applyFilters()"
+    />
+
+    <select
+      hms-toolbar
+      class="hms-filter-select"
+      [(ngModel)]="selectedStatus"
+      (ngModelChange)="applyFilters()"
+    >
+      <option *ngFor="let status of statuses" [value]="status">
+        {{ status === 'ALL' ? 'ALL STATUS' : status }}
+      </option>
+    </select>
+
+    <select
+      hms-toolbar
+      class="hms-filter-select"
+      [(ngModel)]="selectedDoctor"
+      (ngModelChange)="applyFilters()"
+    >
+      <option value="">ALL DOCTORS</option>
+      <option *ngFor="let doctor of doctors" [value]="doctor.employeeCode">
+        Dr. {{ doctor.name }}
+      </option>
+    </select>
+
+    <mat-form-field hms-toolbar appearance="outline" class="appointment-date-field">
+      <input
+        matInput
+        [matDatepicker]="filterPicker"
+        [(ngModel)]="selectedDate"
+        (dateChange)="applyFilters()"
+        placeholder="Date"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="filterPicker"></mat-datepicker-toggle>
+      <mat-datepicker #filterPicker></mat-datepicker>
+    </mat-form-field>
+
+    <button
+      hms-toolbar
+      mat-stroked-button
+      color="primary"
+      type="button"
+      class="hms-clear-button"
+      (click)="clearFilters()"
+    >
+      <mat-icon>filter_alt_off</mat-icon>
+      Clear
+    </button>
+
+    <button
+      hms-toolbar
+      *appHasPermission="PERMISSIONS.APPOINTMENT_CREATE"
+      mat-flat-button
+      color="primary"
+      type="button"
+      class="hms-add-button"
+      matTooltip="Add Appointment"
+      (click)="openAddDialog()"
+    >
+      <mat-icon>add</mat-icon>
+      Add
+    </button>
+
+    <div hms-toolbar class="appointment-summary-cards">
+      <div class="appointment-summary-card pending">
+        <span>Pending</span><strong>{{ getStatusCount('PENDING') }}</strong>
+      </div>
+      <div class="appointment-summary-card booked">
+        <span>Booked</span><strong>{{ getStatusCount('BOOKED') }}</strong>
+      </div>
+      <div class="appointment-summary-card process">
+        <span>In Process</span><strong>{{ getStatusCount('IN-PROCESS') }}</strong>
+      </div>
+      <div class="appointment-summary-card completed">
+        <span>Completed</span><strong>{{ getStatusCount('COMPLETED') }}</strong>
+      </div>
+      <div class="appointment-summary-card cancelled">
+        <span>Cancelled</span><strong>{{ getStatusCount('CANCELLED') }}</strong>
+      </div>
+    </div>
+
+    <ng-container hms-table>
+      @if (!isLoading && filteredAppointments.length > 0) {
+        <table
+          mat-table
+          [dataSource]="paginatedAppointments"
+          class="hms-data-table appointment-table"
+          multiTemplateDataRows
+        >
+
+          <ng-container matColumnDef="appointmentId">
+            <th mat-header-cell *matHeaderCellDef>Appointment ID</th>
+            <td mat-cell *matCellDef="let a">
+              <span class="hms-primary-text">{{ a.appointmentId || '-' }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="patientId">
+            <th mat-header-cell *matHeaderCellDef>Patient</th>
+            <td mat-cell *matCellDef="let a">
+              <div class="hms-name-cell">
+                <div class="hms-avatar">{{ a.patientName?.charAt(0) || '?' }}</div>
+                <div class="hms-name-text">
+                  <span class="compact-main">{{ a.patientName || 'N/A' }}</span>
+                  <span class="compact-sub">{{ a.patientId || '-' }}</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="doctorEmployeeId">
+            <th mat-header-cell *matHeaderCellDef>Doctor</th>
+            <td mat-cell *matCellDef="let a">
+              <div class="hms-name-cell">
+                <div class="hms-avatar">{{ a.doctorName?.charAt(0) || 'D' }}</div>
+                <div class="hms-name-text">
+                  <span class="compact-main">{{ a.doctorName ? 'Dr. ' + a.doctorName : 'N/A' }}</span>
+                  <span class="compact-sub">{{ a.doctorEmployeeId || '-' }}</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef>Date</th>
+            <td mat-cell *matCellDef="let a">
+              {{ a.date ? (a.date | date: 'mediumDate') : '-' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="timeSlot">
+            <th mat-header-cell *matHeaderCellDef>Slot</th>
+            <td mat-cell *matCellDef="let a">{{ a.timeSlot || '-' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let a">
+              <span class="hms-chip appointment-status" [ngClass]="(a.status || '').toLowerCase()">
+                {{ a.status || '-' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="expandedDetail">
+            <td mat-cell *matCellDef="let a" [attr.colspan]="displayedColumns.length">
+              <div class="hms-action-panel appointment-action-panel" *ngIf="expandedAppointment === a">
+                <div class="hms-action-info appointment-action-info">
+                  <strong>{{ a.appointmentId || 'Appointment' }}</strong>
+                  <span>Patient: {{ a.patientName || 'N/A' }} <small>({{ a.patientId || '-' }})</small></span>
+                  <span>Doctor: {{ a.doctorName ? 'Dr. ' + a.doctorName : 'N/A' }} <small>({{ a.doctorEmployeeId || '-' }})</small></span>
+                  <span>Date &amp; Slot: {{ a.date ? (a.date | date: 'mediumDate') : '-' }} | {{ a.timeSlot || '-' }}</span>
+                  <span>Status: {{ a.status || '-' }}</span>
+                </div>
+
+                <div class="hms-action-buttons appointment-action-buttons">
+                  @if (a.allowedActions?.includes('APPROVE')) {
+                    <button *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE" mat-stroked-button class="approve-action"
+                      matTooltip="Approve Appointment" (click)="approveAppointment(a); $event.stopPropagation()">
+                      <mat-icon>check_circle</mat-icon> Approve
+                    </button>
+                  }
+                  @if (a.allowedActions?.includes('REJECT')) {
+                    <button *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE" mat-stroked-button class="reject-action"
+                      matTooltip="Reject Appointment" (click)="rejectAppointment(a); $event.stopPropagation()">
+                      <mat-icon>cancel</mat-icon> Reject
+                    </button>
+                  }
+                  @if (a.allowedActions?.includes('DELETE')) {
+                    <button *appHasPermission="PERMISSIONS.APPOINTMENT_DELETE" mat-stroked-button class="delete-action"
+                      matTooltip="Delete Appointment" (click)="deleteAppointment(a); $event.stopPropagation()">
+                      <mat-icon>delete</mat-icon> Delete
+                    </button>
+                  }
+                  @if (a.allowedActions?.includes('UPDATE_STATUS')) {
+                    <button *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE" mat-stroked-button class="update-action"
+                      matTooltip="Update Status" (click)="openUpdateStatusDialog(a); $event.stopPropagation()">
+                      <mat-icon>sync</mat-icon> Update Status
+                    </button>
+                  }
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            class="hms-row"
+            [class.selected-row]="expandedAppointment === row"
+            tabindex="0"
+            (click)="toggleRow(row)"
+            (keydown.enter)="toggleRow(row)"
+            (keydown.space)="toggleRow(row); $event.preventDefault()"
+          ></tr>
+
+          <tr
+            mat-row
+            *matRowDef="let row; columns: ['expandedDetail']"
+            class="hms-detail-row"
+            [class.hidden]="expandedAppointment !== row"
+          ></tr>
+
+        </table>
+      }
+    </ng-container>
+
+    <ng-container hms-empty>
+      @if (isLoading) {
+        <div class="hms-no-data">
+          <mat-icon>hourglass_empty</mat-icon>
+          <p>Loading appointments...</p>
         </div>
-      </div>
+      } @else if (filteredAppointments.length === 0) {
+        <div class="hms-no-data">
+          <mat-icon>event_busy</mat-icon>
+          <p>No appointments found.</p>
+        </div>
+      }
+    </ng-container>
 
-      <button *appHasPermission="PERMISSIONS.APPOINTMENT_CREATE" mat-fab color="primary" matTooltip="Add Appointment"
-        (click)="openAddDialog()">
-        <mat-icon>add</mat-icon>
-      </button>
-    </div>
+    <ng-container hms-paginator>
+      @if (!isLoading && filteredAppointments.length > 0) {
+        <mat-paginator
+          [length]="totalRecords"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex"
+          [pageSizeOptions]="pageSizeOptions"
+          showFirstLastButtons
+          (page)="onPageChange($event)"
+        ></mat-paginator>
+      }
+    </ng-container>
 
-    <div class="toolbar">
-      <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Search appointments</mat-label>
-
-        <input matInput [(ngModel)]="searchText" (input)="applyFilters()"
-          placeholder="Search by appointment ID, patient, doctor, status" />
-
-        @if (searchText) {
-        <button mat-icon-button matSuffix type="button" matTooltip="Clear search" (click)="clearSearch()">
-          <mat-icon>close</mat-icon>
-        </button>
-        }
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="filter-field">
-        <mat-label>Status</mat-label>
-
-        <mat-select [(ngModel)]="selectedStatus" (selectionChange)="applyFilters()">
-          <mat-option *ngFor="let status of statuses" [value]="status">
-            {{ status === 'ALL' ? 'ALL STATUS' : status }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="filter-field">
-        <mat-label>Doctor</mat-label>
-
-        <mat-select [(ngModel)]="selectedDoctor" (selectionChange)="applyFilters()">
-          <mat-option value="">ALL DOCTORS</mat-option>
-          <mat-option *ngFor="let doctor of doctors" [value]="doctor.employeeCode">
-            Dr. {{ doctor.name }} 
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="filter-field">
-        <mat-label>Date</mat-label>
-
-        <input matInput [matDatepicker]="filterPicker" [(ngModel)]="selectedDate" (dateChange)="applyFilters()" />
-
-        <mat-datepicker-toggle matIconSuffix [for]="filterPicker"></mat-datepicker-toggle>
-
-        <mat-datepicker #filterPicker></mat-datepicker>
-      </mat-form-field>
-
-      <button mat-stroked-button color="primary" type="button" (click)="clearFilters()">
-        <mat-icon>filter_alt_off</mat-icon>
-        Clear
-      </button>
-    </div>
-
-    <div class="summary-cards">
-      <div class="summary-card pending">
-        <span>Pending</span>
-        <strong>{{ getStatusCount('PENDING') }}</strong>
-      </div>
-
-      <div class="summary-card booked">
-        <span>Booked</span>
-        <strong>{{ getStatusCount('BOOKED') }}</strong>
-      </div>
-
-      <div class="summary-card process">
-        <span>In Process</span>
-        <strong>{{ getStatusCount('IN-PROCESS') }}</strong>
-      </div>
-
-      <div class="summary-card completed">
-        <span>Completed</span>
-        <strong>{{ getStatusCount('COMPLETED') }}</strong>
-      </div>
-
-      <div class="summary-card cancelled">
-        <span>Cancelled</span>
-        <strong>{{ getStatusCount('CANCELLED') }}</strong>
-      </div>
-    </div>
-
-    @if (isLoading) {
-    <div class="no-data">
-      <mat-icon>hourglass_empty</mat-icon>
-      <p>Loading appointments...</p>
-    </div>
-    } @else if (filteredAppointments.length > 0) {
-    <div class="table-wrapper">
-      <table mat-table [dataSource]="paginatedAppointments" multiTemplateDataRows>
-        <ng-container matColumnDef="appointmentId">
-          <th mat-header-cell *matHeaderCellDef>Appointment ID</th>
-          <td mat-cell *matCellDef="let a">
-            {{ a.appointmentId || '-' }}
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="patientId">
-          <th mat-header-cell *matHeaderCellDef>Patient</th>
-          <td mat-cell *matCellDef="let a">
-            <strong>{{ a.patientName || 'N/A' }}</strong>
-            <br />
-            <small>{{ a.patientId || '-' }}</small>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="doctorEmployeeId">
-          <th mat-header-cell *matHeaderCellDef>Doctor</th>
-          <td mat-cell *matCellDef="let a">
-            <strong>
-              {{ a.doctorName ? 'Dr. ' + a.doctorName : 'N/A' }}
-            </strong>
-            <br />
-            <small>{{ a.doctorEmployeeId || '-' }}</small>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="date">
-          <th mat-header-cell *matHeaderCellDef>Date</th>
-          <td mat-cell *matCellDef="let a">
-            {{ a.date | date: 'mediumDate' }}
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="timeSlot">
-          <th mat-header-cell *matHeaderCellDef>Slot</th>
-          <td mat-cell *matCellDef="let a">
-            {{ a.timeSlot || '-' }}
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
-          <td mat-cell *matCellDef="let a">
-            <span class="badge" [ngClass]="a.status?.toLowerCase()">
-              {{ a.status || '-' }}
-            </span>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="expandedDetail">
-          <td mat-cell *matCellDef="let a" [attr.colspan]="displayedColumns.length">
-            <div class="appointment-action-panel" *ngIf="expandedAppointment === a">
-              <div class="appointment-action-info">
-                <strong>{{ a.appointmentId || 'Appointment' }}</strong>
-
-                <span>
-                  Patient:
-                  {{ a.patientName || 'N/A' }}
-                  <small>({{ a.patientId || '-' }})</small>
-                </span>
-
-                <span>
-                  Doctor:
-                  {{ a.doctorName ? 'Dr. ' + a.doctorName : 'N/A' }}
-                  <small>({{ a.doctorEmployeeId || '-' }})</small>
-                </span>
-
-                <span>
-                  Date & Slot:
-                  {{ a.date | date: 'mediumDate' }} |
-                  {{ a.timeSlot || '-' }}
-                </span>
-
-                <span>
-                  Status:
-                  {{ a.status || '-' }}
-                </span>
-              </div>
-
-              <div class="appointment-action-buttons">
-                @if (a.allowedActions?.includes('APPROVE')) {
-                <button *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE" mat-stroked-button class="approve-action"
-                  matTooltip="Approve Appointment" (click)="approveAppointment(a); $event.stopPropagation()">
-                  <mat-icon>check_circle</mat-icon>
-                  Approve
-                </button>
-                }
-
-                @if (a.allowedActions?.includes('REJECT')) {
-                <button *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE" mat-stroked-button class="reject-action"
-                  matTooltip="Reject Appointment" (click)="rejectAppointment(a); $event.stopPropagation()">
-                  <mat-icon>cancel</mat-icon>
-                  Reject
-                </button>
-                }
-
-                @if (a.allowedActions?.includes('DELETE')) {
-                <button *appHasPermission="PERMISSIONS.APPOINTMENT_DELETE" mat-stroked-button class="delete-action"
-                  matTooltip="Delete Appointment" (click)="deleteAppointment(a); $event.stopPropagation()">
-                  <mat-icon>delete</mat-icon>
-                  Delete Appointment
-                </button>
-                }
-
-                @if (a.allowedActions?.includes('UPDATE_STATUS')) {
-                <button *appHasPermission="PERMISSIONS.APPOINTMENT_UPDATE" mat-stroked-button class="update-action"
-                  matTooltip="Update Status" (click)="openUpdateStatusDialog(a); $event.stopPropagation()">
-                  <mat-icon>sync</mat-icon>
-                  Update Status
-                </button>
-                }
-              </div>
-            </div>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-
-        <tr mat-row *matRowDef="let row; columns: displayedColumns" class="appointment-row"
-          [class.selected-row]="expandedAppointment === row" (click)="toggleRow(row)" (keydown.enter)="toggleRow(row)"
-          (keydown.space)="toggleRow(row)" tabindex="0"></tr>
-
-        <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
-      </table>
-    </div>
-    <mat-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
-      [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
-    </mat-paginator>
-
-    } @else {
-    <div class="no-data">
-      <mat-icon>event_busy</mat-icon>
-      <p>No appointments found.</p>
-    </div>
-    }
-  </mat-card>
+  </app-maincomponent>
 </main>
