@@ -1,7 +1,7 @@
 <main class="content">
   <app-maincomponent
     title="Appointments"
-    [recordCount]="totalRecords"
+    [recordCount]="totalRecords()"
     toolbarColumns="minmax(240px, 1fr) 150px 170px 170px auto 76px"
   >
 
@@ -10,17 +10,17 @@
       class="hms-search-input"
       type="text"
       placeholder="Search appointments..."
-      [(ngModel)]="searchText"
-      (ngModelChange)="applyFilters()"
+      [ngModel]="searchText()"
+      (ngModelChange)="searchText.set($event); applyFilters()"
     />
 
     <select
       hms-toolbar
       class="hms-filter-select"
-      [(ngModel)]="selectedStatus"
-      (ngModelChange)="applyFilters()"
+      [ngModel]="selectedStatus()"
+      (ngModelChange)="selectedStatus.set($event); applyFilters()"
     >
-      <option *ngFor="let status of statuses" [value]="status">
+      <option *ngFor="let status of statuses()" [value]="status">
         {{ status === 'ALL' ? 'ALL STATUS' : status }}
       </option>
     </select>
@@ -28,11 +28,11 @@
     <select
       hms-toolbar
       class="hms-filter-select"
-      [(ngModel)]="selectedDoctor"
-      (ngModelChange)="applyFilters()"
+      [ngModel]="selectedDoctor()"
+      (ngModelChange)="selectedDoctor.set($event); applyFilters()"
     >
       <option value="">ALL DOCTORS</option>
-      <option *ngFor="let doctor of doctors" [value]="doctor.employeeCode">
+      <option *ngFor="let doctor of doctors()" [value]="doctor.employeeCode">
         Dr. {{ doctor.name }}
       </option>
     </select>
@@ -41,7 +41,8 @@
       <input
         matInput
         [matDatepicker]="filterPicker"
-        [(ngModel)]="selectedDate"
+        [ngModel]="selectedDate()"
+        (ngModelChange)="selectedDate.set($event)"
         (dateChange)="applyFilters()"
         placeholder="Date"
       />
@@ -94,10 +95,10 @@
     </div>
 
     <ng-container hms-table>
-      @if (!isLoading && filteredAppointments.length > 0) {
+      @if (!isLoading() && filteredAppointments().length > 0) {
         <table
           mat-table
-          [dataSource]="paginatedAppointments"
+          [dataSource]="paginatedAppointments()"
           class="hms-data-table appointment-table"
           multiTemplateDataRows
         >
@@ -158,7 +159,7 @@
 
           <ng-container matColumnDef="expandedDetail">
             <td mat-cell *matCellDef="let a" [attr.colspan]="displayedColumns.length">
-              <div class="hms-action-panel appointment-action-panel" *ngIf="expandedAppointment === a">
+              <div class="hms-action-panel appointment-action-panel" *ngIf="expandedAppointment() === a">
                 <div class="hms-action-info appointment-action-info">
                   <strong>{{ a.appointmentId || 'Appointment' }}</strong>
                   <span>Patient: {{ a.patientName || 'N/A' }} <small>({{ a.patientId || '-' }})</small></span>
@@ -203,7 +204,7 @@
             mat-row
             *matRowDef="let row; columns: displayedColumns"
             class="hms-row"
-            [class.selected-row]="expandedAppointment === row"
+            [class.selected-row]="expandedAppointment() === row"
             tabindex="0"
             (click)="toggleRow(row)"
             (keydown.enter)="toggleRow(row)"
@@ -214,7 +215,7 @@
             mat-row
             *matRowDef="let row; columns: ['expandedDetail']"
             class="hms-detail-row"
-            [class.hidden]="expandedAppointment !== row"
+            [class.hidden]="expandedAppointment() !== row"
           ></tr>
 
         </table>
@@ -222,12 +223,12 @@
     </ng-container>
 
     <ng-container hms-empty>
-      @if (isLoading) {
+      @if (isLoading()) {
         <div class="hms-no-data">
           <mat-icon>hourglass_empty</mat-icon>
           <p>Loading appointments...</p>
         </div>
-      } @else if (filteredAppointments.length === 0) {
+      } @else if (filteredAppointments().length === 0) {
         <div class="hms-no-data">
           <mat-icon>event_busy</mat-icon>
           <p>No appointments found.</p>
@@ -236,11 +237,11 @@
     </ng-container>
 
     <ng-container hms-paginator>
-      @if (!isLoading && filteredAppointments.length > 0) {
+      @if (!isLoading() && filteredAppointments().length > 0) {
         <mat-paginator
-          [length]="totalRecords"
-          [pageSize]="pageSize"
-          [pageIndex]="pageIndex"
+          [length]="totalRecords()"
+          [pageSize]="pageSize()"
+          [pageIndex]="pageIndex()"
           [pageSizeOptions]="pageSizeOptions"
           showFirstLastButtons
           (page)="onPageChange($event)"

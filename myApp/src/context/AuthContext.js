@@ -4,8 +4,9 @@ import React, {
     useContext,
     useEffect,
     useMemo,
-    useState,
 } from "react";
+import { signal } from "@preact/signals-react";
+import { useSignals } from "@preact/signals-react/runtime";
 
 import SecureStorage from "../utils/secureStorage";
 
@@ -23,6 +24,12 @@ import {
 } from "../api/patientService";
 
 const AuthContext = createContext(null);
+
+const tokenSignal = signal(null);
+const userSignal = signal(null);
+const patientSignal = signal(null);
+const authLoadingSignal = signal(true);
+const tokenExpirySignal = signal(null);
 
 const decodeJWT = (token) => {
     try {
@@ -71,18 +78,20 @@ const normalizeLogin = (payload) => {
 };
 
 export function AuthProvider({ children }) {
-    const [token, setToken] = useState(null);
-    const [user, setUser] = useState(null);
-    const [patient, setPatient] = useState(null);
-    const [authLoading, setAuthLoading] = useState(true);
-    const [tokenExpiry, setTokenExpiry] = useState(null);
+    useSignals();
+
+    const token = tokenSignal.value;
+    const user = userSignal.value;
+    const patient = patientSignal.value;
+    const authLoading = authLoadingSignal.value;
+    const tokenExpiry = tokenExpirySignal.value;
 
     const clearSession = useCallback(async () => {
         await SecureStorage.multiRemove(["token", "refreshToken", "user", "patient", "tokenExpiry"]);
-        setToken(null);
-        setUser(null);
-        setPatient(null);
-        setTokenExpiry(null);
+        tokenSignal.value = null;
+        userSignal.value = null;
+        patientSignal.value = null;
+        tokenExpirySignal.value = null;
     }, []);
 
     const restoreSession = useCallback(async () => {
@@ -106,10 +115,10 @@ export function AuthProvider({ children }) {
 
             if (expiryTime && now < expiryTime) {
                 // Access token still valid
-                setToken(storedToken);
-                setUser(storedUser ? JSON.parse(storedUser) : null);
-                setPatient(normalizePatient(JSON.parse(storedPatient)));
-                setTokenExpiry(expiryTime);
+                tokenSignal.value = storedToken;
+                userSignal.value = storedUser ? JSON.parse(storedUser) : null;
+                patientSignal.value = normalizePatient(JSON.parse(storedPatient));
+                tokenExpirySignal.value = expiryTime;
             } else {
                 // Access token expired — attempt silent refresh
                 console.log("Access token expired on restore, trying refresh...");
@@ -128,10 +137,10 @@ export function AuthProvider({ children }) {
                         ["tokenExpiry", newExpiry.toString()],
                     ]);
 
-                    setToken(newToken);
-                    setTokenExpiry(newExpiry);
-                    setUser(storedUser ? JSON.parse(storedUser) : null);
-                    setPatient(normalizePatient(JSON.parse(storedPatient)));
+                    tokenSignal.value = newToken;
+                    tokenExpirySignal.value = newExpiry;
+                    userSignal.value = storedUser ? JSON.parse(storedUser) : null;
+                    patientSignal.value = normalizePatient(JSON.parse(storedPatient));
                 } catch (refreshErr) {
                     console.log("Silent refresh failed, clearing session:", refreshErr?.message);
                     await clearSession();
@@ -140,7 +149,7 @@ export function AuthProvider({ children }) {
         } catch (err) {
             console.log("RESTORE SESSION ERROR:", err);
         } finally {
-            setAuthLoading(false);
+            authLoadingSignal.value = false;
         }
     }, [clearSession]);
 
@@ -164,8 +173,6 @@ export function AuthProvider({ children }) {
         }
 
         const data = normalizeLogin(response);
-        // console.log("TOKEN:", data.token);
-        // console.log("REFRESH:", data.refreshToken);
 
         if (!data.token || !data.patient) {
             throw new Error("Invalid login response from server");
@@ -185,10 +192,10 @@ export function AuthProvider({ children }) {
             await SecureStorage.removeItem("user");
         }
 
-        setToken(data.token);
-        setTokenExpiry(expiry);
-        setUser(data.user || null);
-        setPatient(data.patient);
+        tokenSignal.value = data.token;
+        tokenExpirySignal.value = expiry;
+        userSignal.value = data.user || null;
+        patientSignal.value = data.patient;
 
         return data;
     }, []);
@@ -226,8 +233,8 @@ export function AuthProvider({ children }) {
                         ["refreshToken", newRefreshToken],
                         ["tokenExpiry", newExpiry.toString()],
                     ]);
-                    setToken(newToken);
-                    setTokenExpiry(newExpiry);
+                    tokenSignal.value = newToken;
+                    tokenExpirySignal.value = newExpiry;
                 } catch (err) {
                     console.log("Proactive refresh failed:", err?.message);
                     logout();
@@ -251,8 +258,8 @@ export function AuthProvider({ children }) {
                     ["refreshToken", newRefreshToken],
                     ["tokenExpiry", newExpiry.toString()],
                 ]);
-                setToken(newToken);
-                setTokenExpiry(newExpiry);
+                tokenSignal.value = newToken;
+                tokenExpirySignal.value = newExpiry;
             } catch (err) {
                 console.log("Proactive refresh failed:", err?.message);
                 logout();
@@ -267,11 +274,11 @@ export function AuthProvider({ children }) {
 
         if (!n) {
             await SecureStorage.removeItem("patient");
-            setPatient(null);
+            patientSignal.value = null;
             return;
         }
 
-        setPatient(n);
+        patientSignal.value = n;
 
         await SecureStorage.setItem(
             "patient",
