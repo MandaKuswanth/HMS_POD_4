@@ -85,7 +85,11 @@ export class PatientList implements OnInit {
 
   loadPatients(): void {
     this.patientService
-      .getPatients(this.pageIndex + 1, this.pageSize)
+      .getPatients(
+        this.pageIndex + 1,
+        this.pageSize,
+        this.searchText
+      )
       .subscribe({
         next: (response: any) => {
           const patients = Array.isArray(response?.data?.records)
@@ -137,45 +141,19 @@ export class PatientList implements OnInit {
   }
 
   applyFilters(): void {
-    let filtered = [...this.allPatients];
-
-    const search = this.searchText.trim().toLowerCase();
-
-    if (search) {
-      filtered = filtered.filter((p) =>
-        (p.UHID ?? '').toLowerCase().includes(search) ||
-        (p.name ?? '').toLowerCase().includes(search) ||
-        (p.email ?? '').toLowerCase().includes(search) ||
-        (p.phone ?? '').includes(search) ||
-        (p.gender ?? '').toLowerCase().includes(search)
-      );
-    }
-
-    if (this.selectedGender !== 'ALL') {
-      filtered = filtered.filter(
-        (p) => p.gender === this.selectedGender
-      );
-    }
-
-    if (this.selectedStatus !== 'ALL') {
-      const isActive = this.selectedStatus === 'ACTIVE';
-
-      filtered = filtered.filter(
-        (p) => p.status === isActive
-      );
-    }
-
-    this.dataSource.data = filtered;
+    this.pageIndex = 0;
     this.expandedPatient = null;
+    this.loadPatients();
   }
 
   clearFilters(): void {
     this.searchText = '';
     this.selectedGender = 'ALL';
     this.selectedStatus = 'ALL';
-
-    this.dataSource.data = this.allPatients;
+    this.pageIndex = 0;
     this.expandedPatient = null;
+
+    this.loadPatients();
   }
 
   openAddDialog(): void {
