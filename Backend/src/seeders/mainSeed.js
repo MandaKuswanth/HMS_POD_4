@@ -234,17 +234,17 @@ async function main() {
       email,
     });
 
-    if (adminUser) {
-      console.log(" Super Admin user already exists");
-    } else {
-      adminEmployee = await Employee.create({
-        name: "System Super Administrator",
-        email,
-        phone: mobile,
-        department: "ADMINISTRATION",
-        designation: "SUPER_ADMIN",
-        status: true,
-      });
+        if (adminUser) {
+            console.log(" Super Admin user already exists");
+        } else {
+            adminEmployee = await Employee.create({
+                name: "System Super Administrator",
+                email,
+                phone: mobile,
+                department: "ADMINISTRATION",
+                designation: "SUPER_ADMIN",
+                status: true
+            });
 
       console.log(" Super Admin employee created");
     }
