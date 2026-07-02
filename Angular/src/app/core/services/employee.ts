@@ -43,10 +43,23 @@ export class EmployeeService {
     return this.http.get(`${this.baseUrl}/profile`);
   }
 
-  // Get all employees
-  getEmployees(page = 1, limit = 5): Observable<any> {
+  getEmployees(
+    page = 1,
+    limit = 5,
+    search = ''
+  ): Observable<any> {
+    const params: any = {
+      page,
+      limit,
+    };
+
+    if (search.trim()) {
+      params.search = search.trim();
+    }
+
     return this.http.get(
-      `${this.baseUrl}/employees?page=${page}&limit=${limit}`
+      `${this.baseUrl}/employees`,
+      { params }
     );
   }
 

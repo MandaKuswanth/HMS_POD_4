@@ -1,38 +1,19 @@
 <main class="content">
-  <app-maincomponent
-    title="Employees"
-    [recordCount]="totalRecords"
-    toolbarColumns="minmax(260px, 1fr) 145px 160px auto 76px"
-  >
+  <app-maincomponent title="Employees" [recordCount]="totalRecords"
+    toolbarColumns="minmax(260px, 1fr) 145px 160px auto 76px">
 
-    <input
-      hms-toolbar
-      class="hms-search-input"
-      type="text"
-      placeholder="Search employees..."
-      [(ngModel)]="searchText"
-      (ngModelChange)="resetPagination()"
-    />
+    <input hms-toolbar class="hms-search-input" type="text" placeholder="Search employees..." [(ngModel)]="searchText"
+      (ngModelChange)="applyFilters()" />
 
-    <select
-      hms-toolbar
-      class="hms-filter-select"
-      [(ngModel)]="selectedRole"
-      (ngModelChange)="resetPagination()"
-    >
+    <select hms-toolbar class="hms-filter-select" [(ngModel)]="selectedRole" (ngModelChange)="resetPagination()">
       @for (role of roles; track role) {
-        <option [value]="role">{{ role }}</option>
+      <option [value]="role">{{ role }}</option>
       }
     </select>
 
-    <select
-      hms-toolbar
-      class="hms-filter-select"
-      [(ngModel)]="selectedDepartment"
-      (ngModelChange)="resetPagination()"
-    >
+    <select hms-toolbar class="hms-filter-select" [(ngModel)]="selectedDepartment" (ngModelChange)="resetPagination()">
       @for (dept of departments; track dept) {
-        <option [value]="dept">{{ dept }}</option>
+      <option [value]="dept">{{ dept }}</option>
       }
     </select>
 
@@ -50,26 +31,14 @@
       </button>
     </div>
 
-    <button
-      hms-toolbar
-      *appHasPermission="PERMISSIONS.EMPLOYEE_CREATE"
-      mat-flat-button
-      color="primary"
-      class="hms-add-button"
-      type="button"
-      (click)="openAddDialog()"
-    >
+    <button hms-toolbar *appHasPermission="PERMISSIONS.EMPLOYEE_CREATE" mat-flat-button color="primary"
+      class="hms-add-button" type="button" (click)="openAddDialog()">
       <mat-icon>add</mat-icon>
       Add
     </button>
 
-    <table
-      hms-table
-      mat-table
-      [dataSource]="filteredEmployees"
-      class="hms-data-table employee-table"
-      multiTemplateDataRows
-    >
+    <table hms-table mat-table [dataSource]="filteredEmployees" class="hms-data-table employee-table"
+      multiTemplateDataRows>
 
       <ng-container matColumnDef="employeeCode">
         <th mat-header-cell *matHeaderCellDef>Code</th>
@@ -125,88 +94,55 @@
       <ng-container matColumnDef="expandedDetail">
         <td mat-cell *matCellDef="let emp" [attr.colspan]="displayedColumns.length">
           @if (expandedEmployee === emp) {
-            <div class="hms-action-panel">
-              <div class="hms-action-info">
-                <strong>{{ emp.name || 'Employee' }}</strong>
-                <span>{{ emp.employeeCode || '-' }}</span>
-              </div>
-
-              <div class="hms-action-buttons">
-                <button
-                  *appHasPermission="PERMISSIONS.EMPLOYEE_UPDATE"
-                  mat-stroked-button
-                  class="hms-blue-action"
-                  type="button"
-                  (click)="toggleEmployeeStatus(emp); $event.stopPropagation()"
-                >
-                  {{ emp.status ? 'Deactivate' : 'Activate' }}
-                </button>
-
-                <button
-                  *appHasPermission="PERMISSIONS.EMPLOYEE_UPDATE"
-                  mat-stroked-button
-                  class="hms-blue-action"
-                  type="button"
-                  (click)="openEditDialog(emp); $event.stopPropagation()"
-                >
-                  <mat-icon>edit</mat-icon>
-                  Update
-                </button>
-
-                <button
-                  *appHasPermission="PERMISSIONS.EMPLOYEE_DELETE"
-                  mat-stroked-button
-                  class="hms-red-action"
-                  type="button"
-                  (click)="deleteEmployee(emp); $event.stopPropagation()"
-                >
-                  <mat-icon>delete</mat-icon>
-                  Delete
-                </button>
-              </div>
+          <div class="hms-action-panel">
+            <div class="hms-action-info">
+              <strong>{{ emp.name || 'Employee' }}</strong>
+              <span>{{ emp.employeeCode || '-' }}</span>
             </div>
+
+            <div class="hms-action-buttons">
+              <button *appHasPermission="PERMISSIONS.EMPLOYEE_UPDATE" mat-stroked-button class="hms-blue-action"
+                type="button" (click)="toggleEmployeeStatus(emp); $event.stopPropagation()">
+                {{ emp.status ? 'Deactivate' : 'Activate' }}
+              </button>
+
+              <button *appHasPermission="PERMISSIONS.EMPLOYEE_UPDATE" mat-stroked-button class="hms-blue-action"
+                type="button" (click)="openEditDialog(emp); $event.stopPropagation()">
+                <mat-icon>edit</mat-icon>
+                Update
+              </button>
+
+              <button *appHasPermission="PERMISSIONS.EMPLOYEE_DELETE" mat-stroked-button class="hms-red-action"
+                type="button" (click)="deleteEmployee(emp); $event.stopPropagation()">
+                <mat-icon>delete</mat-icon>
+                Delete
+              </button>
+            </div>
+          </div>
           }
         </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
 
-      <tr
-        mat-row
-        *matRowDef="let row; columns: displayedColumns"
-        class="hms-row"
-        [class.selected-row]="expandedEmployee === row"
-        tabindex="0"
-        (click)="toggleRow(row)"
-        (keydown.enter)="toggleRow(row)"
-        (keydown.space)="toggleRow(row); $event.preventDefault()"
-      ></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hms-row"
+        [class.selected-row]="expandedEmployee === row" tabindex="0" (click)="toggleRow(row)"
+        (keydown.enter)="toggleRow(row)" (keydown.space)="toggleRow(row); $event.preventDefault()"></tr>
 
-      <tr
-        mat-row
-        *matRowDef="let row; columns: ['expandedDetail']"
-        class="hms-detail-row"
-        [class.hidden]="expandedEmployee !== row"
-      ></tr>
+      <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="hms-detail-row"
+        [class.hidden]="expandedEmployee !== row"></tr>
 
     </table>
 
     @if (filteredEmployees.length === 0) {
-      <div hms-empty class="hms-no-data">
-        <mat-icon>groups</mat-icon>
-        <p>No employees found</p>
-      </div>
+    <div hms-empty class="hms-no-data">
+      <mat-icon>groups</mat-icon>
+      <p>No employees found</p>
+    </div>
     }
 
-    <mat-paginator
-      hms-paginator
-      [length]="totalRecords"
-      [pageSize]="pageSize"
-      [pageIndex]="pageIndex"
-      [pageSizeOptions]="pageSizeOptions"
-      showFirstLastButtons
-      (page)="onPageChange($event)"
-    >
+    <mat-paginator hms-paginator [length]="totalRecords" [pageSize]="pageSize" [pageIndex]="pageIndex"
+      [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPageChange($event)">
     </mat-paginator>
 
   </app-maincomponent>
