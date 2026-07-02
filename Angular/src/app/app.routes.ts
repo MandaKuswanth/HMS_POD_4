@@ -105,7 +105,7 @@ export const routes: Routes = [
                     import('./features/manage-permissions/manage-permissions').then(
                         (m) => m.ManagePermissions
                     ),
-                canActivate: [/* your existing permission guard, if routes use one */],
+               
             },
 
             // Default route after login
@@ -120,6 +120,6 @@ export const routes: Routes = [
     // Wildcard
     {
         path: '**',
-        redirectTo: '',
+        redirectTo: 'dashboard',
     },
 ];
