@@ -78,3 +78,35 @@
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 760px) {
+    .dialog-form {
+        padding-top: 4px;
+    }
+
+    ::ng-deep .mat-mdc-dialog-title {
+        font-size: 20px !important;
+    }
+
+    ::ng-deep .mat-mdc-dialog-content {
+        max-height: calc(100dvh - 142px) !important;
+    }
+
+    .form-grid {
+        gap: 10px;
+    }
+
+    .medical-section {
+        margin-top: 10px;
+        padding: 14px;
+        border-radius: 12px;
+    }
+
+    .medical-section h3 {
+        font-size: 15px;
+    }
+
+    ::ng-deep .mat-mdc-dialog-actions button {
+        min-width: 100px;
+    }
+}

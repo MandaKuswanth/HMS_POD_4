@@ -110,7 +110,7 @@
 @media (max-width: 768px) {
     .navbar {
         height: 56px;
-        padding: 0 12px;
+        padding: 0 10px;
     }
 
     .brand span {
@@ -132,7 +132,30 @@
     }
 
     .logout-btn {
-        min-width: 40px;
+        min-width: 38px;
+        width: 38px;
+        height: 38px;
         padding: 0 10px !important;
+    }
+
+    .logout-btn span {
+        display: none;
+    }
+
+    .logout-btn mat-icon {
+        margin-right: 0;
+    }
+}
+
+@media (max-width: 420px) {
+    .brand span {
+        font-size: 17px;
+        letter-spacing: 0.8px;
+    }
+
+    .brand mat-icon {
+        font-size: 25px;
+        width: 25px;
+        height: 25px;
     }
 }

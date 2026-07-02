@@ -156,3 +156,94 @@
     color: rgba(0, 0, 0, 0.5);
     padding: 20px;
 }
+
+@media (max-width: 900px) {
+    .layout {
+        padding: 10px;
+    }
+
+    .content {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .form-card,
+    .table-card {
+        margin-bottom: 14px;
+        padding: 16px;
+        border-radius: 10px;
+    }
+
+    .page-header {
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .page-header h2 {
+        font-size: 20px;
+        line-height: 1.2;
+    }
+
+    .page-header p {
+        font-size: 12px;
+        line-height: 1.25;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .form-row mat-form-field {
+        width: 100%;
+    }
+
+    .permission-form {
+        gap: 4px;
+    }
+
+    :host ::ng-deep .permission-form .mat-mdc-form-field-subscript-wrapper {
+        display: none;
+    }
+
+    .permission-form button[type='submit'] {
+        width: 100%;
+        height: 38px;
+        border-radius: 8px;
+    }
+
+    .permission-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 520px) {
+    .layout {
+        padding: 8px;
+    }
+
+    .form-card,
+    .table-card {
+        padding: 14px;
+    }
+
+    .page-header mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+    }
+
+    .page-header h2 {
+        font-size: 18px;
+    }
+
+    .permission-row {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 360px) {
+    .page-header p {
+        display: none;
+    }
+}

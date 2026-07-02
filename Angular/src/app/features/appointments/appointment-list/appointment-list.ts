@@ -144,8 +144,6 @@ export class AppointmentList implements OnInit {
     )
     .subscribe({
       next: (response: any) => {
-        console.log('APPOINTMENT RESPONSE:', response);
-
         const data = response?.data;
 
         this.appointments = Array.isArray(data?.records)
