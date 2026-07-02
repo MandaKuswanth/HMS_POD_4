@@ -5,7 +5,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-
+import { MainComponent } from '../../../shared/components/maincomponent/maincomponent';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -36,6 +36,7 @@ import { UpdateStatusDialog } from '../appointment-dialog/update-status-dialog';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    MainComponent,
     CommonModule,
     FormsModule,
     MatTableModule,
