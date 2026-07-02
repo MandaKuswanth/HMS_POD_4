@@ -298,7 +298,7 @@ async function main() {
 
     console.log("");
     console.log("========================================");
-    console.log("🎉 HMS DATABASE SEEDED SUCCESSFULLY");
+    console.log(" HMS DATABASE SEEDED SUCCESSFULLY");
     console.log("========================================");
     console.log("Super Admin Details");
     console.log("----------------------------------------");
@@ -309,7 +309,7 @@ async function main() {
     console.log(`Role        : SUPER_ADMIN`);
     console.log("========================================");
   } catch (error) {
-    console.error("❌ Seeding failed:");
+    console.error(" Seeding failed:");
     console.error(error);
     process.exitCode = 1;
   } finally {
