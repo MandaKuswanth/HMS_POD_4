@@ -77,3 +77,13 @@
         width: fit-content;
     }
 }
+
+@media (max-width: 520px) {
+    .hms-clear-button {
+        grid-column: 1 / 2;
+    }
+
+    .hms-add-button {
+        grid-column: 2 / 3;
+    }
+}
