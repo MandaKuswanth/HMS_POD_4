@@ -364,6 +364,7 @@ app-maincomponent {
 
 /* RESPONSIVE */
 @media (max-width: 900px) {
+
     app-employee-list,
     app-patient-list,
     app-appointment-list,
@@ -487,7 +488,7 @@ app-maincomponent {
         min-width: 42px !important;
         height: 36px;
         padding: 0 !important;
-        font-size: 12px !important;
+        font-size: 0 !important;
         overflow: hidden;
     }
 
@@ -497,11 +498,6 @@ app-maincomponent {
 
     .hms-add-button {
         color: #ffffff !important;
-    }
-
-    .hms-clear-button,
-    .hms-add-button {
-        font-size: 0 !important;
     }
 
     .hms-clear-button mat-icon,

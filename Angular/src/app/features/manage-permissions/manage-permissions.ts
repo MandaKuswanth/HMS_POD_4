@@ -91,7 +91,7 @@ export class ManagePermissions implements OnInit {
     }
 
     onSubmit(): void {
-        const key = this.form.key.trim().toUpperCase().replace(/\s+/g, '_');
+        const key = this.form.key.trim().toUpperCase().replaceAll(/\s+/g, '_');
         const label = this.form.label.trim();
         const category = this.form.category.trim();
 
