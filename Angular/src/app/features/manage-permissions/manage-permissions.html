@@ -14,7 +14,7 @@
                 <div class="form-row">
                     <mat-form-field appearance="outline">
                         <mat-label>Key</mat-label>
-                        <input matInput [(ngModel)]="form.key" name="key" placeholder="BILLING_CREATE" required />
+                        <input matInput [(ngModel)]="form.key" name="key" placeholder="AUTO_CREATE_PERMISSION" required />
                         <mat-hint>Auto-uppercased, spaces become underscores</mat-hint>
                     </mat-form-field>
 
@@ -27,7 +27,7 @@
                 <div class="form-row">
                     <mat-form-field appearance="outline">
                         <mat-label>Category</mat-label>
-                        <input matInput [(ngModel)]="form.category" name="category" placeholder="Billing Permissions"
+                        <input matInput [(ngModel)]="form.category" name="category" placeholder="Existing or new category"
                             [matAutocomplete]="auto" required />
                         <mat-autocomplete #auto="matAutocomplete">
                             @for (cat of existingCategories; track cat) {
