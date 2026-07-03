@@ -24,8 +24,8 @@ jobs:
           script: |
             cd ~/HMS_POD_4
 
-            git checkout deployment_aishwarya
-            git pull origin deployment_aishwarya
+            git checkout aishwarya_deployment
+            git pull origin aishwarya_deployment
 
             cd Backend
             npm install
