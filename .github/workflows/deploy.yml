@@ -3,7 +3,7 @@ name: Deploy HMS Application
 on:
   push:
     branches:
-      - aishwarya_deployment
+      - deployment_aishwarya
 
 jobs:
   deploy:
@@ -24,7 +24,8 @@ jobs:
           script: |
             cd ~/HMS_POD_4
 
-            git pull origin aishwarya_deployment
+            git checkout deployment_aishwarya
+            git pull origin deployment_aishwarya
 
             cd Backend
             npm install
