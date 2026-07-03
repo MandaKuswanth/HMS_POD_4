@@ -82,7 +82,11 @@ export class HealthRecordList implements OnInit {
     this.cdr.detectChanges();
 
     this.healthRecordService
-      .getHealthRecords(this.pageIndex + 1, this.pageSize)
+      .getHealthRecords(
+        this.pageIndex + 1,
+        this.pageSize,
+        this.searchText
+      )
       .subscribe({
         next: (response: any) => {
           const records = Array.isArray(response?.data?.records)
@@ -115,31 +119,22 @@ export class HealthRecordList implements OnInit {
   }
 
   applyFilter(): void {
-    const search = this.searchText.trim().toLowerCase();
-
-    this.filteredHealthRecords = search
-      ? this.healthRecords.filter((record) =>
-        (record.healthRecordId ?? '').toLowerCase().includes(search) ||
-        (record.appointmentId ?? '').toLowerCase().includes(search) ||
-        (record.patientId ?? '').toLowerCase().includes(search) ||
-        (record.patientName ?? '').toLowerCase().includes(search) ||
-        (record.doctorName ?? '').toLowerCase().includes(search) ||
-        (record.diagnosis ?? '').toLowerCase().includes(search)
-      )
-      : [...this.healthRecords];
-
+    this.pageIndex = 0;
     this.expandedRecord = null;
+    this.loadHealthRecords();
   }
 
   clearSearch(): void {
     this.searchText = '';
-    this.filteredHealthRecords = [...this.healthRecords];
+    this.pageIndex = 0;
     this.expandedRecord = null;
+    this.loadHealthRecords();
   }
 
   onPageChange(event: PageEvent): void {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
+    this.expandedRecord = null;
     this.loadHealthRecords();
   }
 

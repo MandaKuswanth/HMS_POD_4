@@ -4,8 +4,9 @@ import React, {
     useContext,
     useMemo,
     useRef,
-    useState,
 } from "react";
+import { signal } from "@preact/signals-react";
+import { useSignals } from "@preact/signals-react/runtime";
 import PropTypes from "prop-types";
 import {
     bookAppointmentApi,
@@ -19,6 +20,23 @@ import {
 const AppointmentContext = createContext(null);
 
 const APPOINTMENTS_PAGE_SIZE = 10;
+
+const doctorsSignal = signal([]);
+const appointmentsSignal = signal([]);
+const appointmentsPageSignal = signal(1);
+const appointmentsHasMoreSignal = signal(true);
+const appointmentTotalCountSignal = signal(0);
+
+const doctorSlotsSignal = signal({
+    allSlots: [],
+    bookedSlots: [],
+    availableSlots: [],
+});
+
+const doctorsLoadingSignal = signal(false);
+const appointmentsLoadingSignal = signal(false);
+const appointmentsLoadingMoreSignal = signal(false);
+const slotsLoadingSignal = signal(false);
 
 const normalizeList = (payload) => {
     console.log(payload);
@@ -52,39 +70,34 @@ const normalizeSlots = (payload, fallbackSlots = []) => {
 };
 
 export function AppointmentProvider({ children }) {
-    const [doctors, setDoctors] = useState([]);
-    const [appointments, setAppointments] = useState([]);
-    const [appointmentsPage, setAppointmentsPage] = useState(1);
-    const [appointmentsHasMore, setAppointmentsHasMore] = useState(true);
-    const [appointmentTotalCount, setAppointmentTotalCount] = useState(0);
+    useSignals();
 
-    const [doctorSlots, setDoctorSlots] = useState({
-        allSlots: [],
-        bookedSlots: [],
-        availableSlots: [],
-    });
-
-    const [doctorsLoading, setDoctorsLoading] = useState(false);
-    const [appointmentsLoading, setAppointmentsLoading] = useState(false);
-    const [appointmentsLoadingMore, setAppointmentsLoadingMore] =
-        useState(false);
-    const [slotsLoading, setSlotsLoading] = useState(false);
+    const doctors = doctorsSignal.value;
+    const appointments = appointmentsSignal.value;
+    const appointmentsPage = appointmentsPageSignal.value;
+    const appointmentsHasMore = appointmentsHasMoreSignal.value;
+    const appointmentTotalCount = appointmentTotalCountSignal.value;
+    const doctorSlots = doctorSlotsSignal.value;
+    const doctorsLoading = doctorsLoadingSignal.value;
+    const appointmentsLoading = appointmentsLoadingSignal.value;
+    const appointmentsLoadingMore = appointmentsLoadingMoreSignal.value;
+    const slotsLoading = slotsLoadingSignal.value;
     const appointmentsLoadingMoreRef = useRef(false);
 
     const loadDoctors = useCallback(async () => {
         try {
-            setDoctorsLoading(true);
+            doctorsLoadingSignal.value = true;
             const payload = await getDoctorsApi();
             console.log(
     "DOCTORS RESPONSE:",
     JSON.stringify(payload, null, 2)
 );
-            setDoctors(normalizeList(payload));
+            doctorsSignal.value = normalizeList(payload);
         } catch (err) {
             console.log("LOAD DOCTORS ERROR:", err?.response?.data || err.message);
-            setDoctors([]);
+            doctorsSignal.value = [];
         } finally {
-            setDoctorsLoading(false);
+            doctorsLoadingSignal.value = false;
         }
     }, []);
 
@@ -94,9 +107,9 @@ export function AppointmentProvider({ children }) {
     } = {}) => {
         try {
             if (append) {
-                setAppointmentsLoadingMore(true);
+                appointmentsLoadingMoreSignal.value = true;
             } else {
-                setAppointmentsLoading(true);
+                appointmentsLoadingSignal.value = true;
             }
 
             const payload = await getMyAppointmentsApi({
@@ -109,34 +122,29 @@ export function AppointmentProvider({ children }) {
                 pagination,
             } = normalizePaginatedAppointments(payload);
 
-            setAppointments((currentAppointments) =>
-                append
-                    ? [
-                        ...currentAppointments,
-                        ...nextAppointments,
-                    ]
-                    : nextAppointments
-            );
-            setAppointmentsPage(page);
-            setAppointmentTotalCount(
+            appointmentsSignal.value = append
+                ? [
+                    ...appointmentsSignal.value,
+                    ...nextAppointments,
+                ]
+                : nextAppointments;
+            appointmentsPageSignal.value = page;
+            appointmentTotalCountSignal.value =
                 pagination?.totalRecords ??
-                nextAppointments.length
-            );
-            setAppointmentsHasMore(
-                pagination
-                    ? page < pagination.totalPages
-                    : nextAppointments.length === APPOINTMENTS_PAGE_SIZE
-            );
+                nextAppointments.length;
+            appointmentsHasMoreSignal.value = pagination
+                ? page < pagination.totalPages
+                : nextAppointments.length === APPOINTMENTS_PAGE_SIZE;
         } catch (err) {
             console.log("LOAD APPOINTMENTS ERROR:", err?.response?.data || err.message);
             if (!append) {
-                setAppointments([]);
-                setAppointmentTotalCount(0);
-                setAppointmentsHasMore(false);
+                appointmentsSignal.value = [];
+                appointmentTotalCountSignal.value = 0;
+                appointmentsHasMoreSignal.value = false;
             }
         } finally {
-            setAppointmentsLoading(false);
-            setAppointmentsLoadingMore(false);
+            appointmentsLoadingSignal.value = false;
+            appointmentsLoadingMoreSignal.value = false;
         }
     }, []);
 
@@ -174,33 +182,33 @@ export function AppointmentProvider({ children }) {
         fallbackSlots = []
     ) => {
         if (!doctorEmployeeId || !date) {
-            setDoctorSlots({
+            doctorSlotsSignal.value = {
                 allSlots: fallbackSlots,
                 bookedSlots: [],
                 availableSlots: fallbackSlots,
-            });
+            };
             return;
         }
 
         try {
-            setSlotsLoading(true);
+            slotsLoadingSignal.value = true;
 
             const payload = await getDoctorSlotsApi(
                 doctorEmployeeId,
                 date
             );
 
-            setDoctorSlots(normalizeSlots(payload, fallbackSlots));
+            doctorSlotsSignal.value = normalizeSlots(payload, fallbackSlots);
         } catch (err) {
             console.log("LOAD DOCTOR SLOTS ERROR:", err?.response?.data || err.message);
 
-            setDoctorSlots({
+            doctorSlotsSignal.value = {
                 allSlots: fallbackSlots,
                 bookedSlots: [],
                 availableSlots: fallbackSlots,
-            });
+            };
         } finally {
-            setSlotsLoading(false);
+            slotsLoadingSignal.value = false;
         }
     }, []);
 

@@ -32,13 +32,23 @@ export class PatientService {
 
   getPatients(
     page = 1,
-    limit = 5
+    limit = 5,
+    search = ''
   ): Observable<any> {
 
-    return this.http.get(
-      `${this.baseUrl}?page=${page}&limit=${limit}`
-    );
+    const params: any = {
+      page,
+      limit,
+    };
 
+    if (search.trim()) {
+      params.search = search.trim();
+    }
+
+    return this.http.get(
+      this.baseUrl,
+      { params }
+    );
   }
 
   updatePatient(
