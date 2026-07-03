@@ -1,0 +1,39 @@
+name: Deploy HMS Application
+
+on:
+  push:
+    branches:
+      - sprint5_WORKING
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+            cd ~/HMS_POD_4
+
+            git pull origin sprint5_WORKING
+
+            cd Backend
+            npm install
+            pm2 restart healthcare-api
+
+            cd ../Angular
+            npm install
+            npm run build
+
+            sudo cp -r dist/FRONTEND/browser/* /var/www/html/
+
+            sudo systemctl restart nginx

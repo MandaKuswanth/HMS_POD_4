@@ -19,6 +19,31 @@
         0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
+/* MOBILE MENU BUTTON */
+.menu-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    background: transparent;
+    cursor: pointer;
+
+    width: 36px;
+    height: 36px;
+    margin-right: 4px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.menu-btn:hover {
+    background: rgba(13, 71, 161, 0.08);
+}
+
+.menu-btn mat-icon {
+    color: #0d47a1;
+}
+
 /* BRAND LEFT */
 .brand {
     display: flex;
@@ -107,6 +132,12 @@
 }
 
 /* MOBILE */
+@media (max-width: 900px) {
+    .menu-btn {
+        display: flex;
+    }
+}
+
 @media (max-width: 768px) {
     .navbar {
         height: 56px;

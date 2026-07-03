@@ -4,6 +4,7 @@
     justify-content: center;
     align-items: center;
     padding: 32px;
+    box-sizing: border-box;
     background:
         radial-gradient(circle at top left, #dbeafe 0%, transparent 35%),
         radial-gradient(circle at bottom right, #bfdbfe 0%, transparent 25%),
@@ -15,8 +16,9 @@
 /* CARD */
 
 .inactive-card {
-    width: 100%;
+    width: min(520px, calc(100vw - 32px));
     max-width: 520px;
+    box-sizing: border-box;
     padding: 48px 40px !important;
     border-radius: 30px !important;
     text-align: center;
@@ -87,7 +89,12 @@ button {
 /* RESPONSIVE */
 
 @media (max-width: 600px) {
+    .inactive-page {
+        padding: 1rem;
+    }
+
     .inactive-card {
+        width: min(520px, calc(100vw - 16px));
         padding: 38px 24px !important;
         border-radius: 24px !important;
     }
@@ -109,5 +116,25 @@ button {
         font-size: 46px;
         width: 46px;
         height: 46px;
+    }
+}
+
+@media (max-width: 360px) {
+    .inactive-page {
+        padding: 0.5rem;
+    }
+
+    .inactive-card {
+        width: min(520px, calc(100vw - 8px));
+        padding: 28px 16px !important;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    button {
+        width: 100%;
+        padding: 0 16px !important;
     }
 }

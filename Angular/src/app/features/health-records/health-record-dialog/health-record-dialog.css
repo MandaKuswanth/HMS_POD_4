@@ -90,3 +90,15 @@ textarea.mat-mdc-input-element {
         min-width: 100px;
     }
 }
+
+@media (max-width: 400px) {
+    mat-dialog-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    mat-dialog-actions button {
+        width: 100%;
+        min-width: 0;
+    }
+}

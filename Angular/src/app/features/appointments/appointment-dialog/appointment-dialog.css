@@ -1,6 +1,7 @@
 .dialog-form {
     padding-top: 8px;
-    min-width: 680px;
+    width: min(680px, calc(100vw - 64px));
+    max-width: 100%;
 }
 
 
@@ -77,44 +78,21 @@
 
 /* RESPONSIVE */
 
-@media (max-width: 900px) {
+@media (max-width: 760px) {
     .dialog-form {
-        min-width: auto;
+        width: 100%;
     }
 
     .form-grid {
         grid-template-columns: 1fr;
     }
-}
 
-@media (max-width: 760px) {
-    .dialog-form {
-        padding-top: 4px;
-    }
-
-    ::ng-deep .mat-mdc-dialog-title {
-        font-size: 20px !important;
-    }
-
-    ::ng-deep .mat-mdc-dialog-content {
-        max-height: calc(100dvh - 142px) !important;
-    }
-
-    .form-grid {
-        gap: 10px;
-    }
-
-    .medical-section {
-        margin-top: 10px;
-        padding: 14px;
-        border-radius: 12px;
-    }
-
-    .medical-section h3 {
-        font-size: 15px;
+    ::ng-deep .mat-mdc-dialog-actions {
+        flex-wrap: wrap;
     }
 
     ::ng-deep .mat-mdc-dialog-actions button {
-        min-width: 100px;
+        flex: 1 1 auto;
+        min-width: 0;
     }
 }
