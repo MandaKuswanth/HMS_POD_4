@@ -2,7 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
-
+import { environment } from '../../../environments/environment';
 export interface LoginRequest {
   email: string;
   password: string;
@@ -59,7 +59,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
-  private readonly API_URL = 'http://localhost:3000/api/employees';
+  private readonly API_URL = `${environment.apiUrl}/api/employees`;
 
   private readonly TOKEN_KEY = 'token';
   private readonly USER_KEY = 'user';

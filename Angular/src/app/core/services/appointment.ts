@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 import { Observable } from 'rxjs';
 
@@ -24,7 +25,7 @@ export class AppointmentService {
     readonly http = inject(HttpClient);
 
     readonly baseUrl =
-        'http://localhost:3000/api';
+        `${environment.apiUrl}/api`;
 
     createAppointment(
         data: AppointmentRequest
@@ -42,7 +43,7 @@ export class AppointmentService {
             doctorEmployeeId?: string;
             status?: string;
             search?: string;
-             date?: string;
+            date?: string;
         }
     ): Observable<any> {
         const params: any = {
@@ -62,8 +63,8 @@ export class AppointmentService {
             params.search = filters.search.trim();
         }
         if (filters?.date) {
-        params.date = filters.date;
-    }
+            params.date = filters.date;
+        }
 
         return this.http.get(`${this.baseUrl}/appointments`, { params });
     }
