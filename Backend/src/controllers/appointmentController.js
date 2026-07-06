@@ -18,7 +18,7 @@ const {
     findSlotConflict,
     MAX_PAGE_LIMIT
 } = require("../utils/appointmentValidators");
-const escapeRegex = (value = "") => { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); };
+const escapeRegex = (value = "") => { return value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`); };
 // ─── Admin/Reception: Create Appointment ─────────────────────────────────────
 exports.createAppointment = async (req, res) => {
     try {
@@ -112,13 +112,13 @@ exports.getAppointments = async (req, res) => {
             const startOfDay = new Date(date);
             startOfDay.setHours(0, 0, 0, 0);
 
-            const endOfDay = new Date(date); 
+            const endOfDay = new Date(date);
             endOfDay.setHours(23, 59, 59, 999);
 
             query.date = { $gte: startOfDay, $lte: endOfDay };
         }
 
-        if (search && search.trim()) {
+        if (search?.trim()) {
             const regex = new RegExp(escapeRegex(search.trim()), "i");
 
             const [matchedPatients, matchedDoctors] = await Promise.all([
@@ -609,8 +609,7 @@ exports.getAppointmentFilterOptions = async (req, res) => {
             isDeleted: false,
             status: true
         };
-
-        if (doctorSearch && doctorSearch.trim()) {
+        if ( doctorSearch?.trim()) {
             const regex = new RegExp(escapeRegex(doctorSearch.trim()), "i");
 
             doctorQuery.$or = [

@@ -11,9 +11,8 @@ const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const {sendEmail} = require("../utils/sendEmail");
 
-const escapeRegex = (value = "") => {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-};
+const escapeRegex = (value = "") => { return value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`); };
+
 
 // ─── Internal: Cancel doctor appointments on deactivation / deletion ──────────
 
