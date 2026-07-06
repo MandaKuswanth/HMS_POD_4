@@ -1,3 +1,10 @@
+app-maincomponent {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
 .hms-page {
     width: 100%;
     height: 100%;
@@ -107,7 +114,7 @@
     min-height: 0;
     width: 100%;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
 }
@@ -357,8 +364,41 @@
 
 /* RESPONSIVE */
 @media (max-width: 900px) {
+
+    app-employee-list,
+    app-patient-list,
+    app-appointment-list,
+    app-health-record-list,
+    app-role-list,
+    app-node-list {
+        display: block;
+        width: 100%;
+        height: auto !important;
+        min-height: 100%;
+        overflow: visible !important;
+    }
+
+    app-maincomponent,
+    .content,
+    .hms-page {
+        height: auto !important;
+        min-height: 100%;
+        overflow: visible !important;
+    }
+
+    .content {
+        display: block !important;
+        width: 100%;
+    }
+
     .hms-toolbar {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .hms-search-input {
+        grid-column: 1 / -1;
     }
 
     .hms-clear-button,
@@ -370,43 +410,228 @@
         align-items: flex-start;
         flex-direction: column;
     }
-}
-/* NAME CELL WITH AVATAR (reusable) */
-.hms-name-cell {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-    color: #263238;
-    font-weight: 700;
+
+    .hms-table-card {
+        flex: none;
+        height: auto;
+        min-height: 360px;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .hms-table-header {
+        padding: 10px 12px;
+    }
+
+    .hms-table-scroll {
+        flex: none;
+        min-height: 240px;
+        max-height: 48dvh;
+    }
+
+    .hms-data-table {
+        min-width: 760px;
+    }
+
+    .hms-table-card mat-paginator {
+        min-height: 92px;
+    }
+
+    .hms-table-card .mat-mdc-paginator-container {
+        min-height: 86px;
+        padding: 8px 10px !important;
+        display: grid !important;
+        grid-template-columns: 1fr;
+        justify-items: center;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .hms-table-card .mat-mdc-paginator-page-size {
+        margin: 0 !important;
+        justify-content: center;
+    }
+
+    .hms-table-card .mat-mdc-paginator-range-actions {
+        width: 100%;
+        justify-content: center;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    .hms-table-card .mat-mdc-paginator-range-label {
+        margin: 0 8px !important;
+        white-space: nowrap;
+    }
 }
 
-.hms-name-cell .hms-name-text {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
+@media (max-width: 520px) {
+    .hms-page {
+        gap: 10px;
+    }
+
+    .hms-toolbar {
+        grid-template-columns: 42px 42px 1fr !important;
+        gap: 7px;
+    }
+
+    .hms-search-input,
+    .hms-filter-select {
+        grid-column: 1 / -1;
+        height: 36px;
+        font-size: 12px;
+    }
+
+    .hms-clear-button,
+    .hms-add-button {
+        width: 42px;
+        min-width: 42px !important;
+        height: 36px;
+        padding: 0 !important;
+        font-size: 0 !important;
+        overflow: hidden;
+    }
+
+    .hms-clear-button {
+        color: #f44336 !important;
+    }
+
+    .hms-add-button {
+        color: #ffffff !important;
+    }
+
+    .hms-clear-button mat-icon,
+    .hms-add-button mat-icon {
+        margin: 0 !important;
+        font-size: 19px;
+        width: 19px;
+        height: 19px;
+    }
+
+    .hms-table-header h3 {
+        font-size: 15px;
+    }
+
+    .hms-table-header span {
+        font-size: 11px;
+    }
+
+    .hms-data-table {
+        min-width: 700px;
+    }
+
+    .hms-table-card {
+        min-height: 350px;
+    }
+
+    .hms-table-scroll {
+        min-height: 210px;
+        max-height: 46dvh;
+    }
+
+    .hms-table-card mat-paginator {
+        min-height: 68px;
+    }
+
+    .hms-table-card .mat-mdc-paginator-container {
+        min-height: 68px;
+        padding: 5px 6px !important;
+        gap: 4px;
+    }
 }
 
-.hms-name-cell span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+@media (max-width: 900px) {
+    .hms-page {
+        min-height: 0;
+    }
+
+    .hms-table-scroll {
+        max-height: none;
+        min-height: 0;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin !important;
+    }
+
+    .hms-table-scroll::-webkit-scrollbar {
+        width: 6px !important;
+        height: 6px !important;
+        display: block !important;
+    }
+
+    .hms-table-scroll::-webkit-scrollbar-thumb {
+        background: #90caf9;
+        border-radius: 999px;
+    }
 }
 
-.hms-avatar {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    border-radius: 50%;
-    background: #dbeafe;
-    color: #0d47a1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 900;
-    text-transform: uppercase;
+@media (max-width: 520px) {
+    .hms-table-card {
+        min-height: 0;
+    }
+
+    .hms-table-scroll {
+        max-height: none;
+        min-height: 0;
+    }
+
+    .hms-table-card mat-paginator {
+        min-height: 76px;
+    }
+
+    .hms-table-card .mat-mdc-paginator-container {
+        min-height: 76px;
+        padding: 5px 6px !important;
+        display: flex !important;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .hms-table-card .mat-mdc-paginator-page-size {
+        align-items: center;
+        gap: 3px;
+        margin: 0 !important;
+    }
+
+    .hms-table-card .mat-mdc-paginator-page-size-label {
+        display: none;
+    }
+
+    .hms-table-card .mat-mdc-paginator-page-size-select {
+        width: 54px !important;
+        margin: 0 !important;
+    }
+
+    .hms-table-card .mat-mdc-paginator-range-actions {
+        width: auto;
+        justify-content: center;
+        flex-wrap: nowrap;
+        gap: 0;
+    }
+
+    .hms-table-card .mat-mdc-paginator-navigation-first,
+    .hms-table-card .mat-mdc-paginator-navigation-previous,
+    .hms-table-card .mat-mdc-paginator-navigation-next,
+    .hms-table-card .mat-mdc-paginator-navigation-last {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        padding: 0 !important;
+    }
+
+    .hms-table-card .mat-mdc-paginator-range-label {
+        order: 0;
+        width: auto;
+        margin: 0 !important;
+        text-align: center;
+        white-space: nowrap;
+        font-size: 12px;
+    }
 }
+
 /* NAME CELL WITH AVATAR (reusable) */
 .hms-name-cell {
     display: flex;

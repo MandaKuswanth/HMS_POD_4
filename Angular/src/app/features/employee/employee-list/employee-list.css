@@ -84,6 +84,25 @@
 
 @media (max-width: 900px) {
     .employee-status-filters {
+        grid-column: 1 / -1;
         flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 520px) {
+    .employee-status-filters {
+        justify-content: flex-start;
+        gap: 4px;
+    }
+
+    .employee-status-filters button {
+        height: 30px;
+        padding: 0 7px !important;
+        font-size: 11px;
+    }
+
+    .employee-status-filters button span {
+        padding: 1px 5px;
+        font-size: 10px;
     }
 }

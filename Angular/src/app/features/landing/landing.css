@@ -1,7 +1,7 @@
 /* Page */
 
 .landing-page {
-    min-height: 100vh;
+    height: 100dvh;
 
     background:
         radial-gradient(circle at top left, #dbeafe 0%, transparent 35%),
@@ -10,7 +10,9 @@
             #f8fbff 0%,
             #eff6ff 100%);
 
+    overflow-y: auto;
     overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Header */

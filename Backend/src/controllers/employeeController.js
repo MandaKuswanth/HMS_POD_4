@@ -9,11 +9,45 @@ const jwt = require("jsonwebtoken");
 
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
-const {sendEmail} = require("../utils/sendEmail");
+const { sendEmail } = require("../utils/sendEmail");
 
 const escapeRegex = (value = "") => {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 };
+
+const findActiveEmployeeByEmailOrPhone = (email, phone) => {
+    return Employee.findOne({
+        $or: [{ email }, { phone }],
+        isDeleted: false
+    });
+};
+
+const findActiveUserByEmail = (email) => {
+    return User.findOne({
+        email,
+        isDeleted: false
+    });
+};
+
+const findActiveRoleByName = (role) => {
+    return Role.findOne({
+        name: role.trim().toUpperCase(),
+        status: true
+    });
+};
+
+const buildUserResponse = (user, roleDoc) => ({
+    _id: user._id,
+    email: user.email,
+    employeeId: user.employeeId,
+    roleIds: user.roleIds,
+    role: {
+        roleId: roleDoc.roleId,
+        name: roleDoc.name
+    },
+    status: user.status,
+    mustResetPassword: user.mustResetPassword
+});
 
 // ─── Internal: Cancel doctor appointments on deactivation / deletion ──────────
 
@@ -74,35 +108,40 @@ exports.adminAddEmployee = async (req, res) => {
             return res.status(400).json(new ApiError(400, "Required fields are missing"));
         }
 
-        // Check for existing active employee
-        const existingEmp = await Employee.findOne({
-            $or: [{ email }, { phone }],
-            isDeleted: false
-        });
-
+        const existingEmp = await findActiveEmployeeByEmailOrPhone(email, phone);
         if (existingEmp) {
-            return res.status(409).json(new ApiResponse(409, null, "Employee already exists with this email or phone"));
+            return res.status(409).json(
+                new ApiResponse(409, null, "Employee already exists with this email or phone")
+            );
         }
 
-        const existingUser = await User.findOne({ email, isDeleted: false });
+        const existingUser = await findActiveUserByEmail(email);
         if (existingUser) {
-            return res.status(409).json(new ApiResponse(409, null, "User already exists with this email"));
+            return res.status(409).json(
+                new ApiResponse(409, null, "User already exists with this email")
+            );
         }
 
-        const roleDoc = await Role.findOne({ name: role.trim().toUpperCase(), status: true });
+        const roleDoc = await findActiveRoleByName(role);
         if (!roleDoc) {
             return res.status(404).json(new ApiError(404, "Role not found"));
         }
 
         const tempPassword = crypto.randomBytes(8).toString("hex");
-        console.log(`Temporary Password for ${email}: ${tempPassword}`);
-
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
         const employee = await Employee.create({
-            name, phone, email, department, designation,
-            joiningDate, medicalRegistrationNo, specialization,
-            qualification, consultationFee, availabilitySlots,
+            name,
+            phone,
+            email,
+            department,
+            designation,
+            joiningDate,
+            medicalRegistrationNo,
+            specialization,
+            qualification,
+            consultationFee,
+            availabilitySlots,
             status: true
         });
 
@@ -134,22 +173,16 @@ exports.adminAddEmployee = async (req, res) => {
                 201,
                 {
                     employee,
-                    user: {
-                        _id: user._id,
-                        email: user.email,
-                        employeeId: user.employeeId,
-                        roleIds: user.roleIds,
-                        role: { roleId: roleDoc.roleId, name: roleDoc.name },
-                        status: user.status,
-                        mustResetPassword: user.mustResetPassword
-                    }
+                    user: buildUserResponse(user, roleDoc)
                 },
                 "Employee created successfully"
             )
         );
     } catch (err) {
         console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+        return res.status(500).json(
+            new ApiError(500, err.message || "Internal Server Error")
+        );
     }
 };
 
@@ -171,7 +204,7 @@ exports.selfRegister = async (req, res) => {
             return res.status(400).json(new ApiError(400, "Required fields are missing"));
         }
 
-        const roleDoc = await Role.findOne({ name: role.trim().toUpperCase(), status: true });
+        const roleDoc = await findActiveRoleByName(role);
         if (!roleDoc) {
             return res.status(404).json(new ApiError(404, "Role not found"));
         }
@@ -184,33 +217,45 @@ exports.selfRegister = async (req, res) => {
         }
 
         if (password !== confirmPassword) {
-            return res.status(400).json(new ApiError(400, "Password and confirm password do not match"));
+            return res.status(400).json(
+                new ApiError(400, "Password and confirm password do not match")
+            );
         }
 
         if (password.length < 8) {
-            return res.status(400).json(new ApiError(400, "Password must be at least 8 characters"));
+            return res.status(400).json(
+                new ApiError(400, "Password must be at least 8 characters")
+            );
         }
 
-        const existingEmp = await Employee.findOne({
-            $or: [{ email }, { phone }],
-            isDeleted: false
-        });
-
+        const existingEmp = await findActiveEmployeeByEmailOrPhone(email, phone);
         if (existingEmp) {
-            return res.status(409).json(new ApiResponse(409, null, "Employee already exists"));
+            return res.status(409).json(
+                new ApiResponse(409, null, "Employee already exists")
+            );
         }
 
-        const existingUser = await User.findOne({ email, isDeleted: false });
+        const existingUser = await findActiveUserByEmail(email);
         if (existingUser) {
-            return res.status(409).json(new ApiResponse(409, null, "User already exists"));
+            return res.status(409).json(
+                new ApiResponse(409, null, "User already exists")
+            );
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const employee = await Employee.create({
-            name, phone, email, department, designation,
-            joiningDate, medicalRegistrationNo, specialization,
-            qualification, consultationFee, availabilitySlots,
+            name,
+            phone,
+            email,
+            department,
+            designation,
+            joiningDate,
+            medicalRegistrationNo,
+            specialization,
+            qualification,
+            consultationFee,
+            availabilitySlots,
             status: false
         });
 
@@ -254,22 +299,16 @@ exports.selfRegister = async (req, res) => {
                 201,
                 {
                     employee,
-                    user: {
-                        _id: user._id,
-                        email: user.email,
-                        employeeId: user.employeeId,
-                        roleIds: user.roleIds,
-                        role: { roleId: roleDoc.roleId, name: roleDoc.name },
-                        status: user.status,
-                        mustResetPassword: user.mustResetPassword
-                    }
+                    user: buildUserResponse(user, roleDoc)
                 },
                 "Registration submitted successfully. Please wait for admin approval."
             )
         );
     } catch (err) {
         console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+        return res.status(500).json(
+            new ApiError(500, err.message || "Internal Server Error")
+        );
     }
 };
 
@@ -473,7 +512,7 @@ exports.getEmployees = async (req, res) => {
 
         const query = { isDeleted: false };
 
-        if (search && search.trim()) {
+        if (search?.trim()) {
             const regex = new RegExp(escapeRegex(search.trim()), "i");
 
             query.$or = [
@@ -841,10 +880,9 @@ exports.toggleEmployeeStatus = async (req, res) => {
                 <p>Hello ${employee.name},</p>
                 <p>Your account status has been updated.</p>
                 <p><strong>Status:</strong> ${newStatus ? "ACTIVE" : "INACTIVE"}</p>
-                ${
-                    newStatus
-                        ? `<p>You can now login to HMS.</p><p><a href="http://localhost:4200/login" target="_blank">Login to HMS Portal</a></p>`
-                        : `<p>Your account has been deactivated. Please contact admin.</p>`
+                ${newStatus
+                    ? `<p>You can now login to HMS.</p><p><a href="http://localhost:4200/login" target="_blank">Login to HMS Portal</a></p>`
+                    : `<p>Your account has been deactivated. Please contact admin.</p>`
                 }
             `
         });

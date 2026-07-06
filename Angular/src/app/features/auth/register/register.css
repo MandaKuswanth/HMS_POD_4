@@ -1,11 +1,11 @@
 :host {
   display: block;
-  min-height: 100dvh;
+  height: 100dvh;
   background: #f5f8ff;
 }
 
 .register-page {
-  min-height: 100dvh;
+  height: 100%;
   padding: 32px;
   box-sizing: border-box;
   display: flex;
@@ -15,6 +15,7 @@
     radial-gradient(circle at top left, #e8efff 0%, transparent 32%),
     linear-gradient(135deg, #f5f8ff 0%, #eef4ff 100%);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .register-card {

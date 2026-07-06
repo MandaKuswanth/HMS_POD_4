@@ -2,15 +2,7 @@
   <app-sidebar [class.open]="sidebarOpen()"></app-sidebar>
 
   @if (sidebarOpen()) {
-    <div
-      class="sidebar-overlay"
-      role="button"
-      tabindex="0"
-      aria-label="Close menu"
-      (click)="closeSidebar()"
-      (keydown.enter)="closeSidebar()"
-      (keydown.space)="closeSidebar()"
-    ></div>
+  <button type="button" class="sidebar-overlay" aria-label="Close menu" (click)="closeSidebar()"></button>
   }
 
   <div class="main-content">

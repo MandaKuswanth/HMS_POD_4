@@ -12,196 +12,31 @@ import {
 import AppButton from "../../components/AppButton";
 import AppCard from "../../components/AppCard";
 import AppContainer from "../../components/AppContainer";
-import AppInput from "../../components/AppInput";
-import SectionLabel from "../../components/SectionLabel";
 
-import ChipSelector from "../../components/forms/ChipSelector";
-import DatePickerField from "../../components/forms/DatePickerField";
-import AddressForm from "../../components/forms/AddressForm";
-import EmergencyContactForm from "../../components/forms/EmergencyContactForm";
+import PatientContactForms from "../../components/forms/PatientContactForms";
+import PatientPersonalForm from "../../components/forms/PatientPersonalForm";
 
 import { useAuth } from "../../context/AuthContext";
+import usePatientProfileForm from "../../hooks/usePatientProfileForm";
 
 import COLORS from "../../utils/colors";
-import { formatDateForApi } from "../../utils/dateUtils";
 import PropTypes from "prop-types";
 import {
-
     firstErrorMessage,
-    isEmpty,
-    isValidEmail,
-    isValidIndianMobile,
-    isValidPassword,
-    isValidPincode,
     validateRegisterSubmit,
 } from "../../utils/validators";
 
 export default function RegisterScreen({ navigation }) {
     const { register } = useAuth();
-
-    const [name, setName] = useState("");
-    const [phone, setPhone] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-
-    const [gender, setGender] = useState("");
-    const [bloodGroup, setBloodGroup] = useState("");
-
-    const [dob, setDob] = useState(null);
-
-    const [street, setStreet] = useState("");
-    const [city, setCity] = useState("");
-    const [stateName, setStateName] = useState("");
-    const [pincode, setPincode] = useState("");
-
-    const [ecName, setEcName] = useState("");
-    const [ecRelation, setEcRelation] = useState("");
-    const [ecPhone, setEcPhone] = useState("");
-    const GENDER_OPTIONS = [
-        "male",
-        "female",
-        "others",
-    ];
-
-    const BLOOD_GROUPS = [
-        "A+",
-        "A-",
-        "B+",
-        "B-",
-        "AB+",
-        "AB-",
-        "O+",
-        "O-",
-    ];
-
-    const formatGender = (gender) => {
-        return gender.charAt(0).toUpperCase() + gender.slice(1);
-    };
-
-    const [errors, setErrors] = useState({
-        name: "",
-        phone: "",
-        email: "",
-        password: "",
-        gender: "",
-        dob: "",
-        pincode: "",
-        emergencyPhone: "",
-    });
-
+    const form = usePatientProfileForm();
     const [loading, setLoading] = useState(false);
 
-    const updateError = (field, message) => {
-        setErrors((prev) => ({
-            ...prev,
-            [field]: message,
-        }));
-    };
-
-    const handleNameChange = (value) => {
-        setName(value);
-
-        if (isEmpty(value)) {
-            updateError("name", "");
-            return;
-        }
-
-        updateError(
-            "name",
-            value.trim().length < 3
-                ? "Name must be at least 3 characters"
-                : ""
-        );
-    };
-
-    const handlePhoneChange = (value) => {
-        setPhone(value);
-
-        if (isEmpty(value)) {
-            updateError("phone", "");
-            return;
-        }
-
-        updateError(
-            "phone",
-            isValidIndianMobile(value)
-                ? ""
-                : "Phone must be a valid 10-digit Indian mobile number"
-        );
-    };
-
-    const handleEmailChange = (value) => {
-        setEmail(value);
-
-        if (isEmpty(value)) {
-            updateError("email", "");
-            return;
-        }
-
-        updateError(
-            "email",
-            isValidEmail(value)
-                ? ""
-                : "Please enter a valid email address"
-        );
-    };
-
-    const handlePasswordChange = (value) => {
-        setPassword(value);
-
-        if (isEmpty(value)) {
-            updateError("password", "");
-            return;
-        }
-
-        updateError(
-            "password",
-            isValidPassword(value)
-                ? ""
-                : "Password must be at least 8 characters"
-        );
-    };
-
-    const handlePincodeChange = (value) => {
-        setPincode(value);
-
-        updateError(
-            "pincode",
-            isValidPincode(value)
-                ? ""
-                : "Pincode must be 6 digits"
-        );
-    };
-
-    const handleEmergencyPhoneChange = (value) => {
-        setEcPhone(value);
-
-        if (isEmpty(value)) {
-            updateError("emergencyPhone", "");
-            return;
-        }
-
-        updateError(
-            "emergencyPhone",
-            isValidIndianMobile(value)
-                ? ""
-                : "Emergency contact phone must be a valid 10-digit mobile number"
-        );
-    };
-
     const handleRegister = async () => {
-        const submitErrors = validateRegisterSubmit({
-            name,
-            phone,
-            email,
-            password,
-            gender,
-            dob,
-            pincode,
-            emergencyPhone: ecPhone,
-        });
+        const submitErrors = validateRegisterSubmit(
+            form.getSubmitValues()
+        );
 
-        setErrors((prev) => ({
+        form.setErrors((prev) => ({
             ...prev,
             ...submitErrors,
         }));
@@ -216,26 +51,11 @@ export default function RegisterScreen({ navigation }) {
         try {
             setLoading(true);
 
-            await register({
-                name: name.trim(),
-                phone: phone.trim(),
-                email: email.trim().toLowerCase(),
-                password,
-                gender,
-                bloodGroup,
-                dob: formatDateForApi(dob),
-                address: {
-                    street: street.trim(),
-                    city: city.trim(),
-                    state: stateName.trim(),
-                    pincode: pincode.trim(),
-                },
-                emergencyContact: {
-                    name: ecName.trim(),
-                    relation: ecRelation.trim(),
-                    phone: ecPhone.trim(),
-                },
-            });
+            await register(
+                form.getPatientPayload({
+                    includeAuthFields: true,
+                })
+            );
 
             Alert.alert(
                 "Success",
@@ -275,92 +95,28 @@ export default function RegisterScreen({ navigation }) {
                             Register as a patient
                         </Text>
 
-                        <SectionLabel text="Basic Information" />
-
-                        <AppInput
-                            placeholder="Full Name *"
-                            value={name}
-                            onChangeText={handleNameChange}
-                            error={errors.name}
+                        <PatientPersonalForm
+                            name={form.name}
+                            phone={form.phone}
+                            email={form.email}
+                            password={form.password}
+                            gender={form.gender}
+                            bloodGroup={form.bloodGroup}
+                            dob={form.dob}
+                            errors={form.errors}
+                            onNameChange={form.handleNameChange}
+                            onPhoneChange={form.handlePhoneChange}
+                            onEmailChange={form.handleEmailChange}
+                            onPasswordChange={form.handlePasswordChange}
+                            onGenderChange={form.handleGenderChange}
+                            onBloodGroupChange={form.setBloodGroup}
+                            onDobChange={form.handleDobChange}
+                            includeAuthFields
+                            requiredDob
+                            requiredPlaceholders
                         />
 
-                        <AppInput
-                            placeholder="Phone Number *"
-                            value={phone}
-                            onChangeText={handlePhoneChange}
-                            keyboardType="phone-pad"
-                            error={errors.phone}
-                        />
-
-                        <AppInput
-                            placeholder="Email *"
-                            value={email}
-                            onChangeText={handleEmailChange}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            error={errors.email}
-                        />
-
-                        <AppInput
-                            placeholder="Password *"
-                            value={password}
-                            onChangeText={handlePasswordChange}
-                            secureTextEntry
-                            error={errors.password}
-                        />
-
-                        <ChipSelector
-                            label="Gender"
-                            options={GENDER_OPTIONS}
-                            value={gender}
-                            required
-                            error={errors.gender}
-                            formatLabel={formatGender}
-                            onChange={(value) => {
-                                setGender(value);
-                                updateError("gender", "");
-                            }}
-                        />
-
-                        <ChipSelector
-                            label="Blood Group"
-                            options={BLOOD_GROUPS}
-                            value={bloodGroup}
-                            onChange={setBloodGroup}
-                        />
-
-                        <DatePickerField
-                            label="Date of Birth"
-                            value={dob}
-                            required
-                            error={errors.dob}
-                            onChange={(selectedDate) => {
-                                setDob(selectedDate);
-                                updateError("dob", "");
-                            }}
-                        />
-
-                        <AddressForm
-                            street={street}
-                            city={city}
-                            stateName={stateName}
-                            pincode={pincode}
-                            onStreetChange={setStreet}
-                            onCityChange={setCity}
-                            onStateChange={setStateName}
-                            onPincodeChange={handlePincodeChange}
-                            pincodeError={errors.pincode}
-                        />
-
-                        <EmergencyContactForm
-                            name={ecName}
-                            relation={ecRelation}
-                            phone={ecPhone}
-                            onNameChange={setEcName}
-                            onRelationChange={setEcRelation}
-                            onPhoneChange={handleEmergencyPhoneChange}
-                            phoneError={errors.emergencyPhone}
-                        />
+                        <PatientContactForms form={form} />
 
                         <AppButton
                             title="Create Account"
