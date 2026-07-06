@@ -141,8 +141,8 @@ export function AuthProvider({ children }) {
                     tokenExpirySignal.value = newExpiry;
                     userSignal.value = storedUser ? JSON.parse(storedUser) : null;
                     patientSignal.value = normalizePatient(JSON.parse(storedPatient));
-                } catch (refreshErr) {
-                    console.log("Silent refresh failed, clearing session:", refreshErr?.message);
+                } catch (error_) {
+                    console.log("Silent refresh failed, clearing session:", error_?.message);
                     await clearSession();
                 }
             }

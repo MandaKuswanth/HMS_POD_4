@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
+import AppointmentSlots from "../../components/AppointmentSlots";
 
 import {
-    ActivityIndicator,
     Alert,
     Platform,
     ScrollView,
@@ -311,59 +311,7 @@ const isBookedSlot = (slot) => {
         </View>
     );
 
-    const renderTimeSlots = () => {
-        if (slotsLoading) {
-            return (
-                <ActivityIndicator
-                    color={COLORS.primary}
-                    style={styles.loader}
-                />
-            );
-        }
 
-        if (!selectedDoctor) {
-            return (
-                <View style={styles.slotsEmpty}>
-                    <Text style={styles.slotsEmptyText}>
-                        Select doctor to view slots
-                    </Text>
-                </View>
-            );
-        }
-
-        return (
-            <View style={styles.slotsGrid}>
-                {allSlots.map((slot) => {
-                    const booked = isBookedSlot(slot);
-                    const selected = timeSlot === slot;
-                    const slotLabel = booked ? `${slot} (Booked)` : slot;
-
-                    return (
-                        <TouchableOpacity
-                            key={slot}
-                            disabled={booked}
-                            style={[
-                                styles.slotChip,
-                                selected && styles.slotChipActive,
-                                booked && styles.slotChipDisabled,
-                            ]}
-                            onPress={() => handleSelectSlot(slot, booked)}
-                        >
-                            <Text
-                                style={[
-                                    styles.slotText,
-                                    selected && styles.slotTextActive,
-                                    booked && styles.slotTextDisabled,
-                                ]}
-                            >
-                                {slotLabel}
-                            </Text>
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
-        );
-    };
 
     return (
         <AppContainer>
@@ -410,7 +358,15 @@ const isBookedSlot = (slot) => {
 
                     <Text style={styles.fieldLabel}>Time Slots</Text>
 
-                    {renderTimeSlots()}
+                   <AppointmentSlots
+    loading={slotsLoading}
+    slots={selectedDoctor ? allSlots : []}
+    selectedSlot={timeSlot}
+    isBookedSlot={isBookedSlot}
+    onSelectSlot={handleSelectSlot}
+    showEmpty={!selectedDoctor}
+    emptyMessage="Select doctor to view slots"
+/>
 
                     {slotError ? (
                         <Text style={styles.inlineError}>{slotError}</Text>
@@ -586,58 +542,10 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
 
-    slotsGrid: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 8,
-    },
+ 
 
-    slotChip: {
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 50,
-        backgroundColor: COLORS.surface,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
 
-    slotChipActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
 
-    slotChipDisabled: {
-        backgroundColor: COLORS.disabledBg || "#E5E7EB",
-        borderColor: COLORS.disabledBg || "#E5E7EB",
-        opacity: 0.9,
-    },
-
-    slotText: {
-        fontSize: 13,
-        fontWeight: "800",
-        color: COLORS.text,
-    },
-
-    slotTextActive: {
-        color: "#fff",
-    },
-
-    slotTextDisabled: {
-        color: COLORS.disabledText || "#9CA3AF",
-    },
-
-    slotsEmpty: {
-        backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 16,
-        alignItems: "center",
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-
-    slotsEmptyText: {
-        color: COLORS.subtitle,
-    },
 
     inlineError: {
         marginTop: 8,
@@ -646,9 +554,7 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
 
-    loader: {
-        marginVertical: 12,
-    },
+
 
     bookBtn: {
         marginTop: 24,

@@ -1,14 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
+import AppointmentSlots from "../../components/AppointmentSlots";
 
 import {
-    ActivityIndicator,
     Alert,
     Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
 } from "react-native";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -208,49 +207,7 @@ export default function EditAppointmentScreen({ navigation, route }) {
         }
     };
 
-    const renderSlots = () => {
-        if (slotsLoading) {
-            return (
-                <ActivityIndicator
-                    color={COLORS.primary}
-                    style={styles.loader}
-                />
-            );
-        }
 
-        return (
-            <View style={styles.slotsGrid}>
-                {allSlots.map((slot) => {
-                    const booked = isBookedSlot(slot);
-                    const selected = timeSlot === slot;
-                    const slotLabel = booked ? `${slot} (Booked)` : slot;
-
-                    return (
-                        <TouchableOpacity
-                            key={slot}
-                            disabled={booked}
-                            style={[
-                                styles.slotChip,
-                                selected && styles.slotChipActive,
-                                booked && styles.slotChipDisabled,
-                            ]}
-                            onPress={() => handleSelectSlot(slot, booked)}
-                        >
-                            <Text
-                                style={[
-                                    styles.slotText,
-                                    selected && styles.slotTextActive,
-                                    booked && styles.slotTextDisabled,
-                                ]}
-                            >
-                                {slotLabel}
-                            </Text>
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
-        );
-    };
 
     return (
         <AppContainer>
@@ -283,8 +240,13 @@ export default function EditAppointmentScreen({ navigation, route }) {
                 )}
 
                 <Text style={styles.label}>Time Slot</Text>
-
-                {renderSlots()}
+<AppointmentSlots
+    loading={slotsLoading}
+    slots={allSlots}
+    selectedSlot={timeSlot}
+    isBookedSlot={isBookedSlot}
+    onSelectSlot={handleSelectSlot}
+/>
 
                 {slotError ? (
                     <Text style={styles.inlineError}>{slotError}</Text>
@@ -361,45 +323,6 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
 
-    slotsGrid: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 8,
-    },
-
-    slotChip: {
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 50,
-        backgroundColor: COLORS.surface,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-
-    slotChipActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-
-    slotChipDisabled: {
-        backgroundColor: COLORS.disabledBg || "#E5E7EB",
-        borderColor: COLORS.disabledBg || "#E5E7EB",
-        opacity: 0.9,
-    },
-
-    slotText: {
-        fontSize: 13,
-        fontWeight: "800",
-        color: COLORS.text,
-    },
-
-    slotTextActive: {
-        color: "#fff",
-    },
-
-    slotTextDisabled: {
-        color: COLORS.disabledText || "#9CA3AF",
-    },
 
     inlineError: {
         marginTop: 8,
@@ -408,9 +331,7 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
 
-    loader: {
-        marginVertical: 12,
-    },
+  
 
     button: {
         marginTop: 25,
