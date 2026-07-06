@@ -16,6 +16,10 @@ import {
     refreshTokenApi,
     logoutApi,
 } from "../api/authService";
+import {
+    clearApiAccessToken,
+    setApiAccessToken,
+} from "../utils/api";
 
 import PropTypes from "prop-types";
 
