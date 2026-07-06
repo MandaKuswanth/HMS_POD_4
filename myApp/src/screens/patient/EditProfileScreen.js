@@ -10,13 +10,10 @@ import {
 import AppButton from "../../components/AppButton";
 import AppCard from "../../components/AppCard";
 import AppContainer from "../../components/AppContainer";
-import AppInput from "../../components/AppInput";
 import ScreenHeader from "../../components/ScreenHeader";
-import SectionLabel from "../../components/SectionLabel";
-import ChipSelector from "../../components/forms/ChipSelector";
-import DatePickerField from "../../components/forms/DatePickerField";
 import AddressForm from "../../components/forms/AddressForm";
 import EmergencyContactForm from "../../components/forms/EmergencyContactForm";
+import PatientPersonalForm from "../../components/forms/PatientPersonalForm";
 
 import { useAuth } from "../../context/AuthContext";
 
@@ -29,6 +26,7 @@ import {
 } from "../../utils/validators";
 
 import { formatDateForApi } from "../../utils/dateUtils";
+import { createErrorUpdater } from "../../utils/formErrors";
 import PropTypes from "prop-types";
 
 export default function EditProfileScreen({
@@ -86,32 +84,7 @@ export default function EditProfileScreen({
 
     const [loading, setLoading] = useState(false);
 
-    const updateError = (field, message) => {
-        setErrors((prev) => ({
-            ...prev,
-            [field]: message,
-        }));
-    };
-    const GENDER_OPTIONS = [
-        "male",
-        "female",
-        "others",
-    ];
-
-    const BLOOD_GROUPS = [
-        "A+",
-        "A-",
-        "B+",
-        "B-",
-        "AB+",
-        "AB-",
-        "O+",
-        "O-",
-    ];
-
-    const formatGender = (gender) => {
-        return gender.charAt(0).toUpperCase() + gender.slice(1);
-    };
+    const updateError = createErrorUpdater(setErrors);
 
     const handleNameChange = (value) => {
         setName(value);
@@ -253,48 +226,21 @@ export default function EditProfileScreen({
                 />
 
                 <AppCard style={styles.card}>
-                    <SectionLabel text="Basic Information" />
-
-                    <AppInput
-                        placeholder="Full Name"
-                        value={name}
-                        onChangeText={handleNameChange}
-                        error={errors.name}
-                    />
-
-                    <AppInput
-                        placeholder="Phone Number"
-                        value={phone}
-                        onChangeText={handlePhoneChange}
-                        keyboardType="phone-pad"
-                        error={errors.phone}
-                    />
-
-                    <ChipSelector
-                        label="Gender"
-                        options={GENDER_OPTIONS}
-                        value={gender}
-                        required
-                        error={errors.gender}
-                        formatLabel={formatGender}
-                        onChange={(value) => {
+                    <PatientPersonalForm
+                        name={name}
+                        phone={phone}
+                        gender={gender}
+                        bloodGroup={bloodGroup}
+                        dob={dob}
+                        errors={errors}
+                        onNameChange={handleNameChange}
+                        onPhoneChange={handlePhoneChange}
+                        onGenderChange={(value) => {
                             setGender(value);
                             updateError("gender", "");
                         }}
-                    />
-
-                    <ChipSelector
-                        label="Blood Group"
-                        options={BLOOD_GROUPS}
-                        value={bloodGroup}
-                        onChange={setBloodGroup}
-                    />
-
-                    <DatePickerField
-                        label="Date of Birth"
-                        value={dob}
-                        error={errors.dob}
-                        onChange={(selectedDate) => {
+                        onBloodGroupChange={setBloodGroup}
+                        onDobChange={(selectedDate) => {
                             setDob(selectedDate);
                             updateError("dob", "");
                         }}

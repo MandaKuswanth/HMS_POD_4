@@ -12,21 +12,18 @@ import {
 import AppButton from "../../components/AppButton";
 import AppCard from "../../components/AppCard";
 import AppContainer from "../../components/AppContainer";
-import AppInput from "../../components/AppInput";
-import SectionLabel from "../../components/SectionLabel";
 
-import ChipSelector from "../../components/forms/ChipSelector";
-import DatePickerField from "../../components/forms/DatePickerField";
 import AddressForm from "../../components/forms/AddressForm";
 import EmergencyContactForm from "../../components/forms/EmergencyContactForm";
+import PatientPersonalForm from "../../components/forms/PatientPersonalForm";
 
 import { useAuth } from "../../context/AuthContext";
 
 import COLORS from "../../utils/colors";
 import { formatDateForApi } from "../../utils/dateUtils";
+import { createErrorUpdater } from "../../utils/formErrors";
 import PropTypes from "prop-types";
 import {
-
     firstErrorMessage,
     isEmpty,
     isValidEmail,
@@ -57,26 +54,6 @@ export default function RegisterScreen({ navigation }) {
     const [ecName, setEcName] = useState("");
     const [ecRelation, setEcRelation] = useState("");
     const [ecPhone, setEcPhone] = useState("");
-    const GENDER_OPTIONS = [
-        "male",
-        "female",
-        "others",
-    ];
-
-    const BLOOD_GROUPS = [
-        "A+",
-        "A-",
-        "B+",
-        "B-",
-        "AB+",
-        "AB-",
-        "O+",
-        "O-",
-    ];
-
-    const formatGender = (gender) => {
-        return gender.charAt(0).toUpperCase() + gender.slice(1);
-    };
 
     const [errors, setErrors] = useState({
         name: "",
@@ -91,12 +68,7 @@ export default function RegisterScreen({ navigation }) {
 
     const [loading, setLoading] = useState(false);
 
-    const updateError = (field, message) => {
-        setErrors((prev) => ({
-            ...prev,
-            [field]: message,
-        }));
-    };
+    const updateError = createErrorUpdater(setErrors);
 
     const handleNameChange = (value) => {
         setName(value);
@@ -275,69 +247,31 @@ export default function RegisterScreen({ navigation }) {
                             Register as a patient
                         </Text>
 
-                        <SectionLabel text="Basic Information" />
-
-                        <AppInput
-                            placeholder="Full Name *"
-                            value={name}
-                            onChangeText={handleNameChange}
-                            error={errors.name}
-                        />
-
-                        <AppInput
-                            placeholder="Phone Number *"
-                            value={phone}
-                            onChangeText={handlePhoneChange}
-                            keyboardType="phone-pad"
-                            error={errors.phone}
-                        />
-
-                        <AppInput
-                            placeholder="Email *"
-                            value={email}
-                            onChangeText={handleEmailChange}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            error={errors.email}
-                        />
-
-                        <AppInput
-                            placeholder="Password *"
-                            value={password}
-                            onChangeText={handlePasswordChange}
-                            secureTextEntry
-                            error={errors.password}
-                        />
-
-                        <ChipSelector
-                            label="Gender"
-                            options={GENDER_OPTIONS}
-                            value={gender}
-                            required
-                            error={errors.gender}
-                            formatLabel={formatGender}
-                            onChange={(value) => {
+                        <PatientPersonalForm
+                            name={name}
+                            phone={phone}
+                            email={email}
+                            password={password}
+                            gender={gender}
+                            bloodGroup={bloodGroup}
+                            dob={dob}
+                            errors={errors}
+                            onNameChange={handleNameChange}
+                            onPhoneChange={handlePhoneChange}
+                            onEmailChange={handleEmailChange}
+                            onPasswordChange={handlePasswordChange}
+                            onGenderChange={(value) => {
                                 setGender(value);
                                 updateError("gender", "");
                             }}
-                        />
-
-                        <ChipSelector
-                            label="Blood Group"
-                            options={BLOOD_GROUPS}
-                            value={bloodGroup}
-                            onChange={setBloodGroup}
-                        />
-
-                        <DatePickerField
-                            label="Date of Birth"
-                            value={dob}
-                            required
-                            error={errors.dob}
-                            onChange={(selectedDate) => {
+                            onBloodGroupChange={setBloodGroup}
+                            onDobChange={(selectedDate) => {
                                 setDob(selectedDate);
                                 updateError("dob", "");
                             }}
+                            includeAuthFields
+                            requiredDob
+                            requiredPlaceholders
                         />
 
                         <AddressForm
