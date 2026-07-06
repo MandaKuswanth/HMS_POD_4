@@ -6,6 +6,27 @@ const ApiError = require("../utils/ApiError");
 const Role = require("../models/Role");
 const { validatePassword } = require("../utils/passwordValidator");
 
+const jwt = require("jsonwebtoken");
+const { sendPasswordResetOTP } = require("../utils/sendEmail");
+
+const normalizeEmail = (email = "") => email.trim().toLowerCase();
+
+const findPatientUserByEmail = (email, extraSelect = "") => {
+    return User.findOne({
+        email: normalizeEmail(email),
+        isEmployee: false,
+        isDeleted: false
+    }).select(extraSelect);
+};
+
+const buildPatientUserResponse = (user) => ({
+    id: user._id,
+    email: user.email,
+    UHID: user.UHID,
+    roleIds: user.roleIds,
+    status: user.status
+});
+
 exports.registerPatient = async (req, res) => {
     try {
         const {
@@ -38,7 +59,7 @@ exports.registerPatient = async (req, res) => {
 
         const existingPatient = await Patient.findOne({
             $or: [
-                { email: email.trim().toLowerCase() },
+                { email: normalizeEmail(email) },
                 { phone }
             ]
         });
@@ -52,9 +73,7 @@ exports.registerPatient = async (req, res) => {
             );
         }
 
-        const existingUser = await User.findOne({
-            email: email.trim().toLowerCase()
-        });
+        const existingUser = await findPatientUserByEmail(email);
 
         if (existingUser) {
             return res.status(409).json(
@@ -82,7 +101,7 @@ exports.registerPatient = async (req, res) => {
         const patient = await Patient.create({
             name,
             phone,
-            email: email.trim().toLowerCase(),
+            email: normalizeEmail(email),
             bloodGroup,
             gender,
             dob,
@@ -96,7 +115,7 @@ exports.registerPatient = async (req, res) => {
         );
 
         const user = await User.create({
-            email: email.trim().toLowerCase(),
+            email: normalizeEmail(email),
             passwordHash,
 
             isEmployee: false,
@@ -117,13 +136,7 @@ exports.registerPatient = async (req, res) => {
                 201,
                 {
                     patient,
-                    user: {
-                        id: user._id,
-                        email: user.email,
-                        UHID: user.UHID,
-                        roleIds: user.roleIds,
-                        status: user.status
-                    }
+                    user: buildPatientUserResponse(user)
                 },
                 "Patient registered successfully"
             )
@@ -158,7 +171,7 @@ exports.loginPatient = async (req, res) => {
         }
 
         const user = await User.findOne({
-            email: email.trim().toLowerCase(),
+            email: normalizeEmail(email),
             isEmployee: false
         });
 
@@ -305,11 +318,7 @@ exports.forgotPassword = async (req, res) => {
         }
 
         // Find user by email (patient only)
-        const user = await User.findOne({
-            email: email.trim().toLowerCase(),
-            isEmployee: false,
-            isDeleted: false
-        });
+        const user = await findPatientUserByEmail(email);
 
         if (!user) {
             // For security: don't reveal if email exists
@@ -348,7 +357,6 @@ exports.forgotPassword = async (req, res) => {
         const patientName = patient?.name || "Patient";
 
         // Send OTP via email
-        const { sendPasswordResetOTP } = require("../utils/sendEmail");
         const emailResult = await sendPasswordResetOTP(
             user.email,
             otp,
@@ -399,12 +407,10 @@ exports.verifyResetOTP = async (req, res) => {
         }
 
         // Find user with OTP fields (need to explicitly select them)
-        const user = await User.findOne({
-            email: email.trim().toLowerCase(),
-            isEmployee: false,
-            isDeleted: false
-        }).select("+resetOTP +resetOTPExpiry +resetOTPAttempts");
-
+        const user = await findPatientUserByEmail(
+            email,
+            "+resetOTP +resetOTPExpiry +resetOTPAttempts"
+        );
         if (!user) {
             return res.status(404).json(
                 new ApiError(
@@ -447,7 +453,7 @@ exports.verifyResetOTP = async (req, res) => {
         await user.save();
 
         // Return a verification token that will be used for password reset
-        const verificationToken = require('jsonwebtoken').sign(
+        const verificationToken = jwt.sign(
             { email: user.email, verified: true },
             process.env.ACCESS_TOKEN_SECRET,
             { expiresIn: '10m' } // Short validity like OTP
@@ -502,11 +508,10 @@ exports.resetPassword = async (req, res) => {
         }
 
         // Find user
-        const user = await User.findOne({
-            email: email.trim().toLowerCase(),
-            isEmployee: false,
-            isDeleted: false
-        }).select("+resetOTP +resetOTPExpiry");
+        const user = await findPatientUserByEmail(
+            email,
+            "+resetOTP +resetOTPExpiry"
+        );
 
         if (!user) {
             return res.status(404).json(
@@ -578,7 +583,6 @@ exports.refreshPatientToken = async (req, res) => {
             return res.status(401).json(new ApiError(401, "Refresh token required"));
         }
 
-        const jwt = require("jsonwebtoken");
         let decoded;
         try {
             decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
@@ -619,7 +623,6 @@ exports.logoutPatient = async (req, res) => {
         const { refreshToken } = req.body;
 
         if (refreshToken) {
-            const jwt = require("jsonwebtoken");
             try {
                 const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
                 await User.findByIdAndUpdate(decoded.id, { refreshToken: null });
@@ -686,11 +689,7 @@ exports.resetTemporaryPassword = async (req, res) => {
         }
 
         // Find user
-        const user = await User.findOne({
-            email: email.trim().toLowerCase(),
-            isEmployee: false,
-            isDeleted: false
-        });
+        const user = await findPatientUserByEmail(email);
 
         if (!user) {
             return res.status(404).json(
