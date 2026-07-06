@@ -1,9 +1,18 @@
 import axios from "axios";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import SecureStorage from "./secureStorage";
 
+export const BASE_URL = "http://10.11.73.69:3000/api";
 
-export const BASE_URL = "https://10.11.67.99:3000/api";
+let accessToken = null;
+
+export const setApiAccessToken = (token) => {
+    accessToken = token || null;
+};
+
+export const clearApiAccessToken = () => {
+    accessToken = null;
+};
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -26,7 +35,7 @@ const isAuthEndpoint = (url = "") => {
 
 api.interceptors.request.use(
     async (config) => {
-        const token = await AsyncStorage.getItem("token");
+        const token = accessToken || await SecureStorage.getItem("token");
 
         if (token) {
             config.headers = config.headers || {};
@@ -84,10 +93,25 @@ api.interceptors.response.use(
                     throw new Error("No refresh token");
                 }
 
-                const { data } = await axios.post(`${BASE_URL}/patient-auth/refresh-token`, { refreshToken });
-                const newToken = data?.data?.token;
-           
-     
+                const { data } = await axios.post(
+                    `${BASE_URL}/patient-auth/refresh-token`,
+                    { refreshToken }
+                );
+                const newToken = data?.data?.token || data?.token;
+                const newRefreshToken =
+                    data?.data?.refreshToken ||
+                    data?.refreshToken ||
+                    refreshToken;
+
+                if (!newToken) {
+                    throw new Error("Refresh response missing token");
+                }
+
+                await SecureStorage.multiSet([
+                    ["token", newToken],
+                    ["refreshToken", newRefreshToken],
+                ]);
+                setApiAccessToken(newToken);
 
                 processQueue(null, newToken);
                 isRefreshing = false;
@@ -99,8 +123,14 @@ api.interceptors.response.use(
                 processQueue(refreshError, null);
                 isRefreshing = false;
 
-           
-                await AsyncStorage.multiRemove(["token", "refreshToken", "user", "patient", "tokenExpiry"]);
+                await SecureStorage.multiRemove([
+                    "token",
+                    "refreshToken",
+                    "user",
+                    "patient",
+                    "tokenExpiry",
+                ]);
+                clearApiAccessToken();
 
                 throw refreshError;
             }
