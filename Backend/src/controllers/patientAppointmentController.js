@@ -261,8 +261,7 @@ exports.getMyAppointments = async (req, res) => {
         const skip = (page - 1) * limit;
 
         const filter = {
-            patientId,
-            isDeleted: false
+            patientId
         };
 
         const totalRecords = await Appointment.countDocuments(filter);
