@@ -2,20 +2,8 @@ import axios from "axios";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-/*
-    BASE URL GUIDE
 
-    Android Emulator with backend on same computer:
-    http://10.0.2.2:3000/api
-
-    Physical phone or LAN IP:
-    http://10.11.77.115:3000/api
-
-    Web browser:
-    http://localhost:3000/api
-*/
-
-export const BASE_URL = "http://10.11.67.99:3000/api";
+export const BASE_URL = "https://10.11.67.99:3000/api";
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -81,10 +69,8 @@ api.interceptors.response.use(
 
                 const { data } = await axios.post(`${BASE_URL}/patient-auth/refresh-token`, { refreshToken });
                 const newToken = data?.data?.token;
-                const newRefreshToken = data?.data?.refreshToken;
-
-                // await AsyncStorage.setItem("token", newToken);
-                // await AsyncStorage.setItem("refreshToken", newRefreshToken);
+           
+     
 
                 processQueue(null, newToken);
                 isRefreshing = false;
@@ -95,7 +81,7 @@ api.interceptors.response.use(
                 processQueue(refreshError, null);
                 isRefreshing = false;
 
-                // Refresh failed — clear all auth data so AuthContext detects logout
+           
                 await AsyncStorage.multiRemove(["token", "refreshToken", "user", "patient", "tokenExpiry"]);
 
                 throw refreshError;
