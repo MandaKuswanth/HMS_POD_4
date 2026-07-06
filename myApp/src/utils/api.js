@@ -1,21 +1,18 @@
 import axios from "axios";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import SecureStorage from "./secureStorage";
 
-/*
-    BASE URL GUIDE
+export const BASE_URL = "https://10.11.73.69:3000/api";
 
-    Android Emulator with backend on same computer:
-    http://10.0.2.2:3000/api
+let accessToken = null;
 
-    Physical phone or LAN IP:
-    http://10.11.77.115:3000/api
+export const setApiAccessToken = (token) => {
+    accessToken = token || null;
+};
 
-    Web browser:
-    http://localhost:3000/api
-*/
-
-export const BASE_URL = "http://10.11.67.99:3000/api";
+export const clearApiAccessToken = () => {
+    accessToken = null;
+};
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -25,11 +22,23 @@ const api = axios.create({
     },
 });
 
+const isAuthEndpoint = (url = "") => {
+    return url.includes("/patient-auth/login") ||
+        url.includes("/patient-auth/register") ||
+        url.includes("/patient-auth/refresh-token") ||
+        url.includes("/patient-auth/forgot-password") ||
+        url.includes("/patient-auth/verify-otp") ||
+        url.includes("/patient-auth/reset-password") ||
+        url.includes("/patient-auth/reset-temporary-password") ||
+        url.includes("/patient-auth/logout");
+};
+
 api.interceptors.request.use(
     async (config) => {
-        const token = await AsyncStorage.getItem("token");
+        const token = accessToken || await SecureStorage.getItem("token");
 
         if (token) {
+            config.headers = config.headers || {};
             config.headers.Authorization = `Bearer ${token}`;
         }
 
@@ -58,12 +67,17 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (
+            error.response?.status === 401 &&
+            !originalRequest._retry &&
+            !isAuthEndpoint(originalRequest.url)
+        ) {
             if (isRefreshing) {
                 // Queue this request until the current refresh finishes
                 return new Promise((resolve, reject) => {
                     pendingQueue.push({ resolve, reject });
                 }).then((token) => {
+                    originalRequest.headers = originalRequest.headers || {};
                     originalRequest.headers.Authorization = `Bearer ${token}`;
                     return api(originalRequest);
                 });
@@ -73,30 +87,50 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const refreshToken = await AsyncStorage.getItem("refreshToken");
+                const refreshToken = await SecureStorage.getItem("refreshToken");
 
                 if (!refreshToken) {
                     throw new Error("No refresh token");
                 }
 
-                const { data } = await axios.post(`${BASE_URL}/patient-auth/refresh-token`, { refreshToken });
-                const newToken = data?.data?.token;
-                const newRefreshToken = data?.data?.refreshToken;
+                const { data } = await axios.post(
+                    `${BASE_URL}/patient-auth/refresh-token`,
+                    { refreshToken }
+                );
+                const newToken = data?.data?.token || data?.token;
+                const newRefreshToken =
+                    data?.data?.refreshToken ||
+                    data?.refreshToken ||
+                    refreshToken;
 
-                // await AsyncStorage.setItem("token", newToken);
-                // await AsyncStorage.setItem("refreshToken", newRefreshToken);
+                if (!newToken) {
+                    throw new Error("Refresh response missing token");
+                }
+
+                await SecureStorage.multiSet([
+                    ["token", newToken],
+                    ["refreshToken", newRefreshToken],
+                ]);
+                setApiAccessToken(newToken);
 
                 processQueue(null, newToken);
                 isRefreshing = false;
 
+                originalRequest.headers = originalRequest.headers || {};
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
                 return api(originalRequest);
             } catch (refreshError) {
                 processQueue(refreshError, null);
                 isRefreshing = false;
 
-                // Refresh failed — clear all auth data so AuthContext detects logout
-                await AsyncStorage.multiRemove(["token", "refreshToken", "user", "patient", "tokenExpiry"]);
+                await SecureStorage.multiRemove([
+                    "token",
+                    "refreshToken",
+                    "user",
+                    "patient",
+                    "tokenExpiry",
+                ]);
+                clearApiAccessToken();
 
                 throw refreshError;
             }
