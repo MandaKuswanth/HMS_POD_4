@@ -33,9 +33,10 @@ export class PatientService {
   getPatients(
     page = 1,
     limit = 5,
-    search = ''
+    search = '',
+    gender = 'ALL',
+    status = 'ALL'
   ): Observable<any> {
-
     const params: any = {
       page,
       limit,
@@ -45,10 +46,15 @@ export class PatientService {
       params.search = search.trim();
     }
 
-    return this.http.get(
-      this.baseUrl,
-      { params }
-    );
+    if (gender !== 'ALL') {
+      params.gender = gender;
+    }
+
+    if (status !== 'ALL') {
+      params.status = status;
+    }
+
+    return this.http.get(this.baseUrl, { params });
   }
 
   updatePatient(

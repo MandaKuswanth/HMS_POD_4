@@ -9,7 +9,7 @@ const { cancelPatientAppointments } = require("../controllers/appointmentControl
 const {sendEmail} = require("../utils/sendEmail");
 
 const escapeRegex = (value = "") => {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 };
 // ─── Create Patient ──────────────────────────────────────────────────────────
 
@@ -111,11 +111,19 @@ exports.getPatients = async (req, res) => {
         const limit = Math.max(Number(req.query.limit) || 10, 1);
         const skip = (page - 1) * limit;
 
-        const { search } = req.query;
+        const { search, gender, status } = req.query;
 
         const query = { isDeleted: false };
 
-        if (search && search.trim()) {
+        if (gender && gender !== "ALL") {
+            query.gender = gender;
+        }
+
+        if (status && status !== "ALL") {
+            query.status = status === "ACTIVE";
+        }
+
+        if (search?.trim()) {
             const regex = new RegExp(escapeRegex(search.trim()), "i");
 
             query.$or = [
@@ -125,7 +133,9 @@ exports.getPatients = async (req, res) => {
                 { phone: regex },
                 { gender: regex },
                 { address: regex },
-                { emergencyContact: regex }
+                { "emergencyContact.name": regex },
+                { "emergencyContact.relation": regex },
+                { "emergencyContact.phone": regex }
             ];
         }
 

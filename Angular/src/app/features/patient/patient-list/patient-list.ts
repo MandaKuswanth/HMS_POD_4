@@ -88,7 +88,9 @@ export class PatientList implements OnInit {
       .getPatients(
         this.pageIndex + 1,
         this.pageSize,
-        this.searchText
+        this.searchText,
+        this.selectedGender,
+        this.selectedStatus
       )
       .subscribe({
         next: (response: any) => {
