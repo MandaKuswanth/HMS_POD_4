@@ -31,6 +31,14 @@ const patientSignal = signal(null);
 const authLoadingSignal = signal(true);
 const tokenExpirySignal = signal(null);
 
+const SESSION_KEYS = [
+    "token",
+    "refreshToken",
+    "user",
+    "patient",
+    "tokenExpiry",
+];
+
 const decodeJWT = (token) => {
     try {
         const parts = token.split(".");
@@ -77,6 +85,21 @@ const normalizeLogin = (payload) => {
     };
 };
 
+const persistTokenSession = async ({
+    token,
+    refreshToken,
+    expiry,
+}) => {
+    await SecureStorage.multiSet([
+        ["token", token],
+        ["refreshToken", refreshToken],
+        ["tokenExpiry", expiry.toString()],
+    ]);
+
+    tokenSignal.value = token;
+    tokenExpirySignal.value = expiry;
+};
+
 export function AuthProvider({ children }) {
     useSignals();
 
@@ -87,18 +110,43 @@ export function AuthProvider({ children }) {
     const tokenExpiry = tokenExpirySignal.value;
 
     const clearSession = useCallback(async () => {
-        await SecureStorage.multiRemove(["token", "refreshToken", "user", "patient", "tokenExpiry"]);
+        await SecureStorage.multiRemove(SESSION_KEYS);
         tokenSignal.value = null;
         userSignal.value = null;
         patientSignal.value = null;
         tokenExpirySignal.value = null;
     }, []);
 
+    const refreshAccessToken = useCallback(async (refreshToken) => {
+        const refreshed = await refreshTokenApi(refreshToken);
+        const newToken = refreshed?.token;
+        const newRefreshToken = refreshed?.refreshToken;
+
+        if (!newToken || !newRefreshToken) {
+            throw new Error("Empty refresh response");
+        }
+
+        const newExpiry =
+            getTokenExpiry(newToken) ??
+            (Date.now() + 15 * 60 * 1000);
+
+        await persistTokenSession({
+            token: newToken,
+            refreshToken: newRefreshToken,
+            expiry: newExpiry,
+        });
+
+        return {
+            token: newToken,
+            refreshToken: newRefreshToken,
+            expiry: newExpiry,
+        };
+    }, []);
+
     const restoreSession = useCallback(async () => {
         try {
-            const [t, rt, u, p, expiryStr] = await SecureStorage.multiGet([
-                "token", "refreshToken", "user", "patient", "tokenExpiry"
-            ]);
+            const [t, rt, u, p, expiryStr] =
+                await SecureStorage.multiGet(SESSION_KEYS);
 
             const storedToken = t[1];
             const storedRefreshToken = rt[1];
@@ -115,30 +163,18 @@ export function AuthProvider({ children }) {
 
             if (expiryTime && now < expiryTime) {
                 // Access token still valid
-                tokenSignal.value = storedToken;
+                await persistTokenSession({
+                    token: storedToken,
+                    refreshToken: storedRefreshToken,
+                    expiry: expiryTime,
+                });
                 userSignal.value = storedUser ? JSON.parse(storedUser) : null;
                 patientSignal.value = normalizePatient(JSON.parse(storedPatient));
-                tokenExpirySignal.value = expiryTime;
             } else {
                 // Access token expired — attempt silent refresh
                 console.log("Access token expired on restore, trying refresh...");
                 try {
-                    const refreshed = await refreshTokenApi(storedRefreshToken);
-                    const newToken = refreshed?.token;
-                    const newRefreshToken = refreshed?.refreshToken;
-
-                    if (!newToken || !newRefreshToken) throw new Error("Empty refresh response");
-
-                    const newExpiry = getTokenExpiry(newToken) ?? (Date.now() + 15 * 60 * 1000);
-
-                    await SecureStorage.multiSet([
-                        ["token", newToken],
-                        ["refreshToken", newRefreshToken],
-                        ["tokenExpiry", newExpiry.toString()],
-                    ]);
-
-                    tokenSignal.value = newToken;
-                    tokenExpirySignal.value = newExpiry;
+                    await refreshAccessToken(storedRefreshToken);
                     userSignal.value = storedUser ? JSON.parse(storedUser) : null;
                     patientSignal.value = normalizePatient(JSON.parse(storedPatient));
                 } catch (error_) {
@@ -151,7 +187,7 @@ export function AuthProvider({ children }) {
         } finally {
             authLoadingSignal.value = false;
         }
-    }, [clearSession]);
+    }, [clearSession, refreshAccessToken]);
 
     useEffect(() => {
         restoreSession();
@@ -180,20 +216,26 @@ export function AuthProvider({ children }) {
 
         const expiry = getTokenExpiry(data.token) ?? (Date.now() + 15 * 60 * 1000);
 
-        await SecureStorage.multiSet([
-            ["token", data.token],
-            ["refreshToken", data.refreshToken ?? ""],
-            ["tokenExpiry", expiry.toString()],
-            ["patient", JSON.stringify(data.patient)],
-            ...(data.user ? [["user", JSON.stringify(data.user)]] : []),
-        ]);
+        await persistTokenSession({
+            token: data.token,
+            refreshToken: data.refreshToken ?? "",
+            expiry,
+        });
 
-        if (!data.user) {
+        await SecureStorage.setItem(
+            "patient",
+            JSON.stringify(data.patient)
+        );
+
+        if (data.user) {
+            await SecureStorage.setItem(
+                "user",
+                JSON.stringify(data.user)
+            );
+        } else {
             await SecureStorage.removeItem("user");
         }
 
-        tokenSignal.value = data.token;
-        tokenExpirySignal.value = expiry;
         userSignal.value = data.user || null;
         patientSignal.value = data.patient;
 
@@ -222,19 +264,7 @@ export function AuthProvider({ children }) {
             SecureStorage.getItem("refreshToken").then(async (rt) => {
                 if (!rt) { logout(); return; }
                 try {
-                    const refreshed = await refreshTokenApi(rt);
-                    const newToken = refreshed?.token;
-                    const newRefreshToken = refreshed?.refreshToken;
-                    if (!newToken || !newRefreshToken) throw new Error("Empty refresh");
-
-                    const newExpiry = getTokenExpiry(newToken) ?? (Date.now() + 15 * 60 * 1000);
-                    await SecureStorage.multiSet([
-                        ["token", newToken],
-                        ["refreshToken", newRefreshToken],
-                        ["tokenExpiry", newExpiry.toString()],
-                    ]);
-                    tokenSignal.value = newToken;
-                    tokenExpirySignal.value = newExpiry;
+                    await refreshAccessToken(rt);
                 } catch (err) {
                     console.log("Proactive refresh failed:", err?.message);
                     logout();
@@ -247,19 +277,7 @@ export function AuthProvider({ children }) {
             const rt = await SecureStorage.getItem("refreshToken");
             if (!rt) { logout(); return; }
             try {
-                const refreshed = await refreshTokenApi(rt);
-                const newToken = refreshed?.token;
-                const newRefreshToken = refreshed?.refreshToken;
-                if (!newToken || !newRefreshToken) throw new Error("Empty refresh");
-
-                const newExpiry = getTokenExpiry(newToken) ?? (Date.now() + 15 * 60 * 1000);
-                await SecureStorage.multiSet([
-                    ["token", newToken],
-                    ["refreshToken", newRefreshToken],
-                    ["tokenExpiry", newExpiry.toString()],
-                ]);
-                tokenSignal.value = newToken;
-                tokenExpirySignal.value = newExpiry;
+                await refreshAccessToken(rt);
             } catch (err) {
                 console.log("Proactive refresh failed:", err?.message);
                 logout();
@@ -267,7 +285,7 @@ export function AuthProvider({ children }) {
         }, timeUntilRefresh);
 
         return () => clearTimeout(timeoutId);
-    }, [token, tokenExpiry, logout]);
+    }, [token, tokenExpiry, logout, refreshAccessToken]);
 
     const updatePatientState = useCallback(async (p) => {
         const n = normalizePatient(p);
