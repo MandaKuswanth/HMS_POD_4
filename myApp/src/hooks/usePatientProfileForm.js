@@ -3,272 +3,268 @@ import { useState } from "react";
 import { formatDateForApi } from "../utils/dateUtils";
 import { createErrorUpdater } from "../utils/formErrors";
 import {
-    isEmpty,
-    isValidEmail,
-    isValidIndianMobile,
-    isValidPassword,
-    isValidPincode,
+  isEmpty,
+  isValidEmail,
+  isValidIndianMobile,
+  isValidPassword,
+  isValidPincode,
 } from "../utils/validators";
 
 const EMPTY_INITIAL_VALUES = {
+  name: "",
+  phone: "",
+  email: "",
+  password: "",
+  gender: "",
+  bloodGroup: "",
+  dob: null,
+  street: "",
+  city: "",
+  stateName: "",
+  pincode: "",
+  ecName: "",
+  ecRelation: "",
+  ecPhone: "",
+};
+
+export const getPatientFormInitialValues = (patient) => {
+  const address =
+    typeof patient?.address === "object" && patient.address !== null
+      ? patient.address
+      : {
+          street: patient?.address || "",
+          city: "",
+          state: "",
+          pincode: "",
+        };
+
+  return {
+    name: patient?.name || "",
+    phone: patient?.phone || "",
+    gender: patient?.gender || "",
+    bloodGroup: patient?.bloodGroup || "",
+    dob: patient?.dob ? new Date(patient.dob) : null,
+    street: address.street || "",
+    city: address.city || "",
+    stateName: address.state || "",
+    pincode: address.pincode || "",
+    ecName: patient?.emergencyContact?.name || "",
+    ecRelation: patient?.emergencyContact?.relation || "",
+    ecPhone: patient?.emergencyContact?.phone || "",
+  };
+};
+
+export default function usePatientProfileForm({
+  initialValues = EMPTY_INITIAL_VALUES,
+  initialErrors = {},
+} = {}) {
+  const values = {
+    ...EMPTY_INITIAL_VALUES,
+    ...initialValues,
+  };
+
+  const [name, setName] = useState(values.name);
+  const [phone, setPhone] = useState(values.phone);
+  const [email, setEmail] = useState(values.email);
+  const [password, setPassword] = useState(values.password);
+  const [gender, setGender] = useState(values.gender);
+  const [bloodGroup, setBloodGroup] = useState(values.bloodGroup);
+  const [dob, setDob] = useState(values.dob);
+  const [street, setStreet] = useState(values.street);
+  const [city, setCity] = useState(values.city);
+  const [stateName, setStateName] = useState(values.stateName);
+  const [pincode, setPincode] = useState(values.pincode);
+  const [ecName, setEcName] = useState(values.ecName);
+  const [ecRelation, setEcRelation] = useState(values.ecRelation);
+  const [ecPhone, setEcPhone] = useState(values.ecPhone);
+
+  const [errors, setErrors] = useState({
     name: "",
     phone: "",
     email: "",
     password: "",
     gender: "",
-    bloodGroup: "",
-    dob: null,
-    street: "",
-    city: "",
-    stateName: "",
+    dob: "",
     pincode: "",
-    ecName: "",
-    ecRelation: "",
-    ecPhone: "",
-};
+    emergencyPhone: "",
+    ...initialErrors,
+  });
 
-export const getPatientFormInitialValues = (patient) => {
-    const address =
-        typeof patient?.address === "object" &&
-            patient.address !== null
-            ? patient.address
-            : {
-                street: patient?.address || "",
-                city: "",
-                state: "",
-                pincode: "",
-            };
+  const updateError = createErrorUpdater(setErrors);
 
-    return {
-        name: patient?.name || "",
-        phone: patient?.phone || "",
-        gender: patient?.gender || "",
-        bloodGroup: patient?.bloodGroup || "",
-        dob: patient?.dob ? new Date(patient.dob) : null,
-        street: address.street || "",
-        city: address.city || "",
-        stateName: address.state || "",
-        pincode: address.pincode || "",
-        ecName: patient?.emergencyContact?.name || "",
-        ecRelation: patient?.emergencyContact?.relation || "",
-        ecPhone: patient?.emergencyContact?.phone || "",
-    };
-};
+  const handleNameChange = (value) => {
+    setName(value);
 
-export default function usePatientProfileForm({
-    initialValues = EMPTY_INITIAL_VALUES,
-    initialErrors = {},
-} = {}) {
-    const values = {
-        ...EMPTY_INITIAL_VALUES,
-        ...initialValues,
-    };
+    if (isEmpty(value)) {
+      updateError("name", "");
+      return;
+    }
 
-    const [name, setName] = useState(values.name);
-    const [phone, setPhone] = useState(values.phone);
-    const [email, setEmail] = useState(values.email);
-    const [password, setPassword] = useState(values.password);
-    const [gender, setGender] = useState(values.gender);
-    const [bloodGroup, setBloodGroup] = useState(values.bloodGroup);
-    const [dob, setDob] = useState(values.dob);
-    const [street, setStreet] = useState(values.street);
-    const [city, setCity] = useState(values.city);
-    const [stateName, setStateName] = useState(values.stateName);
-    const [pincode, setPincode] = useState(values.pincode);
-    const [ecName, setEcName] = useState(values.ecName);
-    const [ecRelation, setEcRelation] = useState(values.ecRelation);
-    const [ecPhone, setEcPhone] = useState(values.ecPhone);
+    updateError(
+      "name",
+      value.trim().length < 3 ? "Name must be at least 3 characters" : "",
+    );
+  };
 
-    const [errors, setErrors] = useState({
-        name: "",
-        phone: "",
-        email: "",
-        password: "",
-        gender: "",
-        dob: "",
-        pincode: "",
-        emergencyPhone: "",
-        ...initialErrors,
-    });
+  const handlePhoneChange = (value) => {
+    setPhone(value);
 
-    const updateError = createErrorUpdater(setErrors);
+    if (isEmpty(value)) {
+      updateError("phone", "");
+      return;
+    }
 
-    const handleNameChange = (value) => {
-        setName(value);
+    updateError(
+      "phone",
+      isValidIndianMobile(value)
+        ? ""
+        : "Phone must be a valid 10-digit Indian mobile number",
+    );
+  };
 
-        if (isEmpty(value)) {
-            updateError("name", "");
-            return;
-        }
+  const handleEmailChange = (value) => {
+    setEmail(value);
 
-        updateError(
-            "name",
-            value.trim().length < 3
-                ? "Name must be at least 3 characters"
-                : ""
-        );
-    };
+    if (isEmpty(value)) {
+      updateError("email", "");
+      return;
+    }
 
-    const handlePhoneChange = (value) => {
-        setPhone(value);
+    updateError(
+      "email",
+      isValidEmail(value) ? "" : "Please enter a valid email address",
+    );
+  };
 
-        if (isEmpty(value)) {
-            updateError("phone", "");
-            return;
-        }
+  const handlePasswordChange = (value) => {
+    setPassword(value);
 
-        updateError(
-            "phone",
-            isValidIndianMobile(value)
-                ? ""
-                : "Phone must be a valid 10-digit Indian mobile number"
-        );
-    };
+    if (isEmpty(value)) {
+      updateError("password", "");
+      return;
+    }
 
-    const handleEmailChange = (value) => {
-        setEmail(value);
+    updateError(
+      "password",
+      isValidPassword(value) ? "" : "Password must be at least 8 characters",
+    );
+  };
 
-        if (isEmpty(value)) {
-            updateError("email", "");
-            return;
-        }
+  const handlePincodeChange = (value) => {
+    setPincode(value);
 
-        updateError(
-            "email",
-            isValidEmail(value)
-                ? ""
-                : "Please enter a valid email address"
-        );
-    };
+    updateError(
+      "pincode",
+      isValidPincode(value) ? "" : "Pincode must be 6 digits",
+    );
+  };
 
-    const handlePasswordChange = (value) => {
-        setPassword(value);
+  const handleEmergencyPhoneChange = (value) => {
+    setEcPhone(value);
 
-        if (isEmpty(value)) {
-            updateError("password", "");
-            return;
-        }
+    if (isEmpty(value)) {
+      updateError("emergencyPhone", "");
+      return;
+    }
 
-        updateError(
-            "password",
-            isValidPassword(value)
-                ? ""
-                : "Password must be at least 8 characters"
-        );
-    };
+    updateError(
+      "emergencyPhone",
+      isValidIndianMobile(value)
+        ? ""
+        : "Emergency contact phone must be a valid 10-digit mobile number",
+    );
+  };
 
-    const handlePincodeChange = (value) => {
-        setPincode(value);
+  const handleGenderChange = (value) => {
+    setGender(value);
+    updateError("gender", "");
+  };
 
-        updateError(
-            "pincode",
-            isValidPincode(value)
-                ? ""
-                : "Pincode must be 6 digits"
-        );
-    };
+  const handleDobChange = (selectedDate) => {
+    setDob(selectedDate);
+    updateError("dob", "");
+  };
 
-    const handleEmergencyPhoneChange = (value) => {
-        setEcPhone(value);
+  const getSubmitValues = () => ({
+    name,
+    phone,
+    email,
+    password,
+    gender,
+    dob,
+    pincode,
+    emergencyPhone: ecPhone,
+  });
 
-        if (isEmpty(value)) {
-            updateError("emergencyPhone", "");
-            return;
-        }
+  const getPatientPayload = ({
+    includeAuthFields = false,
+    optionalDob = false,
+  } = {}) => {
+    let formattedDob;
 
-        updateError(
-            "emergencyPhone",
-            isValidIndianMobile(value)
-                ? ""
-                : "Emergency contact phone must be a valid 10-digit mobile number"
-        );
-    };
-
-    const handleGenderChange = (value) => {
-        setGender(value);
-        updateError("gender", "");
-    };
-
-    const handleDobChange = (selectedDate) => {
-        setDob(selectedDate);
-        updateError("dob", "");
-    };
-
-    const getSubmitValues = () => ({
-        name,
-        phone,
-        email,
-        password,
-        gender,
-        dob,
-        pincode,
-        emergencyPhone: ecPhone,
-    });
-
-    const getPatientPayload = ({
-        includeAuthFields = false,
-        optionalDob = false,
-    } = {}) => ({
-        ...(includeAuthFields
-            ? {
-                email: email.trim().toLowerCase(),
-                password,
-            }
-            : {}),
-        name: name.trim(),
-        phone: phone.trim(),
-        gender,
-        bloodGroup,
-        dob: optionalDob
-            ? dob
-                ? formatDateForApi(dob)
-                : undefined
-            : formatDateForApi(dob),
-        address: {
-            street: street.trim(),
-            city: city.trim(),
-            state: stateName.trim(),
-            pincode: pincode.trim(),
-        },
-        emergencyContact: {
-            name: ecName.trim(),
-            relation: ecRelation.trim(),
-            phone: ecPhone.trim(),
-        },
-    });
+    if (dob) {
+      formattedDob = formatDateForApi(dob);
+    } else if (!optionalDob) {
+      formattedDob = null;
+    }
 
     return {
-        name,
-        phone,
-        email,
-        password,
-        gender,
-        bloodGroup,
-        dob,
-        street,
-        city,
-        stateName,
-        pincode,
-        ecName,
-        ecRelation,
-        ecPhone,
-        errors,
-        setErrors,
-        handleNameChange,
-        handlePhoneChange,
-        handleEmailChange,
-        handlePasswordChange,
-        handleGenderChange,
-        handleDobChange,
-        handlePincodeChange,
-        handleEmergencyPhoneChange,
-        setBloodGroup,
-        setStreet,
-        setCity,
-        setStateName,
-        setEcName,
-        setEcRelation,
-        getSubmitValues,
-        getPatientPayload,
+      ...(includeAuthFields
+        ? {
+            email: email.trim().toLowerCase(),
+            password,
+          }
+        : {}),
+      name: name.trim(),
+      phone: phone.trim(),
+      gender,
+      bloodGroup,
+      dob: formattedDob,
+      address: {
+        street: street.trim(),
+        city: city.trim(),
+        state: stateName.trim(),
+        pincode: pincode.trim(),
+      },
+      emergencyContact: {
+        name: ecName.trim(),
+        relation: ecRelation.trim(),
+        phone: ecPhone.trim(),
+      },
     };
+  };
+  return {
+    name,
+    phone,
+    email,
+    password,
+    gender,
+    bloodGroup,
+    dob,
+    street,
+    city,
+    stateName,
+    pincode,
+    ecName,
+    ecRelation,
+    ecPhone,
+    errors,
+    setErrors,
+    handleNameChange,
+    handlePhoneChange,
+    handleEmailChange,
+    handlePasswordChange,
+    handleGenderChange,
+    handleDobChange,
+    handlePincodeChange,
+    handleEmergencyPhoneChange,
+    setBloodGroup,
+    setStreet,
+    setCity,
+    setStateName,
+    setEcName,
+    setEcRelation,
+    getSubmitValues,
+    getPatientPayload,
+  };
 }
