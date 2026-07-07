@@ -3,7 +3,7 @@ name: Deploy HMS Backend
 on:
   push:
     branches:
-      - feature/sprint5_kuswanth_deployment
+      - feature/sprint5_pod4_kuswanth
  
 jobs:
   deploy:
@@ -19,7 +19,7 @@ jobs:
           script: |
             sudo su root
             cd HMS_POD_4
-            git pull origin feature/sprint5_kuswanth_deployment
+            git pull origin feature/sprint5_pod4_kuswanth
             cd Backend
             npm ci
             pm2 restart Backend || pm2 start server.js --name Backend
