@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface EmployeeRequest {
   name: string;
@@ -26,7 +27,7 @@ export interface EmployeeRequest {
 export class EmployeeService {
   private readonly http = inject(HttpClient);
 
-  private readonly baseUrl = 'http://localhost:3000/api/employees';
+  private readonly baseUrl = environment.apiUrl + '/api/employees';
 
   // Public employee registration
   registerEmployee(data: EmployeeRequest): Observable<any> {
