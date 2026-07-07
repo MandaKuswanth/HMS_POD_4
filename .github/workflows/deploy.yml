@@ -1,30 +1,47 @@
-name: Deploy HMS Backend
- 
+name: Deploy HMS
+
 on:
   push:
     branches:
       - feature/sprint5_pod4_kuswanth
- 
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
- 
+
     steps:
-      - name: Deploy EC2
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.EC2_KUSWANTH_HOST }}
           username: ${{ secrets.EC2_KUSWANTH_USER }}
           key: ${{ secrets.EC2_KUSWANTH_KEY }}
           script: |
-            sudo su root
-            cd HMS_POD_4
+            set -e
+
+            echo "===== Starting Deployment ====="
+
+            cd /home/ubuntu/HMS_POD_4
+
+            echo "Pulling latest code..."
             git pull origin feature/sprint5_pod4_kuswanth
+
+            ####################################
+            # Backend
+            ####################################
+            echo "Deploying Backend..."
+
             cd Backend
+
             npm ci
+
             pm2 restart Backend || pm2 start server.js --name Backend
+
             pm2 save
-    
+
+            ####################################
+            # Angular
+            ####################################
             echo "Deploying Angular..."
 
             cd ../Angular
@@ -33,10 +50,15 @@ jobs:
 
             npm run build -- --configuration production
 
+            ####################################
+            # Nginx
+            ####################################
+            echo "Updating Nginx..."
+
             sudo rm -rf /var/www/angular/*
 
             sudo cp -r dist/FRONTEND/browser/* /var/www/angular/
 
             sudo systemctl restart nginx
 
-            echo "Deployment completed successfully."
+            echo "===== Deployment Successful ====="
