@@ -59,7 +59,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
-  private readonly API_URL = environment.apiUrl + '/api/employees';
+  private readonly API_URL = environment.apiUrl + '/employees';
 
   private readonly TOKEN_KEY = 'token';
   private readonly USER_KEY = 'user';
