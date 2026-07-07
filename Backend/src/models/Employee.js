@@ -85,7 +85,8 @@ employeeSchema.pre("save", async function (next) {
             return next(err);
         }
     }
-   
+
+    next();
 });
 
 module.exports = mongoose.model("Employee", employeeSchema);
