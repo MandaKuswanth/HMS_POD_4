@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-
+import { environment } from '../../../environments/environment';
 export interface HealthRecordRequest {
   healthRecordId?: string;
 
@@ -31,8 +31,7 @@ export interface HealthRecordRequest {
 export class HealthRecordService {
   private readonly http = inject(HttpClient);
 
-  private readonly baseUrl =
-    'http://localhost:3000/api/health-records';
+  private readonly baseUrl = `${environment.apiUrl}/api/health-records`;
 
   createHealthRecord(
     data: HealthRecordRequest

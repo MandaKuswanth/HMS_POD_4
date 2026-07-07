@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-
+import { environment } from '../../../environments/environment';
 export interface MenuNode {
   nodeId?: string;
   name: string;
@@ -21,7 +21,7 @@ export interface MenuNode {
 export class NodeService {
   private readonly http = inject(HttpClient);
 
-  private readonly API_URL = 'http://localhost:3000/api/nodes';
+  private readonly API_URL = environment.apiUrl + '/api/nodes';
 
   getMyMenu(): Observable<any> {
     return this.http.get(`${this.API_URL}/my-menu`);

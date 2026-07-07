@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface PatientRequest {
   UHID?: string;
@@ -24,7 +25,7 @@ export interface PatientRequest {
 export class PatientService {
   private readonly http = inject(HttpClient);
 
-  private readonly baseUrl = 'http://localhost:3000/api/patients';
+  private readonly baseUrl = environment.apiUrl + '/api/patients';
 
   createPatient(data: PatientRequest): Observable<any> {
     return this.http.post(this.baseUrl, data);
