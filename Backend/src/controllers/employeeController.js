@@ -911,10 +911,21 @@ exports.refreshEmployeeToken = async (req, res) => {
         }
 
         let decoded;
+
         try {
             decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
         } catch (err) {
-            return res.status(403).json(new ApiError(403, "Invalid or expired refresh token"));
+            if (
+                err instanceof jwt.TokenExpiredError ||
+                err instanceof jwt.JsonWebTokenError ||
+                err instanceof jwt.NotBeforeError
+            ) {
+                return res
+                    .status(403)
+                    .json(new ApiError(403, "Invalid or expired refresh token"));
+            }
+
+            throw err;
         }
 
         const user = await User.findOne({
@@ -960,23 +971,45 @@ exports.logoutEmployee = async (req, res) => {
         const refreshToken = req.cookies.refreshToken;
 
         if (refreshToken) {
+            let decoded = null;
+
             try {
-                const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-                await User.findByIdAndUpdate(decoded.id, { refreshToken: null });
-            } catch (_) {
-                // token invalid — nothing to revoke
+                decoded = jwt.verify(
+                    refreshToken,
+                    process.env.REFRESH_TOKEN_SECRET
+                );
+            } catch (err) {
+                if (
+                    err instanceof jwt.TokenExpiredError ||
+                    err instanceof jwt.JsonWebTokenError ||
+                    err instanceof jwt.NotBeforeError
+                ) {
+                    // Invalid or expired token; nothing to revoke.
+                } else {
+                    throw err;
+                }
+            }
+
+            if (decoded) {
+                await User.findByIdAndUpdate(decoded.id, {
+                    refreshToken: null,
+                });
             }
         }
 
         res.clearCookie("refreshToken", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "lax"
+            sameSite: "lax",
         });
 
-        return res.status(200).json(new ApiResponse(200, {}, "Logged out successfully"));
+        return res
+            .status(200)
+            .json(new ApiResponse(200, {}, "Logged out successfully"));
     } catch (err) {
         console.error(err);
-        return res.status(500).json(new ApiError(500, err.message || "Internal Server Error"));
+        return res
+            .status(500)
+            .json(new ApiError(500, err.message || "Internal Server Error"));
     }
 };

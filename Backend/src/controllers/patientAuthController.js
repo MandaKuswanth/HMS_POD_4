@@ -587,7 +587,18 @@ exports.refreshPatientToken = async (req, res) => {
         try {
             decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
         } catch (err) {
-            return res.status(403).json(new ApiError(403, "Invalid or expired refresh token"));
+            if (
+                err instanceof jwt.TokenExpiredError ||
+                err instanceof jwt.JsonWebTokenError ||
+                err instanceof jwt.NotBeforeError
+            ) {
+                return res
+                    .status(403)
+                    .json(new ApiError(403, "Invalid or expired refresh token"));
+            }
+
+            // Re-throw unexpected errors
+            throw err;
         }
 
         const user = await User.findOne({
@@ -624,10 +635,24 @@ exports.logoutPatient = async (req, res) => {
 
         if (refreshToken) {
             try {
-                const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-                await User.findByIdAndUpdate(decoded.id, { refreshToken: null });
-            } catch (_) {
-                // token invalid — nothing to revoke
+                const decoded = jwt.verify(
+                    refreshToken,
+                    process.env.REFRESH_TOKEN_SECRET
+                );
+
+                await User.findByIdAndUpdate(decoded.id, {
+                    refreshToken: null,
+                });
+            } catch (err) {
+                if (
+                    err instanceof jwt.TokenExpiredError ||
+                    err instanceof jwt.JsonWebTokenError ||
+                    err instanceof jwt.NotBeforeError
+                ) {
+                    // Token is invalid or expired; nothing to revoke.
+                } else {
+                    throw err;
+                }
             }
         }
 

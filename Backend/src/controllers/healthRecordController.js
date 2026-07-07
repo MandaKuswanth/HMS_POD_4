@@ -9,7 +9,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 
 const escapeRegex = (value = "") => {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 };
 // ─── Helper: resolve caller's roles ─────────────────────────────────────────
 
@@ -155,7 +155,7 @@ exports.getHealthRecords = async (req, res) => {
             filter.doctorEmployeeId = loggedInEmployeeId;
         }
 
-        if (search && search.trim()) {
+        if (search?.trim()) {
             const regex = new RegExp(escapeRegex(search.trim()), "i");
 
             const [matchedPatients, matchedDoctors] = await Promise.all([
