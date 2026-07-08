@@ -236,6 +236,7 @@ export class EmployeeDialog implements OnInit {
         this.roles = rawRoles
           .filter((role) => role?.status !== false)
           .map((role) => role.name)
+          .filter((name) => name?.toLowerCase() !== 'patient')
           .sort();
 
         this.rolesLoading = false;
