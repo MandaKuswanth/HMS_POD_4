@@ -218,17 +218,20 @@ export class Register implements OnInit {
     this.rolesLoadError = '';
 
     // Public endpoint (no auth) — already filtered server-side to active,
-    // non-restricted roles, so no client-side filtering is needed here.
+    // non-restricted roles. Client-side filter kept as a safety net to
+    // ensure "Patient" never appears as a registrable role here.
     this.roleService.getPublicRegistrableRoles().subscribe({
       next: (response: any) => {
         const rawRoles: any[] = Array.isArray(response?.data)
           ? response.data
           : [];
 
-        this.availableRoles = rawRoles.map((role) => ({
-          roleId: role.roleId,
-          name: role.name,
-        }));
+        this.availableRoles = rawRoles
+          .filter((role) => role?.name?.toLowerCase() !== 'patient')
+          .map((role) => ({
+            roleId: role.roleId,
+            name: role.name,
+          }));
 
         this.rolesLoading = false;
       },
