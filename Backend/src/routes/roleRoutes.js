@@ -22,6 +22,14 @@ router.get(
     roleController.getRoles
 );
 
+
+// Public route — no auth. Must be declared before "/:roleId" so it isn't
+// swallowed by the param route. Used to populate the self-registration
+// role dropdown with only non-restricted, active roles.
+router.get(
+    "/public/self-register",
+    roleController.getPublicRegistrableRoles
+);
 router.get(
     "/:roleId",
     auth,

@@ -32,6 +32,15 @@ export class RoleService {
     );
   }
 
+
+  // Public, unauthenticated endpoint — returns only { roleId, name } for
+  // active, non-restricted roles. Safe to call from the self-registration
+  // page before the user has an account or token.
+  getPublicRegistrableRoles(): Observable<any> {
+    return this.http.get(
+      `${this.API_URL}/public/self-register`
+    );
+  }
   getRoleById(
     roleId: string
   ): Observable<any> {
