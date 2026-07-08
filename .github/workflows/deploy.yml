@@ -13,15 +13,11 @@ jobs:
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1
         with:
-         
-
-           host: ${{ secrets.EC2_HOST_AISHWARYA }}
-           username: ${{ secrets.EC2_USER_AISHWARYA }}
-           key: ${{ secrets.EC2_KEY_AISHWARYA }}
-
+          host: ${{ secrets.EC2_HOST_AISHWARYA }}
+          username: ${{ secrets.EC2_USER_AISHWARYA }}
+          key: ${{ secrets.EC2_KEY_AISHWARYA }}
           script: |
             cd ~/HMS_POD_4
-
             git pull origin sprint5_aishwarya
 
             cd Backend
