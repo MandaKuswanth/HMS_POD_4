@@ -1,4 +1,3 @@
-
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -25,8 +24,8 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { ToastrService } from 'ngx-toastr';
 import { EmployeeService } from '../../../core/services/employee';
+import { RoleService } from '../../../core/services/role';
 import {
-  EMPLOYEE_ROLES,
   NAME_PATTERN,
   PHONE_PATTERN,
   getConsultationFeeValidators,
@@ -93,6 +92,7 @@ export interface EmployeeDialogData {
 export class EmployeeDialog implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly employeeService = inject(EmployeeService);
+  private readonly roleService = inject(RoleService);
   private readonly toastr = inject(ToastrService);
   private readonly dialogRef = inject(MatDialogRef<EmployeeDialog>);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -100,7 +100,14 @@ export class EmployeeDialog implements OnInit {
   readonly data = inject<EmployeeDialogData>(MAT_DIALOG_DATA);
 
   loading = false;
-  readonly roles = EMPLOYEE_ROLES;
+
+  // Populated dynamically from the backend instead of a hardcoded list —
+  // admin dialog is authenticated with ROLE_READ, so it can use the
+  // full (protected) roles endpoint and is allowed to see/assign every
+  // active role, including SUPER_ADMIN/ADMIN.
+  roles: string[] = [];
+  rolesLoading = false;
+
   timeSlots: string[] = [
     '09:00 AM - 09:30 AM',
     '09:30 AM - 10:00 AM',
@@ -212,10 +219,33 @@ export class EmployeeDialog implements OnInit {
 
   ngOnInit(): void {
     this.configureJoiningDateValidators();
+    this.loadRoles();
 
     if (this.data.mode === 'edit' && this.data.employee) {
       this.patchEmployeeData(this.data.employee);
     }
+  }
+
+  private loadRoles(): void {
+    this.rolesLoading = true;
+
+    this.roleService.getRoles(1, 100).subscribe({
+      next: (response: any) => {
+        const rawRoles: any[] = response?.data?.records ?? [];
+
+        this.roles = rawRoles
+          .filter((role) => role?.status !== false)
+          .map((role) => role.name)
+          .filter((name) => name?.toLowerCase() !== 'patient')
+          .sort();
+
+        this.rolesLoading = false;
+      },
+      error: () => {
+        this.rolesLoading = false;
+        this.toastr.error('Unable to load roles. Please try again.');
+      }
+    });
   }
 
   private configureJoiningDateValidators(): void {
@@ -233,23 +263,23 @@ export class EmployeeDialog implements OnInit {
   private patchEmployeeData(employee: EmployeeData): void {
     console.log(employee);
     this.form.patchValue({
-  name: employee.name || '',
-  email: employee.email || '',
-  phone: employee.phone || '',
-  department: employee.department || '',
-  designation: employee.designation || '',
-  joiningDate: employee.joiningDate
-    ? new Date(employee.joiningDate).toISOString().split('T')[0]
-    : '',
-  role: employee.roles?.[0] || employee.role || '',
-  status: employee.status ?? true,
-  medicalRegistrationNo: employee.medicalRegistrationNo || '',
-  specialization: employee.specialization || '',
-  qualificationText: employee.qualification?.join(', ') || '',
-  consultationFee: employee.consultationFee
-    ? String(employee.consultationFee)
-    : ''
-});
+      name: employee.name || '',
+      email: employee.email || '',
+      phone: employee.phone || '',
+      department: employee.department || '',
+      designation: employee.designation || '',
+      joiningDate: employee.joiningDate
+        ? new Date(employee.joiningDate).toISOString().split('T')[0]
+        : '',
+      role: employee.roles?.[0] || employee.role || '',
+      status: employee.status ?? true,
+      medicalRegistrationNo: employee.medicalRegistrationNo || '',
+      specialization: employee.specialization || '',
+      qualificationText: employee.qualification?.join(', ') || '',
+      consultationFee: employee.consultationFee
+        ? String(employee.consultationFee)
+        : ''
+    });
 
     this.availabilitySlots.clear();
 
@@ -265,13 +295,13 @@ export class EmployeeDialog implements OnInit {
 
 
   onRoleChange(): void {
-      this.isDoctor = isDoctorRole(this.selectedRole);
-  this.isMedicalStaff = isMedicalStaffRole(this.selectedRole);
-    
-  const qualificationControl = this.form.get('qualificationText');
-  const consultationFeeControl = this.form.get('consultationFee');
-  const medicalRegistrationControl = this.form.get('medicalRegistrationNo');
-  const specializationControl = this.form.get('specialization');
+    this.isDoctor = isDoctorRole(this.selectedRole);
+    this.isMedicalStaff = isMedicalStaffRole(this.selectedRole);
+
+    const qualificationControl = this.form.get('qualificationText');
+    const consultationFeeControl = this.form.get('consultationFee');
+    const medicalRegistrationControl = this.form.get('medicalRegistrationNo');
+    const specializationControl = this.form.get('specialization');
 
 
     qualificationControl?.clearValidators();

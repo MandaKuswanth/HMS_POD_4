@@ -50,6 +50,43 @@ exports.createRole = async (req, res) => {
     }
 };
 
+
+
+// Roles that must never be exposed on the public self-registration form.
+const RESTRICTED_SELF_REGISTER_ROLES = ["SUPER_ADMIN", "ADMIN"];
+
+// Public endpoint — no auth required. Returns only the minimal fields
+// (roleId, name) needed to populate the self-registration dropdown.
+// Deliberately excludes permissions, description, timestamps, etc.
+exports.getPublicRegistrableRoles = async (req, res) => {
+    try {
+        const roles = await Role.find({
+            status: true,
+            name: { $nin: RESTRICTED_SELF_REGISTER_ROLES }
+        })
+            .select("roleId name")
+            .sort({ name: 1 });
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                roles,
+                "Registrable roles fetched successfully"
+            )
+        );
+
+    } catch (err) {
+        console.error(err);
+
+        return res.status(500).json(
+            new ApiError(
+                500,
+                err.message || "Internal Server Error"
+            )
+        );
+    }
+};
+
 exports.getRoles = async (req, res) => {
     try {
         const page = Math.max(
