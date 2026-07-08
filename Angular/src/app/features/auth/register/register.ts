@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormArray,
@@ -9,6 +9,12 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { EmployeeService } from '../../../core/services/employee';
+import { RoleService } from '../../../core/services/role';
+
+export interface SelectableRole {
+  roleId: string;
+  name: string;
+}
 
 @Component({
   selector: 'app-register',
@@ -17,10 +23,12 @@ import { EmployeeService } from '../../../core/services/employee';
   templateUrl: './register.html',
   styleUrl: './register.css',
 })
-export class Register {
+export class Register implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly employeeService = inject(EmployeeService);
+  private readonly roleService = inject(RoleService);
   private readonly router = inject(Router);
+  today = new Date().toISOString().split('T')[0];
 
   readonly registerForm = this.fb.nonNullable.group(
     {
@@ -32,8 +40,8 @@ export class Register {
 
       joiningDate: ['', Validators.required],
 
-      role: ['RECEPTIONIST', Validators.required],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      role: ['', Validators.required],
+      password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', Validators.required],
       medicalRegistrationNo: [''],
       specialization: [''],
@@ -68,12 +76,18 @@ export class Register {
   isSubmitting = false;
   statusMessage = '';
 
-  constructor() {
-    this.updateRoleSpecificValidators();
+  availableRoles: SelectableRole[] = [];
+  rolesLoading = false;
+  rolesLoadError = '';
 
+  constructor() {
     this.registerForm.get('role')?.valueChanges.subscribe(() => {
       this.updateRoleSpecificValidators();
     });
+  }
+
+  ngOnInit(): void {
+    this.loadSelectableRoles();
   }
 
   get isDoctor(): boolean {
@@ -81,7 +95,7 @@ export class Register {
   }
 
   get needsQualification(): boolean {
-    return ['DOCTOR', 'NURSE'].includes(
+    return ['DOCTOR', 'LAB_TECHNICIAN'].includes(
       this.registerForm.get('role')?.value || ''
     );
   }
@@ -157,7 +171,7 @@ export class Register {
           department: '',
           designation: '',
           joiningDate: '',
-          role: 'RECEPTIONIST',
+          role: '',
           password: '',
           confirmPassword: '',
           medicalRegistrationNo: '',
@@ -197,6 +211,32 @@ export class Register {
 
   isAvailabilitySlotSelected(slot: string): boolean {
     return this.availabilitySlotsControl.value?.includes(slot) ?? false;
+  }
+
+  private loadSelectableRoles(): void {
+    this.rolesLoading = true;
+    this.rolesLoadError = '';
+
+    // Public endpoint (no auth) — already filtered server-side to active,
+    // non-restricted roles, so no client-side filtering is needed here.
+    this.roleService.getPublicRegistrableRoles().subscribe({
+      next: (response: any) => {
+        const rawRoles: any[] = Array.isArray(response?.data)
+          ? response.data
+          : [];
+
+        this.availableRoles = rawRoles.map((role) => ({
+          roleId: role.roleId,
+          name: role.name,
+        }));
+
+        this.rolesLoading = false;
+      },
+      error: () => {
+        this.rolesLoading = false;
+        this.rolesLoadError = 'Unable to load roles. Please refresh the page.';
+      },
+    });
   }
 
   private updateRoleSpecificValidators(): void {
@@ -242,7 +282,7 @@ export class Register {
       ]);
 
       availabilitySlots?.setValidators([Validators.required]);
-    } else if (role === 'NURSE') {
+    } else if (role === 'LAB_TECHNICIAN') {
       qualification?.setValidators([Validators.required]);
     }
 
