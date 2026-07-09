@@ -19,6 +19,8 @@
     margin: 0;
 }
 
+#nhdjfnn
+
 :host ::ng-deep .appointment-date-field .mat-mdc-form-field-subscript-wrapper {
     display: none;
 }
