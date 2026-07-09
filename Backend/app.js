@@ -24,7 +24,7 @@ const app = express();
 app.use(helmet());
 
 app.use(cors({
-  origin: "http://localhost:4200",
+  origin: ['http://localhost:4200', 'https://hms.avitam.com'],
   credentials: true
 }));
 

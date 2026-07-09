@@ -69,11 +69,20 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(clonedRequest).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !req.url.includes('/refresh-token')) {
+
+      const hasAuthHeader = clonedRequest.headers.has('Authorization');
+
+      if (
+        error.status === 401 &&
+        hasAuthHeader &&
+        !req.url.includes('/refresh-token')
+      ) {
         return handleRefresh(req, next, authService, router);
       }
 
       return throwError(() => error);
     })
+
+
   );
 };

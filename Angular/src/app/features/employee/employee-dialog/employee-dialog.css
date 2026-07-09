@@ -15,6 +15,27 @@ mat-form-field {
     width: 100%;
 }
 
+/* MAT-HINT (used for "Loading roles..." under the Role dropdown) */
+mat-hint {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1976d2;
+}
+
+/* DISABLED ROLE SELECT (while roles are being fetched) */
+::ng-deep mat-select[formcontrolname="role"].mat-mdc-select-disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+::ng-deep mat-select[formcontrolname="role"].mat-mdc-select-disabled .mat-mdc-select-value-text {
+    color: #94a3b8;
+}
+
+::ng-deep mat-select[formcontrolname="role"].mat-mdc-select-disabled .mat-mdc-select-arrow {
+    opacity: 0.4;
+}
+
 /* MEDICAL SECTION */
 .medical-section {
     margin-top: 18px;
