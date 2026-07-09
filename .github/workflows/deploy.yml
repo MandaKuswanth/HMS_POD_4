@@ -3,7 +3,7 @@ name: Deploy HMS Backend
 on:
   push:
     branches:
-      - feature/sprint5_WORKING
+      - sprint5_WORKING
 
 jobs:
   deploy:
