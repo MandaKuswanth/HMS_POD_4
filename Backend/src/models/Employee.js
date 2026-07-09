@@ -72,21 +72,15 @@ const employeeSchema = new mongoose.Schema(
     }
 );
 
-employeeSchema.pre("save", async function (next) {
+employeeSchema.pre("save", async function () {
     if (this.isNew) {
-        try {
-            const counter = await Counter.findOneAndUpdate(
-                { name: "employee" },
-                { $inc: { seq: 1 } },
-                { new: true, upsert: true }
-            );
-            this.employeeCode = `EMP-${String(counter.seq).padStart(6, "0")}`;
-        } catch (err) {
-            return next(err);
-        }
+        const counter = await Counter.findOneAndUpdate(
+            { name: "employee" },
+            { $inc: { seq: 1 } },
+            { returnDocument: "after", upsert: true }
+        );
+        this.employeeCode = `EMP-${String(counter.seq).padStart(6, "0")}`;
     }
-
-    next();
 });
 
 module.exports = mongoose.model("Employee", employeeSchema);
