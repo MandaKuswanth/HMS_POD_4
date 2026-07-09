@@ -1,0 +1,42 @@
+name: Deploy HMS Backend
+
+on:
+  push:
+    branches:
+      - feature/sprint5_WORKING
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PRASANT_HOST }}
+          username: ${{ secrets.PRASANT_USER }}
+          key: ${{ secrets.PRASANT_KEY }}
+          script: |
+            sudo su root
+            cd HMS_POD_4
+            git pull origin feature/sprint5_WORKING
+            cd Backend
+            npm ci
+            pm2 restart hms-backend || pm2 start server.js --name hms-backend
+            pm2 save
+
+            echo "Deploying Angular..."
+
+            cd ../Angular
+
+            npm ci
+
+            npm run build -- --configuration production
+
+            sudo rm -rf /var/www/angular/*
+
+            sudo cp -r dist/FRONTEND/browser/* /var/www/angular/
+
+            sudo systemctl restart nginx
+
+            echo "Deployment completed successfully."
