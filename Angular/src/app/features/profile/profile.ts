@@ -1,12 +1,9 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
 import { EmployeeService } from '../../core/services/employee';
-
 @Component({
   selector: 'app-profile',
   standalone: true,
@@ -23,14 +20,12 @@ import { EmployeeService } from '../../core/services/employee';
 export class Profile implements OnInit {
   readonly employeeService = inject(EmployeeService);
   readonly cdr = inject(ChangeDetectorRef);
-
   employee: any = null;
   loading = true;
 
   ngOnInit(): void {
     this.loadProfile();
   }
-
   loadProfile(): void {
     this.employeeService.getProfile().subscribe({
       next: (response) => {
@@ -38,7 +33,6 @@ export class Profile implements OnInit {
           response?.data?.employee ||
           response?.employee ||
           response?.data;
-
         this.loading = false;
         this.cdr.markForCheck(); //   tells OnPush to re-render
       },
@@ -49,7 +43,6 @@ export class Profile implements OnInit {
       }
     });
   }
-
   isDoctor(): boolean {
     return this.employee?.role === 'DOCTOR';
   }

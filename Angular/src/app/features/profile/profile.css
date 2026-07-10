@@ -3,7 +3,6 @@
     min-height: calc(100vh - 72px);
     background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
 }
-
 /* MAIN CONTENT */
 .content {
     flex: 1;

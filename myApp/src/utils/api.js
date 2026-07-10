@@ -1,19 +1,13 @@
 import axios from "axios";
-
 import SecureStorage from "./secureStorage";
-
-export const BASE_URL = "https://10.11.73.69:3000/api";
-
+export const BASE_URL = "http://13.126.191.218/api";
 let accessToken = null;
-
 export const setApiAccessToken = (token) => {
     accessToken = token || null;
 };
-
 export const clearApiAccessToken = () => {
     accessToken = null;
 };
-
 const api = axios.create({
     baseURL: BASE_URL,
     timeout: 15000,
@@ -21,7 +15,6 @@ const api = axios.create({
         "Content-Type": "application/json",
     },
 });
-
 const isAuthEndpoint = (url = "") => {
     return url.includes("/patient-auth/login") ||
         url.includes("/patient-auth/register") ||
@@ -32,7 +25,6 @@ const isAuthEndpoint = (url = "") => {
         url.includes("/patient-auth/reset-temporary-password") ||
         url.includes("/patient-auth/logout");
 };
-
 api.interceptors.request.use(
     async (config) => {
         const token = accessToken || await SecureStorage.getItem("token");
@@ -46,11 +38,9 @@ api.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
-
 // Track whether a refresh is already in progress to avoid parallel refresh calls
 let isRefreshing = false;
 let pendingQueue = [];
-
 const processQueue = (error, token = null) => {
     pendingQueue.forEach((p) => {
         if (error) {
@@ -61,7 +51,6 @@ const processQueue = (error, token = null) => {
     });
     pendingQueue = [];
 };
-
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -115,7 +104,6 @@ api.interceptors.response.use(
 
                 processQueue(null, newToken);
                 isRefreshing = false;
-
                 originalRequest.headers = originalRequest.headers || {};
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
                 return api(originalRequest);
@@ -131,13 +119,10 @@ api.interceptors.response.use(
                     "tokenExpiry",
                 ]);
                 clearApiAccessToken();
-
                 throw refreshError;
             }
         }
-
         throw error;
     }
 );
-
 export default api;
