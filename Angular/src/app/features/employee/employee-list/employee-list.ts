@@ -69,6 +69,8 @@ export class EmployeeList implements OnInit {
   activeView: 'all' | 'active' | 'pending' = 'all';
 
   totalRecords = 0;
+  globalActiveCount = 0;
+  globalPendingCount = 0;
   pageSize = 5;
   pageIndex = 0;
   pageSizeOptions = [5, 10, 25];
@@ -114,11 +116,11 @@ export class EmployeeList implements OnInit {
   }
 
   get activeCount(): number {
-    return this.employees.filter((emp: any) => emp.status === true).length;
+    return this.globalActiveCount;
   }
 
   get pendingCount(): number {
-    return this.employees.filter((emp: any) => emp.status === false).length;
+    return this.globalPendingCount;
   }
 
   get roles(): string[] {
@@ -179,6 +181,8 @@ export class EmployeeList implements OnInit {
 
           this.totalRecords =
             response?.data?.pagination?.totalRecords || 0;
+          this.globalActiveCount = response?.data?.activeCount || 0;
+          this.globalPendingCount = response?.data?.pendingCount || 0;
 
           this.expandedEmployee = null;
           this.cdr.markForCheck();
@@ -188,6 +192,8 @@ export class EmployeeList implements OnInit {
 
           this.employees = [];
           this.totalRecords = 0;
+          this.globalActiveCount = 0;
+          this.globalPendingCount = 0;
           this.expandedEmployee = null;
 
           this.toastr.warning('Failed to load employees');

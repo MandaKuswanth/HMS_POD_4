@@ -75,11 +75,12 @@
           <div class="field-group">
             <label>
               Department
-              <input
-                formControlName="department"
-                type="text"
-                placeholder="Cardiology, Dental, Ortho"
-              />
+              <select formControlName="department">
+                <option value="" disabled>Select department</option>
+                @for (dept of departments; track dept) {
+                  <option [value]="dept">{{ dept }}</option>
+                }
+              </select>
             </label>
 
             @if (fieldHasError('department')) {
@@ -207,11 +208,12 @@
                 <div class="field-group">
                   <label>
                     Specialization
-                    <input
-                      formControlName="specialization"
-                      type="text"
-                      placeholder="Cardiology"
-                    />
+                    <select formControlName="specialization">
+                      <option value="" disabled>Select specialization</option>
+                      @for (dept of departments; track dept) {
+                        <option [value]="dept">{{ dept }}</option>
+                      }
+                    </select>
                   </label>
 
                   @if (fieldHasError('specialization')) {

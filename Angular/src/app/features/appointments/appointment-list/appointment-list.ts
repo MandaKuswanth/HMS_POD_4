@@ -80,6 +80,7 @@ export class AppointmentList implements OnInit {
   readonly pageSize = signal(5);
   pageSizeOptions = [5, 10, 25];
   readonly totalRecords = signal(0);
+  readonly statusCounts = signal<Record<string, number>>({});
 
   readonly doctors = signal<any[]>([]);
   readonly statuses = signal<string[]>([]);
@@ -131,6 +132,7 @@ export class AppointmentList implements OnInit {
           this.appointments.set(records);
           this.filteredAppointments.set([...records]);
           this.totalRecords.set(data?.pagination?.totalRecords || records.length);
+          this.statusCounts.set(data?.statusCounts || {});
           this.isLoading.set(false);
         },
         error: (error) => {
@@ -140,6 +142,7 @@ export class AppointmentList implements OnInit {
           this.appointments.set([]);
           this.filteredAppointments.set([]);
           this.totalRecords.set(0);
+          this.statusCounts.set({});
 
           this.toastr.error('Failed to load appointments');
         },
@@ -204,9 +207,7 @@ export class AppointmentList implements OnInit {
   }
 
   getStatusCount(status: string): number {
-    return this.appointments().filter(
-      (appointment: any) => appointment.status === status
-    ).length;
+    return this.statusCounts()[status] || 0;
   }
 
   openAddDialog(): void {

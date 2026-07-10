@@ -31,7 +31,7 @@ exports.createAppointment = async (req, res) => {
 
         // Run validation layers
         const { patient, doctor } = await validatePatientAndDoctor(patientId, doctorEmployeeId);
-        const appointmentDate = validateAppointmentDateRule(date, doctor);
+        const appointmentDate = validateAppointmentDateRule(date, doctor, timeSlot);
         await validateSlotConflicts({ patientId, doctorEmployeeId, date: appointmentDate, timeSlot });
 
         let appointment;
@@ -166,6 +166,19 @@ exports.getAppointments = async (req, res) => {
 
         const totalRecords = await Appointment.countDocuments(query);
 
+        const statusCountQuery = { ...query };
+        delete statusCountQuery.status;
+
+        const statusCountsAgg = await Appointment.aggregate([
+            { $match: statusCountQuery },
+            { $group: { _id: "$status", count: { $sum: 1 } } }
+        ]);
+
+        const statusCounts = statusCountsAgg.reduce((acc, cur) => {
+            acc[cur._id] = cur.count;
+            return acc;
+        }, {});
+
         const appointments = await Appointment.find(query)
             .sort({ createdAt: -1 })
             .skip(skip)
@@ -210,7 +223,8 @@ exports.getAppointments = async (req, res) => {
                         currentPage: page,
                         totalPages: Math.ceil(totalRecords / limit),
                         limit
-                    }
+                    },
+                    statusCounts
                 },
                 "Appointments fetched successfully"
             )

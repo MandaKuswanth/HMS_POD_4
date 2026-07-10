@@ -69,7 +69,7 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(clonedRequest).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !req.url.includes('/refresh-token')) {
+      if (error.status === 401 && !req.url.includes('/refresh-token') && !req.url.includes('/login')) {
         return handleRefresh(req, next, authService, router);
       }
 

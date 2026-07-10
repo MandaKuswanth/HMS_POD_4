@@ -80,22 +80,17 @@
       <!-- Department -->
       <mat-form-field appearance="outline">
         <mat-label>Department</mat-label>
-        <input
-          matInput
-          formControlName="department"
-          placeholder="Cardiology"
-        />
+
+        <mat-select formControlName="department">
+          @for (dept of departments; track dept) {
+            <mat-option [value]="dept">
+              {{ dept }}
+            </mat-option>
+          }
+        </mat-select>
 
         @if (form.get('department')?.hasError('required')) {
           <mat-error>Department is required</mat-error>
-        }
-
-        @if (form.get('department')?.hasError('minlength')) {
-          <mat-error>Department must be at least 2 characters</mat-error>
-        }
-
-        @if (form.get('department')?.hasError('maxlength')) {
-          <mat-error>Department cannot exceed 50 characters</mat-error>
         }
       </mat-form-field>
 
@@ -229,26 +224,16 @@
             <mat-form-field appearance="outline">
               <mat-label>Specialization</mat-label>
 
-              <input
-                matInput
-                formControlName="specialization"
-                placeholder="Cardiology"
-              />
+              <mat-select formControlName="specialization">
+                @for (dept of departments; track dept) {
+                  <mat-option [value]="dept">
+                    {{ dept }}
+                  </mat-option>
+                }
+              </mat-select>
 
               @if (form.get('specialization')?.hasError('required')) {
                 <mat-error>Specialization is required</mat-error>
-              }
-
-              @if (form.get('specialization')?.hasError('minlength')) {
-                <mat-error>Specialization must be at least 2 characters</mat-error>
-              }
-
-              @if (form.get('specialization')?.hasError('maxlength')) {
-                <mat-error>Specialization cannot exceed 50 characters</mat-error>
-              }
-
-              @if (form.get('specialization')?.hasError('pattern')) {
-                <mat-error>Specialization should contain only letters and spaces</mat-error>
               }
             </mat-form-field>
           }

@@ -25,6 +25,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { ToastrService } from 'ngx-toastr';
 import { EmployeeService } from '../../../core/services/employee';
+import { HOSPITAL_DEPARTMENTS } from '../../../constants/departments';
 import {
   EMPLOYEE_ROLES,
   NAME_PATTERN,
@@ -101,6 +102,7 @@ export class EmployeeDialog implements OnInit {
 
   loading = false;
   readonly roles = EMPLOYEE_ROLES;
+  readonly departments = HOSPITAL_DEPARTMENTS;
   timeSlots: string[] = [
     '09:00 AM - 09:30 AM',
     '09:30 AM - 10:00 AM',

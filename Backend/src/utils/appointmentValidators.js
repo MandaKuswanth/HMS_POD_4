@@ -43,6 +43,23 @@ const isBeforeDoctorJoiningDate = (appointmentDate, doctor) => {
     return appointmentDate < normalizeAppointmentDate(doctor.joiningDate);
 };
 
+const parseSlotStartTime = (date, timeSlot) => {
+    const startPart = timeSlot?.split("-")[0]?.trim();
+    const match = startPart?.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!match) return null;
+
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const period = match[3].toUpperCase();
+
+    if (period === "PM" && hours !== 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
+
+    const slotStart = new Date(date);
+    slotStart.setHours(hours, minutes, 0, 0);
+    return slotStart;
+};
+
 const findSlotConflict = async ({ doctorEmployeeId, patientId, date, timeSlot, excludeAppointmentId }) => {
     const { startOfDay, endOfDay } = getDateRange(date);
     const query = {
@@ -171,11 +188,19 @@ const validatePatientAndDoctor = async (patientId, doctorEmployeeId) => {
     return { patient, doctor };
 };
 
-const validateAppointmentDateRule = (date, doctor) => {
+const validateAppointmentDateRule = (date, doctor, timeSlot) => {
     const appDate = normalizeAppointmentDate(date);
     if (Number.isNaN(appDate.getTime())) throw new ApiError(400, "Invalid date format");
-    if (appDate < getTomorrowDate()) throw new ApiError(400, "Appointments can be booked only from tomorrow onwards");
+    if (appDate < getTodayDate()) throw new ApiError(400, "Appointments can only be booked for today or a future date");
     if (isBeforeDoctorJoiningDate(appDate, doctor)) throw new ApiError(400, "Appointment cannot be booked before doctor's joining date");
+
+    if (appDate.getTime() === getTodayDate().getTime()) {
+        const slotStart = parseSlotStartTime(appDate, timeSlot);
+        if (slotStart && slotStart <= new Date()) {
+            throw new ApiError(400, "Selected time slot has already passed for today. Please choose a future time slot.");
+        }
+    }
+
     return appDate;
 };
 

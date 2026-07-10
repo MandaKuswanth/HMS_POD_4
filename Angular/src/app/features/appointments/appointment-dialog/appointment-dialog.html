@@ -79,9 +79,13 @@
         <mat-label>Available Slot</mat-label>
 
         <mat-select formControlName="timeSlot">
-          @if (availableSlots.length > 0) {
-            <mat-option *ngFor="let slot of availableSlots" [value]="slot">
+          @if (filteredSlots.length > 0) {
+            <mat-option *ngFor="let slot of filteredSlots" [value]="slot">
               {{ slot }}
+            </mat-option>
+          } @else if (availableSlots.length > 0) {
+            <mat-option disabled>
+              No remaining slots for today. Please pick a future date.
             </mat-option>
           } @else {
             <mat-option disabled>

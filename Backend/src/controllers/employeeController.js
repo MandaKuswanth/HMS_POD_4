@@ -528,6 +528,8 @@ exports.getEmployees = async (req, res) => {
         }
 
         const totalRecords = await Employee.countDocuments(query);
+        const activeCount = await Employee.countDocuments({ ...query, status: true });
+        const pendingCount = await Employee.countDocuments({ ...query, status: false });
 
         const employees = await Employee.find(query)
             .sort({ createdAt: -1 })
@@ -568,7 +570,9 @@ exports.getEmployees = async (req, res) => {
                         currentPage: page,
                         totalPages: Math.ceil(totalRecords / limit),
                         limit
-                    }
+                    },
+                    activeCount,
+                    pendingCount
                 },
                 "Employees fetched successfully"
             )

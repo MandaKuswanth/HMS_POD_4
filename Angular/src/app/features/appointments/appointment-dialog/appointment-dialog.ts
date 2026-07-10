@@ -49,8 +49,9 @@ export class AppointmentDialog implements OnInit {
   doctors: any[] = [];
   patients: any[] = [];
   availableSlots: string[] = [];
+  filteredSlots: string[] = [];
 
-  minDate: Date = new Date(new Date().setDate(new Date().getDate() + 1));
+  minDate: Date = new Date();
 
   loading = false;
   patientsLoading = false;
@@ -69,6 +70,10 @@ export class AppointmentDialog implements OnInit {
 
     this.form.get('doctorEmployeeId')?.valueChanges.subscribe((doctorCode) => {
       this.onDoctorChange(doctorCode || '');
+    });
+
+    this.form.get('date')?.valueChanges.subscribe(() => {
+      this.updateFilteredSlots();
     });
   }
 
@@ -133,14 +138,67 @@ loadPatients(): void {
       : [];
 
     slotControl?.reset();
+    this.updateFilteredSlots();
 
-    if (this.availableSlots.length > 0) {
+    this.cdr.detectChanges();
+  }
+
+  private isSameDay(a: Date, b: Date): boolean {
+    return (
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate()
+    );
+  }
+
+  private parseSlotStartTime(slot: string, referenceDate: Date): Date | null {
+    const startPart = slot.split('-')[0]?.trim();
+    const match = startPart?.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+
+    if (!match) {
+      return null;
+    }
+
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const period = match[3].toUpperCase();
+
+    if (period === 'PM' && hours !== 12) {
+      hours += 12;
+    }
+    if (period === 'AM' && hours === 12) {
+      hours = 0;
+    }
+
+    const slotStart = new Date(referenceDate);
+    slotStart.setHours(hours, minutes, 0, 0);
+    return slotStart;
+  }
+
+  private updateFilteredSlots(): void {
+    const dateValue = this.form.get('date')?.value;
+    const selectedDate = dateValue ? new Date(dateValue) : null;
+    const now = new Date();
+    const isToday = selectedDate ? this.isSameDay(selectedDate, now) : false;
+
+    this.filteredSlots = isToday
+      ? this.availableSlots.filter((slot) => {
+          const slotStart = this.parseSlotStartTime(slot, now);
+          return slotStart ? slotStart.getTime() > now.getTime() : true;
+        })
+      : this.availableSlots;
+
+    const slotControl = this.form.get('timeSlot');
+
+    if (this.filteredSlots.length > 0) {
       slotControl?.enable();
     } else {
       slotControl?.disable();
     }
 
-    this.cdr.detectChanges();
+    if (slotControl?.value && !this.filteredSlots.includes(slotControl.value)) {
+      slotControl.reset();
+    }
   }
 
   onSubmit(): void {

@@ -9,6 +9,7 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { EmployeeService } from '../../../core/services/employee';
+import { HOSPITAL_DEPARTMENTS } from '../../../constants/departments';
 
 @Component({
   selector: 'app-register',
@@ -45,6 +46,8 @@ export class Register {
       validators: this.passwordsMatchValidator()
     }
   );
+
+  readonly departments = HOSPITAL_DEPARTMENTS;
 
   readonly availabilitySlotOptions = [
     '09:00 AM - 09:30 AM',
