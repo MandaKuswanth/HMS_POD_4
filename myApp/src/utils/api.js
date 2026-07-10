@@ -2,7 +2,7 @@ import axios from "axios";
 
 import SecureStorage from "./secureStorage";
 
-export const BASE_URL = "https://10.11.73.69:3000/api";
+export const BASE_URL = "http://13.206.61.100/api";
 
 let accessToken = null;
 
